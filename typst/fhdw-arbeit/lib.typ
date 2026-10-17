@@ -138,10 +138,10 @@
   // ---------- Abbildungen, Tabellen, Listings ----------
   // S. 5: Nummerierung im Dezimalsystem mit Kapitelnummer (1.1);
   //       Abbildungen haben Unterschriften, Tabellen und Listings Überschriften.
-  let kapitel-nummerierung = state("fhdw-kapitel-nummerierung", "1")
-  set figure(numbering: n => context {
-    numbering(kapitel-nummerierung.get(), counter(heading).get().first()) + "." + str(n)
-  })
+  // Kapitelnummer + laufende Nummer. Kein `context` in der Funktion: Typst wertet sie
+  // dann an der Stelle der Abbildung aus, auch für Verweise und Verzeichnisse.
+  let nummer-mit-kapitel(stil) = n => numbering(stil, counter(heading).get().first(), n)
+  set figure(numbering: nummer-mit-kapitel("1.1"))
   show figure.where(kind: table): set figure.caption(position: top)
   show figure.where(kind: raw): set figure.caption(position: top)
   show figure.caption: set text(size: 10pt)
@@ -150,9 +150,9 @@
   show table.cell.where(y: 0): set text(weight: "bold")
 
   show heading.where(level: 1): it => {
-    counter(figure.where(kind: image)).update(0)
-    counter(figure.where(kind: table)).update(0)
-    counter(figure.where(kind: raw)).update(0)
+    for art in (image, table, raw) {
+      counter(figure.where(kind: art)).update(0)
+    }
     kapitel-ueberschrift(it)
   }
   show heading.where(level: 2): set text(size: 14pt)
@@ -251,7 +251,7 @@
     // 11. Optional: Anhang (S. 4, Punkt 11; Anhang A der FHDW-Hinweise)
     if anhang != none {
       counter(heading).update(0)
-      kapitel-nummerierung.update("A")
+      set figure(numbering: nummer-mit-kapitel("A.1"))
       set heading(numbering: "A.1", supplement: [Anhang])
       show heading.where(level: 1): set heading(supplement: [Anhang])
       anhang

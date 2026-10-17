@@ -10,6 +10,6 @@
 
 #lorem(50)
 
-== Struktur der Arbeit, Methodik
+== Struktur der Arbeit, Methodik <sec:struktur>
 
 #lorem(40) Die Arbeit folgt der kanonischen Struktur einer Praxisarbeit. Begriffe wie #gls("memoization") stehen im Glossar; Abkürzungen wie #gls("api") werden beim ersten Auftreten ausgeschrieben. Die Nutzung von KI-Werkzeugen ist in @anh:ki dokumentiert.

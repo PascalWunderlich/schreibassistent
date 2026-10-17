@@ -17,8 +17,8 @@
   caption: [Anforderungen an das Beispielsystem],
 ) <tab:anforderungen>
 
-#lorem(80)
+#lorem(80) Der Aufbau aus @abb:architektur bleibt dabei unverändert.
 
 == Bewertung
 
-#lorem(90)
+#lorem(90) Die Konventionen dazu stehen in @sec:struktur.

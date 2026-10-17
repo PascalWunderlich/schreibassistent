@@ -151,7 +151,7 @@
               <text variable="note"/>
               <text variable="publisher"/>
               <text variable="genre"/>
-              <text macro="jahr"/>
+              <date variable="issued" form="numeric" date-parts="year-month-day"/>
               <text variable="URL"/>
               <text macro="zugriff"/>
             </group>

@@ -26,6 +26,11 @@ erwarte_abbruch() {
 }
 
 erwarte_ok beispiel-arbeit beispiel-arbeit/Arbeit/main.typ
+if python3 tests/vorlage/inhalt_pruefen.py "$aus/x.pdf"; then
+  echo "ok      Beispiel-PDF: Seitenzahlen, Verweise, Verzeichnisse"
+else
+  echo "FEHLER  Beispiel-PDF: Inhalt"; fehler=1
+fi
 erwarte_ok beispiel-arbeit beispiel-arbeit/Arbeit/erklaerung-einzeln.typ
 erwarte_ok . tests/vorlage/bachelor-voll.typ
 erwarte_abbruch . tests/vorlage/bachelor-ohne-zweitpruefer.typ "zweitpruefer"
