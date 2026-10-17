@@ -96,7 +96,9 @@ button {
 
 .center {
   min-width: 0;
-  overflow: hidden;
+  min-height: 0;
+  /* clip statt hidden: Auch scrollIntoView darf den Bereich nicht verschieben. */
+  overflow: clip;
 }
 
 /* ---------- Seitenleiste ---------- */
@@ -203,10 +205,12 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
 }
 
 .pages {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 1.5rem 0;
 }
@@ -349,7 +353,15 @@ button {
 .source-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* Feste Zeilenhöhe: Quelltext und Seiten scrollen jeweils für sich. */
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
+  min-height: 0;
+}
+
+.source-split > * {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .source-editor {
@@ -362,6 +374,7 @@ button {
 
 .source-body {
   flex: 1;
+  min-height: 0;
   overflow: auto;
 }
 
