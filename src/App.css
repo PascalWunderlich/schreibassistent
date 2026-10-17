@@ -320,3 +320,62 @@ button {
   text-decoration: underline wavy #c0392b;
   text-decoration-skip-ink: none;
 }
+
+/* ---------- Quelltextmodus ---------- */
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  border-radius: 0;
+  margin: 0;
+}
+
+.segmented button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.segmented button:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: 0;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.source-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: 100%;
+}
+
+.source-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid var(--line);
+}
+
+.source-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.source-body .cm-editor {
+  height: 100%;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px;
+}
+
+.source-body .cm-editor.cm-focused {
+  outline: none;
+}
+
+.source-split .page-editor .page {
+  transform-origin: top center;
+  cursor: pointer;
+}

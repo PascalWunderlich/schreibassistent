@@ -3,8 +3,11 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
+import { SourceEditor } from "./editor/SourceEditor";
 import {
   CompileReport,
+  Definition,
+  ParagraphHit,
   ProjectInfo,
   SaveInfo,
   TreeNode,
@@ -36,6 +39,11 @@ function App() {
   const [lastAutosave, setLastAutosave] = useState<number | null>(null);
   const [gitError, setGitError] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
+  /** Quelltextmodus: Datei links, Seiten rechts. */
+  const [sourceMode, setSourceMode] = useState(false);
+  const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
+  const [sourceJump, setSourceJump] = useState<{ offset: number; nonce: number } | null>(null);
+  const [refresh, setRefresh] = useState(0);
 
   // Fehlerzahl von Tinymist für die Statusleiste.
   useEffect(() => {
@@ -93,9 +101,24 @@ function App() {
     setSelected(node.path);
     if (node.path.endsWith(".typ")) {
       setCenter({ kind: "pages" });
+      setSourceFile(node.path);
       setScrollTo({ file: node.path, nonce: Date.now() });
     } else if (node.path.endsWith(".md")) {
       setCenter({ kind: "note", path: node.path, readOnly: !node.writable });
+    }
+  }
+
+  /** Quelltextmodus: Klick auf einen Absatz der Seite öffnet ihn im Quelltext. */
+  function pick(hit: ParagraphHit) {
+    setSourceFile(hit.file);
+    setSelected(hit.file);
+    setSourceJump({ offset: hit.start, nonce: Date.now() });
+  }
+
+  function definitionInSource(definition: Definition) {
+    if (definition.file?.endsWith(".typ")) {
+      setSourceFile(definition.file);
+      setSourceJump({ offset: definition.offset, nonce: Date.now() });
     }
   }
 
@@ -126,6 +149,14 @@ function App() {
         <h1>Schreibassistent</h1>
         <span className="project-name">{project.name}</span>
         <span className="spacer" />
+        <div className="segmented" role="group" aria-label="Ansicht">
+          <button aria-pressed={!sourceMode} onClick={() => setSourceMode(false)}>
+            Seite
+          </button>
+          <button aria-pressed={sourceMode} onClick={() => setSourceMode(true)}>
+            Quelltext
+          </button>
+        </div>
         <button onClick={choose}>Andere Arbeit …</button>
       </header>
       {project.lsp_error && <div className="hint">{project.lsp_error} – ohne Vervollständigung und Fehleranzeige.</div>}
@@ -137,7 +168,29 @@ function App() {
       <div className="workspace">
         <Sidebar tree={tree} selected={selected} onOpen={openNode} />
         <main className="center">
-          {center.kind === "pages" ? (
+          {center.kind === "pages" && sourceMode ? (
+            <div className="source-split">
+              <SourceEditor
+                key={sourceFile}
+                path={sourceFile}
+                jump={sourceJump}
+                onSaved={saved}
+                onSaving={() => setSaveState("speichert …")}
+                onWritten={() => setRefresh((n) => n + 1)}
+                onDefinition={definitionInSource}
+              />
+              <PageEditor
+                key={`${project.root}:quelltext`}
+                scrollTo={scrollTo}
+                onReport={setReport}
+                onSaved={saved}
+                onSaving={() => setSaveState("speichert …")}
+                onPick={pick}
+                refresh={refresh}
+                scale={0.9}
+              />
+            </div>
+          ) : center.kind === "pages" ? (
             <PageEditor
               key={project.root}
               scrollTo={scrollTo}

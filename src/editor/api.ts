@@ -116,6 +116,8 @@ export interface Field {
   start: number;
   end: number;
   text: string;
+  /** Quelltextmodus: `text` ist die ganze Datei. */
+  whole_file: boolean;
 }
 
 export interface Completion {

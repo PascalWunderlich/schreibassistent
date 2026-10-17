@@ -33,11 +33,22 @@ pub struct Field {
     pub start: usize,
     pub end: usize,
     pub text: String,
+    /// Quelltextmodus: `text` ist die ganze Datei (`start`/`end` werden ignoriert).
+    #[serde(default)]
+    pub whole_file: bool,
 }
 
 impl Field {
+    /// Beginn des Feldes in der Datei (Byte).
+    pub fn offset(&self) -> usize {
+        if self.whole_file { 0 } else { self.start }
+    }
+
     /// Quelltext der Datei mit eingesetztem Feld.
     pub fn splice(&self, base: &str) -> Result<String, String> {
+        if self.whole_file {
+            return Ok(self.text.clone());
+        }
         if self.start > self.end || self.end > base.len() || !base.is_char_boundary(self.start) || !base.is_char_boundary(self.end) {
             return Err(format!("Ungültiger Bereich {}..{} in {}", self.start, self.end, self.file));
         }
@@ -160,7 +171,7 @@ impl TinymistSession {
     /// LSP-Position der Cursorposition `cursor` (UTF-16 im Feld); `full` ist der Text der
     /// Datei mit eingesetztem Feld, wie er auf der Platte steht.
     fn position(&self, full: &str, field: &Field, cursor: usize) -> Result<Value, String> {
-        let byte = field.start + field_byte(&field.text, cursor);
+        let byte = field.offset() + field_byte(&field.text, cursor);
         let (line, character) = byte_to_lsp(full, byte);
         Ok(json!({
             "textDocument": { "uri": uri(&self.root.join(&field.file))? },
@@ -173,7 +184,8 @@ impl TinymistSession {
         let params = self.position(full, field, cursor)?;
         let result = self.client.request("textDocument/completion", params)?;
         let items = result.get("items").or(Some(&result)).and_then(Value::as_array).cloned().unwrap_or_default();
-        let field_end = field.start + field.text.len();
+        let field_start = field.offset();
+        let field_end = field_start + field.text.len();
         Ok(items
             .iter()
             .filter_map(|item| {
@@ -184,11 +196,11 @@ impl TinymistSession {
                         let range = edit.get("range").or_else(|| edit.get("replace"))?;
                         let a = lsp_to_byte(full, lsp_pos(&range["start"]));
                         let b = lsp_to_byte(full, lsp_pos(&range["end"]));
-                        if a < field.start || b > field_end {
+                        if a < field_start || b > field_end {
                             return None;
                         }
-                        let from = field_utf16(&field.text, a - field.start);
-                        let to = field_utf16(&field.text, b - field.start);
+                        let from = field_utf16(&field.text, a - field_start);
+                        let to = field_utf16(&field.text, b - field_start);
                         (from, to, edit["newText"].as_str()?.to_owned())
                     }
                     None => (cursor, cursor, item["insertText"].as_str().unwrap_or(&label).to_owned()),
@@ -249,19 +261,20 @@ impl TinymistSession {
 
     /// Fehlermeldungen von Tinymist, die im Feld liegen (Positionen im Feld, UTF-16).
     pub fn field_diagnostics(&self, full: &str, field: &Field) -> Result<Vec<FieldDiagnostic>, String> {
-        let field_end = field.start + field.text.len();
+        let field_start = field.offset();
+        let field_end = field_start + field.text.len();
         let all = self.diagnostics.lock().unwrap().get(&field.file).cloned().unwrap_or_default();
         Ok(all
             .iter()
             .filter_map(|d| {
-                let a = lsp_to_byte(full, d.start).max(field.start);
+                let a = lsp_to_byte(full, d.start).max(field_start);
                 let b = lsp_to_byte(full, d.end).min(field_end);
-                if lsp_to_byte(full, d.start) > field_end || lsp_to_byte(full, d.end) < field.start {
+                if lsp_to_byte(full, d.start) > field_end || lsp_to_byte(full, d.end) < field_start {
                     return None;
                 }
                 Some(FieldDiagnostic {
-                    from: field_utf16(&field.text, a - field.start),
-                    to: field_utf16(&field.text, b.max(a) - field.start),
+                    from: field_utf16(&field.text, a - field_start),
+                    to: field_utf16(&field.text, b.max(a) - field_start),
                     severity: match d.severity {
                         1 => "error",
                         2 => "warning",
@@ -395,7 +408,7 @@ mod tests {
         let end = start + base[start..].find('\n').unwrap();
 
         // Hover auf einem Citekey, der nur im Feld steht.
-        let field = Field { file: path.into(), start, end, text: "Siehe @sutton2018 dazu.".into() };
+        let field = Field { file: path.into(), start, end, whole_file: false, text: "Siehe @sutton2018 dazu.".into() };
         let mut hover = None;
         for _ in 0..30 {
             let full = write_field(&session, &root, &base, &field);
@@ -407,7 +420,7 @@ mod tests {
         assert!(hover.is_some_and(|h| h.to_lowercase().contains("reinforcement")), "Hover zeigt die Quelle");
 
         // Vervollständigung nach `@sut`: Citekey mit Bereich im Feld.
-        let field = Field { file: path.into(), start, end, text: "Wie gezeigt @sut".into() };
+        let field = Field { file: path.into(), start, end, whole_file: false, text: "Wie gezeigt @sut".into() };
         let full = write_field(&session, &root, &base, &field);
         let items = session.completion(&full, &field, field.text.len()).unwrap();
         let item = items
@@ -417,13 +430,13 @@ mod tests {
         assert!(item.to <= field.text.len() && item.from <= item.to, "{item:?}");
 
         // Sprung zur Definition eines Labels in einer anderen Datei.
-        let field = Field { file: path.into(), start, end, text: "Wie in @kap:grundlagen.".into() };
+        let field = Field { file: path.into(), start, end, whole_file: false, text: "Wie in @kap:grundlagen.".into() };
         let full = write_field(&session, &root, &base, &field);
         let target = session.definition(&full, &field, 10).unwrap().expect("Ziel");
         assert_eq!(target.file.as_deref(), Some("Arbeit/kapitel/02-grundlagen.typ"));
 
         // Fehler im Feld: unbekannte Variable wird gemeldet, Position im Feld.
-        let field = Field { file: path.into(), start, end, text: "Text #gibtsnicht hier.".into() };
+        let field = Field { file: path.into(), start, end, whole_file: false, text: "Text #gibtsnicht hier.".into() };
         let full = write_field(&session, &root, &base, &field);
         let mut found = Vec::new();
         for _ in 0..20 {

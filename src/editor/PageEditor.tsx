@@ -6,6 +6,7 @@ import {
   ParagraphHit,
   SaveInfo,
   allPages,
+  compile,
   errorMessages,
   firstPage,
   loadEditorFont,
@@ -17,8 +18,8 @@ import {
   utf8Length,
 } from "./api";
 
-/** Pixel je pt auf dem Bildschirm. */
-const SCALE = 1.4;
+/** Pixel je pt auf dem Bildschirm (Standard; im Quelltextmodus kleiner). */
+const DEFAULT_SCALE = 1.4;
 
 /** Entwurf spätestens nach dieser Zeit ohne Tippen speichern. */
 const DRAFT_DELAY_MS = 1000;
@@ -56,10 +57,16 @@ interface Props {
   onReport: (report: CompileReport) => void;
   onSaved: (save: SaveInfo) => void;
   onSaving: () => void;
+  /** Quelltextmodus: Seiten nur anzeigen; ein Klick meldet den Absatz statt ihn zu öffnen. */
+  onPick?: (hit: ParagraphHit) => void;
+  /** Quelltextmodus: bei jeder Änderung neu setzen. */
+  refresh?: number;
+  /** Pixel je pt. */
+  scale?: number;
 }
 
 /** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
-export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
@@ -82,6 +89,17 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
       .catch((e) => setErrors(errorMessages(e)));
     loadEditorFont().catch((e) => log(`Schrift nicht geladen: ${errorMessages(e).join(" | ")}`));
   }, []);
+
+  useEffect(() => {
+    if (!refresh) return;
+    compile()
+      .then((report) => {
+        setPages((current) => applyReport(current, report));
+        setErrors(report.warnings);
+        onReport(report);
+      })
+      .catch((e) => setErrors(errorMessages(e)));
+  }, [refresh]);
 
   useEffect(() => {
     if (!scrollTo) return;
@@ -168,9 +186,14 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
 
   async function handleClick(page: number, event: React.MouseEvent<HTMLDivElement>) {
     const box = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - box.left) / SCALE;
-    const y = (event.clientY - box.top) / SCALE;
+    const x = (event.clientX - box.left) / scale;
+    const y = (event.clientY - box.top) / scale;
     if (busy.current) return;
+    if (onPick) {
+      const hit = await paragraphAt(page, x, y).catch(() => null);
+      if (hit) onPick(hit);
+      return;
+    }
     if (editing && currentText.current) await commit(currentText.current());
     try {
       const hit = await paragraphAt(page, x, y);
@@ -203,7 +226,7 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
               pageRefs.current[i] = el;
             }}
             className="page"
-            style={{ width: page.width * SCALE, height: page.height * SCALE }}
+            style={{ width: page.width * scale, height: page.height * scale }}
             onClick={(e) => handleClick(i, e)}
           >
             {page.url && <img className="page-image" src={page.url} alt={`Seite ${page.label || i + 1}`} draggable={false} />}
@@ -216,10 +239,10 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
                   className="editor-overlay"
                   style={{
                     // Spaltenbreite wie im Satz; erste Grundlinie auf die gesetzte Grundlinie legen.
-                    left: editing.column_x * SCALE,
-                    width: editing.column_width * SCALE,
-                    top: (rect.y - (editing.line_height - rect.height) / 2) * SCALE,
-                    minHeight: Math.max(rect.height, editing.line_height) * SCALE,
+                    left: editing.column_x * scale,
+                    width: editing.column_width * scale,
+                    top: (rect.y - (editing.line_height - rect.height) / 2) * scale,
+                    minHeight: Math.max(rect.height, editing.line_height) * scale,
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -228,9 +251,9 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
                     start={editing.start}
                     end={editing.end}
                     text={editing.text}
-                    fontSize={editing.font_size * SCALE}
-                    lineHeight={editing.line_height * SCALE}
-                    indent={editing.first_line_indent * SCALE}
+                    fontSize={editing.font_size * scale}
+                    lineHeight={editing.line_height * scale}
+                    indent={editing.first_line_indent * scale}
                     bold={editing.text.trimStart().startsWith("=")}
                     onSplit={split}
                     onCommit={commit}
