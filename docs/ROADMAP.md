@@ -1,9 +1,9 @@
 # Roadmap
-Aktuelle Phase: P1
+Aktuelle Phase: P2
 | Phase | Status | Abnahme |
 |---|---|---|
 | P0 Grundlage | erledigt (2026-10-17) | Tauri-Fenster startet, Kontextdateien vorhanden |
-| P1 Vorlage | in Abnahme | Beispiel-PDF erfüllt FHDW-Checkliste |
+| P1 Vorlage | erledigt (2026-10-17) | Beispiel-PDF erfüllt FHDW-Checkliste |
 | P2 Editor-Test | offen | Entscheidung A/B mit Messwerten |
 | P3 App-Gerüst | offen | Kapitel in der App geschrieben und exportiert |
 | P4 Quellen & Index | offen | Seitenleiste zeigt Quellen/Notizen je Kapitel |
