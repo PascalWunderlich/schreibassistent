@@ -12,6 +12,7 @@ pub mod ingest;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(projekt::commands::AppState::default())
         .invoke_handler(tauri::generate_handler![
             projekt::commands::projekt_last,
@@ -36,6 +37,7 @@ pub fn run() {
             index::commands::index_chapters,
             index::commands::index_chapter,
             index::commands::index_sources,
+            quellen::commands::quellen_zotero,
             lsp::commands::lsp_completion,
             lsp::commands::lsp_hover,
             lsp::commands::lsp_definition,

@@ -214,3 +214,29 @@ export function sourceLabel(source: Source): string {
   const surname = source.authors[0]?.split(",")[0]?.replace(/[{}]/g, "").trim();
   return [surname, source.year].filter(Boolean).join(" ") || source.citekey;
 }
+
+export interface ZoteroAnnotation {
+  page_label: string | null;
+  page: number | null;
+  kind: string;
+  text: string | null;
+  comment: string | null;
+}
+
+export interface ZoteroSource {
+  item_key: string;
+  pdfs: { key: string; title: string; annotations: ZoteroAnnotation[] }[];
+}
+
+/** Zotero-Daten zur Quelle (live über die Local API); `null`, wenn Zotero nicht läuft. */
+export const zoteroSource = (citekey: string) => invoke<ZoteroSource | null>("quellen_zotero", { citekey });
+
+/** Seitenzahl aus einer Ergänzung wie „S. 14“ oder „14–16“. */
+export function pageFromSupplement(supplement: string | undefined): number | null {
+  const match = supplement?.match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
+
+/** Zotero-Adresse, die ein PDF (an einer Seite) im Zotero-Reader öffnet. */
+export const zoteroPdfUrl = (attachmentKey: string, page: number | null) =>
+  `zotero://open-pdf/library/items/${attachmentKey}${page ? `?page=${page}` : ""}`;

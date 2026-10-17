@@ -3,6 +3,9 @@
 //! Bibliografische Daten stehen nur in Zotero; die App liest den Better-BibTeX-Export
 //! `System/quellen.bib` (docs/DATA-FORMATS.md, Wissensmodell im Vault).
 
+pub mod commands;
+pub mod zotero;
+
 use std::path::Path;
 
 use biblatex::{Bibliography, ChunksExt};

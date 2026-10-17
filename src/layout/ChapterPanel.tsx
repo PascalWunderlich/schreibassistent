@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { ChapterView, Source, sourceLabel } from "../editor/api";
+import { useEffect, useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  ChapterView,
+  Source,
+  ZoteroSource,
+  pageFromSupplement,
+  sourceLabel,
+  zoteroPdfUrl,
+  zoteroSource,
+} from "../editor/api";
 
 interface Props {
   chapter: ChapterView | null;
@@ -34,7 +43,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
                     {byKey.get(key) ? sourceLabel(byKey.get(key)!) : key}
                     {pages.length > 0 && <span className="meta"> · {pages.join(", ")}</span>}
                   </button>
-                  {open === key && byKey.get(key) && <SourceDetails source={byKey.get(key)!} />}
+                  {open === key && byKey.get(key) && <SourceDetails source={byKey.get(key)!} pages={pages} />}
                 </li>
               ))}
             </ul>
@@ -58,7 +67,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
                 {sourceLabel(source)}
                 {source.chapters.length === 0 && <span className="meta"> · ungenutzt</span>}
               </button>
-              {open === `alle:${source.citekey}` && <SourceDetails source={source} />}
+              {open === `alle:${source.citekey}` && <SourceDetails source={source} pages={[]} />}
             </li>
           ))}
         </ul>
@@ -104,7 +113,17 @@ function Related({
   );
 }
 
-function SourceDetails({ source }: { source: Source }) {
+/** Details aus der `.bib`; dazu PDFs und Markierungen aus Zotero, falls es läuft. */
+function SourceDetails({ source, pages }: { source: Source; pages: string[] }) {
+  const [zotero, setZotero] = useState<ZoteroSource | null | "laden">("laden");
+  useEffect(() => {
+    zoteroSource(source.citekey)
+      .then(setZotero)
+      .catch(() => setZotero(null));
+  }, [source.citekey]);
+  const open = (key: string, page: number | null) => openUrl(zoteroPdfUrl(key, page)).catch(() => {});
+  const firstPage = pageFromSupplement(pages[0]);
+
   return (
     <div className="source-details">
       <div className="citekey">@{source.citekey}</div>
@@ -118,6 +137,31 @@ function SourceDetails({ source }: { source: Source }) {
       {source.url && <div className="meta url">{source.url}</div>}
       <div className="meta">
         {source.chapters.length === 0 ? "nirgends zitiert" : `zitiert in: ${source.chapters.map((c) => c.split("/").pop()!.replace(/\.typ$/, "")).join(", ")}`}
+      </div>
+      <div className="zotero">
+        {zotero === "laden" && <span className="meta">Zotero …</span>}
+        {zotero === null && <span className="meta">Zotero nicht erreichbar oder Quelle dort nicht vorhanden</span>}
+        {zotero !== "laden" && zotero !== null && zotero.pdfs.length === 0 && <span className="meta">kein PDF in Zotero</span>}
+        {zotero !== "laden" &&
+          zotero?.pdfs.map((pdf) => (
+            <div key={pdf.key}>
+              <button className="pdf" onClick={() => open(pdf.key, firstPage)}>
+                PDF öffnen{firstPage ? ` (S. ${firstPage})` : ""}
+              </button>
+              {pdf.annotations.length > 0 && (
+                <ul className="annotations">
+                  {pdf.annotations.map((a, i) => (
+                    <li key={i}>
+                      <button className="item" onClick={() => open(pdf.key, a.page)} title="im PDF an dieser Stelle öffnen">
+                        <span className="meta">S. {a.page_label ?? a.page ?? "?"}</span> {a.text ?? a.comment ?? a.kind}
+                        {a.text && a.comment && <span className="meta"> – {a.comment}</span>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );

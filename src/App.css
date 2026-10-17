@@ -504,3 +504,23 @@ button {
     opacity: 0;
   }
 }
+
+.source-details .zotero {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--line);
+}
+
+.source-details .pdf {
+  border: 1px solid var(--accent);
+  background: #fff;
+  color: var(--accent);
+  border-radius: 5px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.source-details .annotations .item {
+  padding: 0.15rem 0;
+  font-size: 0.8rem;
+}
