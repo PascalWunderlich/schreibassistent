@@ -9,3 +9,5 @@ referenz/
 .vscode/*
 !.vscode/extensions.json
 src-tauri/gen/schemas/
+*.pdf
+!referenz/*.pdf

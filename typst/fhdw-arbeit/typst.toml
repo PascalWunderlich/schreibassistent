@@ -1,0 +1,7 @@
+[package]
+name = "fhdw-arbeit"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["Pascal Wunderlich"]
+license = "MIT"
+description = "Vorlage für Praxis- und Bachelorarbeiten an der FHDW Hannover (technische Studiengänge), abgeleitet von clean-dhbw"
