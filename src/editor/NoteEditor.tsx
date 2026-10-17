@@ -23,6 +23,7 @@ export function NoteEditor({ path, readOnly, onSaved, onSaving }: Props) {
   callbacks.current = { onSaved, onSaving };
 
   useEffect(() => {
+    let cancelled = false;
     let view: EditorView | null = null;
     let timer: number | undefined;
     let pending: string | null = null;
@@ -34,6 +35,7 @@ export function NoteEditor({ path, readOnly, onSaved, onSaving }: Props) {
     };
     readFile(path)
       .then((text) => {
+        if (cancelled) return;
         view = new EditorView({
           parent: host.current!,
           state: EditorState.create({
@@ -57,6 +59,7 @@ export function NoteEditor({ path, readOnly, onSaved, onSaving }: Props) {
       })
       .catch((e) => setError(errorMessages(e).join(" ")));
     return () => {
+      cancelled = true;
       // Beim Wechsel der Datei sofort speichern, was noch aussteht.
       window.clearTimeout(timer);
       save();

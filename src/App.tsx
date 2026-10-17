@@ -45,7 +45,7 @@ function App() {
   /** Quelltextmodus: Datei links, Seiten rechts. */
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
-  const [sourceJump, setSourceJump] = useState<{ offset: number; nonce: number } | null>(null);
+  const [sourceJump, setSourceJump] = useState<{ file: string; offset: number; nonce: number } | null>(null);
   const [refresh, setRefresh] = useState(0);
 
   // Änderungen von außen: Dateibaum aktualisieren (neue oder gelöschte Dateien).
@@ -130,6 +130,7 @@ function App() {
     if (node.path.endsWith(".typ")) {
       setCenter({ kind: "pages" });
       setSourceFile(node.path);
+      setSourceJump(null);
       setScrollTo({ file: node.path, nonce: Date.now() });
     } else if (node.path.endsWith(".md")) {
       setCenter({ kind: "note", path: node.path, readOnly: !node.writable });
@@ -151,13 +152,13 @@ function App() {
   function pick(hit: ParagraphHit) {
     setSourceFile(hit.file);
     setSelected(hit.file);
-    setSourceJump({ offset: hit.start, nonce: Date.now() });
+    setSourceJump({ file: hit.file, offset: hit.start, nonce: Date.now() });
   }
 
   function definitionInSource(definition: Definition) {
     if (definition.file?.endsWith(".typ")) {
       setSourceFile(definition.file);
-      setSourceJump({ offset: definition.offset, nonce: Date.now() });
+      setSourceJump({ file: definition.file, offset: definition.offset, nonce: Date.now() });
     }
   }
 

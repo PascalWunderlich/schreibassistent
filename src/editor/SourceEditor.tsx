@@ -10,8 +10,8 @@ const SAVE_DELAY_MS = 300;
 
 interface Props {
   path: string;
-  /** Sprungziel im Quelltext (Byte-Offset); `nonce` erzwingt erneuten Sprung. */
-  jump: { offset: number; nonce: number } | null;
+  /** Sprungziel im Quelltext (Byte-Offset in `file`); `nonce` erzwingt erneuten Sprung. */
+  jump: { file: string; offset: number; nonce: number } | null;
   onSaved: (save: SaveInfo) => void;
   onSaving: () => void;
   /** Nach dem Speichern: Seiten neu setzen. */
@@ -42,6 +42,9 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
   callbacks.current = { onSaved, onSaving, onWritten, onDefinition };
 
   useEffect(() => {
+    // Wurde der Effekt schon wieder abgebaut, bevor die Datei gelesen war (z. B. doppelter
+    // Effekt im Entwicklungsmodus), keinen verwaisten Editor erzeugen.
+    let cancelled = false;
     let timer: number | undefined;
     let pending: string | null = null;
     let stopDiagnostics = () => {};
@@ -59,6 +62,7 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
     };
     readFile(path)
       .then((text) => {
+        if (cancelled) return;
         const editor = new EditorView({
           parent: host.current!,
           state: EditorState.create({
@@ -81,10 +85,12 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
         });
         view.current = editor;
         stopDiagnostics = watchDiagnostics(editor, path, field);
-        if (jumpRef.current) jumpTo(editor, jumpRef.current.offset);
+        // Nur springen, wenn das Ziel in dieser Datei liegt; sonst steht Zeile 1 oben.
+        if (jumpRef.current?.file === path) jumpTo(editor, jumpRef.current.offset);
       })
       .catch((e) => setError(errorMessages(e).join(" ")));
     return () => {
+      cancelled = true;
       window.clearTimeout(timer);
       save();
       stopDiagnostics();
@@ -94,8 +100,8 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
   }, [path]);
 
   useEffect(() => {
-    if (jump && view.current) jumpTo(view.current, jump.offset);
-  }, [jump]);
+    if (jump?.file === path && view.current) jumpTo(view.current, jump.offset);
+  }, [jump, path]);
 
   return (
     <div className="source-editor">
