@@ -38,6 +38,22 @@ pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: Stri
     let (project, info) = Project::open(std::path::Path::new(&path), move |file| {
         let _ = emitter.emit("lsp_diagnostics", file.to_owned());
     })?;
+    let mut project = project;
+    // Änderungen von außen: Satz neu laden und die Oberfläche benachrichtigen.
+    let watch_app = app.clone();
+    let watch_root = project.root.clone();
+    project.watcher = super::watch::start(&project.root, move |paths| {
+        let Some(state) = watch_app.try_state::<AppState>() else { return };
+        let changed: Vec<String> = {
+            let mut guard = state.0.lock().unwrap();
+            let Some(project) = guard.as_mut().filter(|p| p.root == watch_root) else { return };
+            paths.into_iter().filter(|p| project.external_change(p).unwrap_or(true)).collect()
+        };
+        if !changed.is_empty() {
+            let _ = watch_app.emit("datei_geaendert", changed);
+        }
+    })
+    .ok();
     // Vorheriges Projekt beim Wechsel sichern (Regel: höchstens alle 5 Minuten).
     if let Some(mut previous) = state.0.lock().unwrap().replace(project) {
         previous.autosave(false);
@@ -62,6 +78,24 @@ pub async fn projekt_read(state: State<'_, AppState>, path: String) -> Result<St
     with_project(&state, |p| {
         let file = files::resolve(&p.root, &path)?;
         std::fs::read_to_string(&file).map_err(|e| format!("{path}: {e}"))
+    })
+}
+
+/// Neue Notiz `Notizen/<name>.md` mit Frontmatter `author: ich` (docs/DATA-FORMATS.md).
+#[tauri::command]
+pub async fn projekt_new_note(state: State<'_, AppState>, name: String) -> Result<String, String> {
+    let clean: String = name.trim().chars().filter(|c| !"/\\:*?\"<>|".contains(*c)).collect();
+    if clean.is_empty() || clean.starts_with('.') {
+        return Err("Ungültiger Name".to_owned());
+    }
+    let path = format!("Notizen/{clean}.md");
+    with_project(&state, |p| {
+        if files::resolve(&p.root, &path)?.exists() {
+            return Err(format!("{path} gibt es schon"));
+        }
+        let today = crate::projekt::today();
+        p.write(&path, &format!("---\nauthor: ich\ncreated: {today}\n---\n\n# {clean}\n\n"))?;
+        Ok(path)
     })
 }
 

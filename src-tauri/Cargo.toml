@@ -30,6 +30,7 @@ comemo = "0.5.1"
 url = "2"
 tauri-plugin-dialog = "2"
 typst-pdf = "0.15.1"
+notify = { version = "8", default-features = false, features = ["macos_fsevent"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

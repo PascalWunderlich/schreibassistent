@@ -91,6 +91,28 @@ impl SatzWorld {
         Ok(())
     }
 
+    /// Nach einer Änderung von außen: Datei beim nächsten Setzen neu von der Platte lesen.
+    /// Quelltexte werden inkrementell ersetzt (schnelles Neusetzen), andere Dateien
+    /// (z. B. `quellen.bib`, Bilder) aus dem Zwischenspeicher entfernt.
+    pub fn reload_from_disk(&self, path: &str) -> Result<(), String> {
+        let id = project_file(path)?;
+        self.files.lock().unwrap().remove(&id);
+        let mut sources = self.sources.lock().unwrap();
+        if let Some(source) = sources.get_mut(&id) {
+            match self.root.load(id.vpath()) {
+                Ok(bytes) => {
+                    let text = std::str::from_utf8(&bytes).map_err(|_| format!("{path}: kein UTF-8"))?;
+                    source.replace(text);
+                }
+                // Gelöscht: beim nächsten Zugriff meldet Typst den Fehler.
+                Err(_) => {
+                    sources.remove(&id);
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Aktueller Quelltext einer Projektdatei (aus dem Speicher oder von der Platte).
     pub fn source_text(&self, path: &str) -> Result<String, String> {
         let id = project_file(path)?;

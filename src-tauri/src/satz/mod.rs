@@ -288,7 +288,7 @@ fn content_pages(document: &PagedDocument, labels: &[String]) -> Option<usize> {
 }
 
 /// UNIX-Zeitstempel → Typst-Datum (UTC), wie `typst compile --creation-timestamp`.
-fn datetime_from_unix(seconds: i64) -> Option<typst::foundations::Datetime> {
+pub(crate) fn datetime_from_unix(seconds: i64) -> Option<typst::foundations::Datetime> {
     let days = seconds.div_euclid(86_400);
     let rest = seconds.rem_euclid(86_400);
     // Tage seit 1970 → Kalenderdatum (Algorithmus von H. Hinnant).

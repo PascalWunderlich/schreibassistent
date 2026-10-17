@@ -20,6 +20,7 @@ pub fn run() {
             projekt::commands::projekt_tree,
             projekt::commands::projekt_read,
             projekt::commands::projekt_write,
+            projekt::commands::projekt_new_note,
             projekt::commands::projekt_log,
             satz::commands::satz_paragraph_at,
             satz::commands::satz_paragraph_at_offset,

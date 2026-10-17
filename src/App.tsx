@@ -16,6 +16,7 @@ import {
   initGit,
   lastProject,
   lspErrorCount,
+  newNote,
   openProject,
   projectTree,
 } from "./editor/api";
@@ -46,6 +47,15 @@ function App() {
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
   const [sourceJump, setSourceJump] = useState<{ offset: number; nonce: number } | null>(null);
   const [refresh, setRefresh] = useState(0);
+
+  // Änderungen von außen: Dateibaum aktualisieren (neue oder gelöschte Dateien).
+  useEffect(() => {
+    if (!project) return;
+    const unlisten = listen("datei_geaendert", () => projectTree().then(setTree).catch(() => {}));
+    return () => {
+      unlisten.then((f) => f()).catch(() => {});
+    };
+  }, [project]);
 
   // Fehlerzahl von Tinymist für die Statusleiste.
   useEffect(() => {
@@ -126,6 +136,17 @@ function App() {
     }
   }
 
+  async function createNote(name: string) {
+    try {
+      const path = await newNote(name);
+      setTree(await projectTree());
+      setSelected(path);
+      setCenter({ kind: "note", path, readOnly: false });
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
   /** Quelltextmodus: Klick auf einen Absatz der Seite öffnet ihn im Quelltext. */
   function pick(hit: ParagraphHit) {
     setSourceFile(hit.file);
@@ -195,7 +216,7 @@ function App() {
         </div>
       )}
       <div className="workspace">
-        <Sidebar tree={tree} selected={selected} onOpen={openNode} />
+        <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} />
         <main className="center">
           {center.kind === "pages" && sourceMode ? (
             <div className="source-split">

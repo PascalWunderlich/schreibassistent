@@ -66,6 +66,7 @@ export const openProject = (path: string) => invoke<ProjectInfo>("projekt_open",
 export const initGit = () => invoke<void>("projekt_git_init");
 export const projectTree = () => invoke<TreeNode[]>("projekt_tree");
 export const readFile = (path: string) => invoke<string>("projekt_read", { path });
+export const newNote = (name: string) => invoke<string>("projekt_new_note", { name });
 export const writeFile = (path: string, text: string) => invoke<SaveInfo>("projekt_write", { path, text });
 
 // ---------- satz ----------

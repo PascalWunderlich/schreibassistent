@@ -7,7 +7,9 @@ pub mod commands;
 pub mod files;
 pub mod git;
 pub mod settings;
+pub mod watch;
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::lsp::{TinymistSession, find_tinymist};
@@ -25,6 +27,11 @@ pub struct Project {
     pub lsp: Option<TinymistSession>,
     /// Zeitpunkt des letzten Autosave-Commits (Sekunden seit 1970).
     pub last_autosave: Option<u64>,
+    /// Prüfsumme des zuletzt selbst geschriebenen Inhalts je Datei: eigene Schreibvorgänge
+    /// sind keine „Änderung von außen“.
+    written: HashMap<String, u128>,
+    /// Dateibeobachtung (endet beim Schließen des Projekts).
+    pub watcher: Option<notify::RecommendedWatcher>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -77,7 +84,7 @@ impl Project {
             report,
             lsp_error,
         };
-        Ok((Self { root, satz, lsp, last_autosave }, info))
+        Ok((Self { root, satz, lsp, last_autosave, written: HashMap::new(), watcher: None }, info))
     }
 
     /// Schreibt eine Datei (nur `Arbeit/` und `Notizen/`) und sichert ggf. per Git.
@@ -86,6 +93,7 @@ impl Project {
             return Err(format!("{relative} ist nur lesbar."));
         }
         files::atomic_write(&files::resolve(&self.root, relative)?, text)?;
+        self.written.insert(relative.to_owned(), typst_utils::hash128(text.as_bytes()));
         if relative.ends_with(".typ")
             && let Some(lsp) = &self.lsp
         {
@@ -110,11 +118,31 @@ impl Project {
         }
     }
 
+    /// Änderung von außen übernehmen. `false`, wenn die Datei nur selbst geschrieben wurde.
+    pub fn external_change(&mut self, relative: &str) -> Result<bool, String> {
+        let path = files::resolve(&self.root, relative)?;
+        let on_disk = std::fs::read(&path).ok();
+        if on_disk.as_ref().map(|b| typst_utils::hash128(b.as_slice())) == self.written.get(relative).copied() {
+            return Ok(false);
+        }
+        self.written.remove(relative);
+        self.satz.world().reload_from_disk(relative)?;
+        Ok(true)
+    }
+
     /// Aktuellen Satz-Quelltext einer `.typ`-Datei auf die Platte schreiben.
     pub fn write_source(&mut self, relative: &str) -> Result<SaveInfo, String> {
         let text = self.satz.world().source_text(relative)?;
         self.write(relative, &text)
     }
+}
+
+/// Heutiges Datum (UTC) als `YYYY-MM-DD`, z. B. fürs Frontmatter neuer Notizen.
+pub fn today() -> String {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    crate::satz::datetime_from_unix(now)
+        .and_then(|d| Some(format!("{:04}-{:02}-{:02}", d.year()?, d.month()?, d.day()?)))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -156,6 +184,13 @@ mod tests {
         let save = project.write_source(path).unwrap();
         assert!(save.autosaved.is_some(), "{save:?}");
         assert!(std::fs::read_to_string(root.join(path)).unwrap().contains("Neu: Die Modellierung"));
+
+        assert!(!project.external_change(path).unwrap(), "eigener Schreibvorgang ist keine Änderung von außen");
+        std::fs::write(root.join(path), "= Von außen\n\nGeändert in VS Code.\n").unwrap();
+        assert!(project.external_change(path).unwrap());
+        let report = project.satz.compile().unwrap();
+        assert!(!report.changed_pages.is_empty());
+        assert!(project.satz.world().source_text(path).unwrap().contains("Geändert in VS Code"));
 
         assert!(project.write("Wissen/Quellen/x.md", "nein").is_err(), "Wissen/ ist nur lesbar");
         assert!(project.write("Notizen/idee.md", "# Idee\n").is_ok());

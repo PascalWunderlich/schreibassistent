@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { ParagraphEditor } from "./ParagraphEditor";
 import {
   CompileReport,
@@ -88,6 +89,32 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
       })
       .catch((e) => setErrors(errorMessages(e)));
     loadEditorFont().catch((e) => log(`Schrift nicht geladen: ${errorMessages(e).join(" | ")}`));
+  }, []);
+
+  // Änderung von außen (z. B. Zotero-Export, VS Code): neu setzen.
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
+  useEffect(() => {
+    const unlisten = Promise.resolve()
+      .then(() =>
+        listen<string[]>("datei_geaendert", ({ payload }) => {
+          if (editingRef.current && payload.includes(editingRef.current.file)) {
+            // Positionen des offenen Absatzes stimmen nicht mehr.
+            setEditing(null);
+            setHint(`${editingRef.current.file} wurde außerhalb der App geändert. Bitte den Absatz neu anklicken.`);
+          }
+          compile()
+            .then((report) => {
+              setPages((current) => applyReport(current, report));
+              onReport(report);
+            })
+            .catch((e) => setErrors(errorMessages(e)));
+        }),
+      )
+      .catch(() => () => {});
+    return () => {
+      unlisten.then((f) => f?.()).catch(() => {});
+    };
   }, []);
 
   useEffect(() => {
