@@ -3658,6 +3658,7 @@ dependencies = [
  "typst-layout",
  "typst-svg",
  "typst-utils",
+ "url",
 ]
 
 [[package]]
