@@ -8,6 +8,8 @@ interface Props {
   /** Schriftgröße und Zeilenabstand in px, wie im Satz. */
   fontSize: number;
   lineHeight: number;
+  /** Einzug der ersten Zeile in px. */
+  indent: number;
   bold: boolean;
   /** Enter: Absatz an der Cursorposition (UTF-16-Index) teilen bzw. neuen Absatz anlegen. */
   onSplit: (text: string, cursor: number) => void;
@@ -21,7 +23,7 @@ interface Props {
  * Quelltext eines Absatzes. Enter beginnt einen neuen Absatz, Shift+Enter bricht die
  * Quelltextzeile um, Esc oder ein Klick daneben übernimmt und schließt.
  */
-export function ParagraphEditor({ text, fontSize, lineHeight, bold, onSplit, onCommit, textRef }: Props) {
+export function ParagraphEditor({ text, fontSize, lineHeight, indent, bold, onSplit, onCommit, textRef }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const callbacks = useRef({ onSplit, onCommit });
   callbacks.current = { onSplit, onCommit };
@@ -58,7 +60,7 @@ export function ParagraphEditor({ text, fontSize, lineHeight, bold, onSplit, onC
       className="paragraph-editor"
       lang="de"
       ref={host}
-      style={{ fontSize, lineHeight: `${lineHeight}px`, fontWeight: bold ? 700 : 400 }}
+      style={{ fontSize, lineHeight: `${lineHeight}px`, fontWeight: bold ? 700 : 400, ["--indent" as string]: `${indent}px` }}
     />
   );
 }

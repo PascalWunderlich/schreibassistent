@@ -114,6 +114,10 @@ main {
   line-height: inherit;
 }
 
+.paragraph-editor .cm-line:first-child {
+  text-indent: var(--indent, 0);
+}
+
 .paragraph-editor .cm-line {
   padding: 0;
   text-align: justify;

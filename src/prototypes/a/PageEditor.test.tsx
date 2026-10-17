@@ -26,6 +26,7 @@ const invoke = vi.fn(async (command: string, _args?: unknown): Promise<unknown> 
         line_height: 14.8,
         column_x: 10,
         column_width: 80,
+        first_line_indent: 0,
       };
     case "satz_font":
       throw ["keine Schrift im Test"];

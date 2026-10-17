@@ -50,6 +50,8 @@ pub struct ParagraphHit {
     /// Textspalte der Arbeit: linke Kante und Breite in pt.
     pub column_x: f64,
     pub column_width: f64,
+    /// Einzug der ersten Zeile in pt.
+    pub first_line_indent: f64,
 }
 
 /// Hält World und letztes Dokument eines Arbeits-Vaults.
@@ -136,6 +138,7 @@ impl Satz {
         let rects = mapping::rects_for_range(&page_boxes, hit.file, &range);
         let (font_size, line_height) = mapping::typography(&page_boxes, hit.file, &range);
         let (column_x, column_width) = self.column.unwrap_or((rects[0].1.x, rects[0].1.width));
+        let first_line_indent = mapping::first_line_indent(&page_boxes, hit.file, &range, column_x);
 
         Some(ParagraphHit {
             file: hit.file.vpath().get_without_slash().to_string(),
@@ -147,6 +150,7 @@ impl Satz {
             line_height,
             column_x,
             column_width,
+            first_line_indent,
         })
     }
 
@@ -158,7 +162,9 @@ impl Satz {
         let source = typst::World::source(&self.world, id).ok()?;
         let text = source.text();
         let rest = text.get(offset..)?;
-        let blank = rest.trim_start_matches([' ', '\t']).starts_with('\n') || rest.trim().is_empty();
+        // Leer, wenn danach nur Zeilenende, Dateiende oder das Ende eines Inhaltsblocks `]` folgt.
+        let next = rest.trim_start_matches([' ', '\t']);
+        let blank = next.is_empty() || next.starts_with('\n') || next.starts_with(']');
         let range = if blank { offset..offset } else { mapping::paragraph_range(&source, offset)? };
 
         let pages = self.document.as_ref()?.pages();
@@ -176,6 +182,12 @@ impl Satz {
         let probe = if range.is_empty() { offset.saturating_sub(1)..offset } else { range.clone() };
         let (font_size, line_height) = mapping::typography(&page_boxes, id, &probe);
         let (column_x, column_width) = self.column.unwrap_or((rects[0].1.x, rects[0].1.width));
+        // Neuer Absatz: im Fließtext eingerückt wie die Vorlage (1,5 em), bestehender wie gesetzt.
+        let first_line_indent = if range.is_empty() {
+            1.5 * font_size
+        } else {
+            mapping::first_line_indent(&page_boxes, id, &range, column_x)
+        };
         Some(ParagraphHit {
             file: file.to_owned(),
             text: text[range.clone()].to_owned(),
@@ -186,6 +198,7 @@ impl Satz {
             line_height,
             column_x,
             column_width,
+            first_line_indent,
         })
     }
 
@@ -296,6 +309,15 @@ mod tests {
         assert!((hit.column_x - 85.04).abs() < 1.0, "{}", hit.column_x);
         assert!((hit.column_width - (595.28 - 85.04 - 113.39)).abs() < 2.0, "{}", hit.column_width);
         assert!(satz.font_data("New Computer Modern", false).is_some_and(|d| d.len() > 10_000));
+        // Direkt nach einer Überschrift: kein Einzug (FHDW-Hinweise S. 5, Vorlage).
+        assert_eq!(hit.first_line_indent, 0.0);
+        // Absatz nach einem Absatz: Einzug 1,5 em = 16,5 pt.
+        let intro = "Arbeit/kapitel/01-einleitung.typ";
+        let intro_text = satz.world().source_text(intro).unwrap();
+        let second = intro_text.find("ausführlich.\n\n#lorem(50)").unwrap() + "ausführlich.\n\n".len();
+        let indented = satz.paragraph_at_offset(intro, second).unwrap();
+        assert_eq!(indented.text, "#lorem(50)");
+        assert!((indented.first_line_indent - 16.5).abs() < 0.5, "{}", indented.first_line_indent);
 
         let new_text = hit.text.replace("Die Modellierung", "Die neue Modellierung");
         let report = satz.replace(&hit.file, hit.start, hit.end, &new_text).unwrap();
@@ -361,6 +383,25 @@ mod tests {
         satz.replace(path, split, split, "\n\n").unwrap();
         let hit = satz.paragraph_at_offset(path, split + 2).expect("zweiter Teil");
         assert_eq!(hit.text, "neuer Absatz.");
+    }
+
+    #[test]
+    fn enter_at_end_of_summary_stays_inside_content_block() {
+        // Fehler aus dem Test am 2026-10-17: Enter am Ende von `summary: [#lorem(120)]`
+        // wählte den ganzen `#show:`-Aufruf als neuen Absatz.
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        let path = "Arbeit/main.typ";
+        let text = satz.world().source_text(path).unwrap();
+        let start = text.find("#lorem(120)").unwrap();
+        let end = start + "#lorem(120)".len();
+        satz.replace(path, start, end, "#lorem(120)\n\n").unwrap();
+        let offset = end + 2;
+        let hit = satz.paragraph_at_offset(path, offset).expect("leerer Absatz in der Zusammenfassung");
+        assert_eq!((hit.start, hit.end), (offset, offset));
+        satz.replace(path, offset, offset, "Zweiter Absatz der Zusammenfassung.").unwrap();
+        let after = satz.world().source_text(path).unwrap();
+        assert!(after.contains("summary: [#lorem(120)\n\nZweiter Absatz der Zusammenfassung.]"), "{after}");
     }
 
     #[test]

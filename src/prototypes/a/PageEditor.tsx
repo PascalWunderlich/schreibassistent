@@ -216,6 +216,7 @@ export function PageEditor() {
                     text={editing.text}
                     fontSize={editing.font_size * SCALE}
                     lineHeight={editing.line_height * SCALE}
+                    indent={editing.first_line_indent * SCALE}
                     bold={editing.text.trimStart().startsWith("=")}
                     onSplit={split}
                     onCommit={commit}

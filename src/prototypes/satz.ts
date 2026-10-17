@@ -31,6 +31,8 @@ export interface ParagraphHit {
   /** Textspalte der Arbeit, in pt. */
   column_x: number;
   column_width: number;
+  /** Einzug der ersten Zeile, in pt. */
+  first_line_indent: number;
 }
 
 export const openExample = () => invoke<CompileReport>("satz_open_example");

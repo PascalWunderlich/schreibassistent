@@ -118,6 +118,11 @@ pub fn box_at(boxes: &[TextBox], x: f64, y: f64, tolerance: f64) -> Option<&Text
 pub fn paragraph_range(source: &Source, offset: usize) -> Option<Range<usize>> {
     let root = LinkedNode::new(source.root());
     let leaf = root.leaf_at(offset, Side::After)?;
+    // Klammern eines Inhaltsblocks gehören zum umgebenden Code, nicht zu einem Absatz:
+    // sonst stiege man bis zu einem ganzen Funktionsaufruf hoch (z. B. `#show: …`).
+    if matches!(leaf.kind(), SyntaxKind::LeftBracket | SyntaxKind::RightBracket) {
+        return None;
+    }
 
     // Bis zum Kind eines Markup-Knotens auf Absatzebene hochsteigen: Markup der Datei
     // oder eines Inhaltsblocks `[…]` (z. B. Abbildungsunterschrift), nicht das Innere
@@ -130,6 +135,10 @@ pub fn paragraph_range(source: &Source, offset: usize) -> Option<Range<usize>> {
             break;
         }
         node = parent.clone();
+    }
+    // Regeln und Anweisungen sind kein Text der Arbeit und werden nie als Absatz geöffnet.
+    if is_code_statement(node.kind()) {
+        return None;
     }
     if is_block(node.kind()) {
         return Some(node.range());
@@ -162,8 +171,19 @@ fn is_block(kind: SyntaxKind) -> bool {
     matches!(kind, SyntaxKind::Heading | SyntaxKind::ListItem | SyntaxKind::EnumItem | SyntaxKind::TermItem)
 }
 
+fn is_code_statement(kind: SyntaxKind) -> bool {
+    matches!(
+        kind,
+        SyntaxKind::ShowRule
+            | SyntaxKind::SetRule
+            | SyntaxKind::LetBinding
+            | SyntaxKind::ModuleImport
+            | SyntaxKind::ModuleInclude
+    )
+}
+
 fn is_boundary(kind: SyntaxKind) -> bool {
-    kind == SyntaxKind::Parbreak || is_block(kind)
+    kind == SyntaxKind::Parbreak || is_block(kind) || is_code_statement(kind)
 }
 
 fn is_trivia(kind: SyntaxKind) -> bool {
@@ -234,6 +254,25 @@ pub fn typography(page_boxes: &[(usize, Vec<TextBox>)], file: FileId, range: &Ra
     (size, if pitch.is_finite() { pitch } else { size * 1.35 })
 }
 
+/// Einzug der ersten Zeile in pt: Abstand des ersten gesetzten Textstücks des Absatzes
+/// zur linken Spaltenkante (0 ohne Einzug, z. B. nach Überschriften).
+pub fn first_line_indent(
+    page_boxes: &[(usize, Vec<TextBox>)],
+    file: FileId,
+    range: &Range<usize>,
+    column_x: f64,
+) -> f64 {
+    let first = page_boxes
+        .iter()
+        .flat_map(|(page, boxes)| boxes.iter().map(move |b| (*page, b)))
+        .filter(|(_, b)| b.file == file && b.range.start < range.end && b.range.end > range.start)
+        .min_by(|(pa, a), (pb, b)| (pa, a.rect.y, a.rect.x).partial_cmp(&(pb, b.rect.y, b.rect.x)).unwrap());
+    match first {
+        Some((_, b)) if b.rect.x - column_x > 0.5 && b.rect.x - column_x < b.size * 4.0 => b.rect.x - column_x,
+        _ => 0.0,
+    }
+}
+
 /// Textspalte (linke Kante, Breite) in pt. Im Blocksatz beginnen und enden fast alle
 /// Zeilen an den Spaltenrändern: häufigste linke und rechte Zeilenkante (auf 0,5 pt).
 pub fn column(page_boxes: &[(usize, Vec<TextBox>)]) -> Option<(f64, f64)> {
@@ -291,6 +330,23 @@ mod tests {
         // Das Label bleibt außerhalb des Editierfelds und kann nicht versehentlich verloren gehen.
         let text = "= Titel <kap:a>\n\nText.\n";
         assert_eq!(para(text, "Titel"), "= Titel");
+    }
+
+    #[test]
+    fn rules_and_statements_are_never_paragraphs() {
+        let text = "#show: vorlage.with(titel: \"T\")\n#set text(lang: \"de\")\nText danach.\n";
+        let src = source(text);
+        assert_eq!(paragraph_range(&src, text.find("vorlage").unwrap()), None);
+        assert_eq!(paragraph_range(&src, text.find("lang").unwrap()), None);
+        assert_eq!(para(text, "danach"), "Text danach.");
+    }
+
+    #[test]
+    fn bracket_of_content_block_is_no_paragraph() {
+        let text = "#show: vorlage.with(\n  summary: [Kurz.\n\n],\n)\n\nText.\n";
+        let src = source(text);
+        assert_eq!(paragraph_range(&src, text.find("],").unwrap()), None);
+        assert_eq!(para(text, "Kurz"), "Kurz.");
     }
 
     #[test]
