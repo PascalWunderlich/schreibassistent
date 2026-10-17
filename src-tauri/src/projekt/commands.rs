@@ -81,6 +81,12 @@ pub async fn projekt_read(state: State<'_, AppState>, path: String) -> Result<St
     })
 }
 
+/// Neues Kapitel anlegen und einbinden; danach setzt die Oberfläche neu.
+#[tauri::command]
+pub async fn projekt_new_chapter(state: State<'_, AppState>, title: String) -> Result<String, String> {
+    with_project(&state, |p| p.new_chapter(&title))
+}
+
 /// Neue Notiz `Notizen/<name>.md` mit Frontmatter `author: ich` (docs/DATA-FORMATS.md).
 #[tauri::command]
 pub async fn projekt_new_note(state: State<'_, AppState>, name: String) -> Result<String, String> {

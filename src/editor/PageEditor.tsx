@@ -117,6 +117,8 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
     };
   }, []);
 
+  const scrollRef = useRef(scrollTo);
+  scrollRef.current = scrollTo;
   useEffect(() => {
     if (!refresh) return;
     compile()
@@ -124,6 +126,12 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
         setPages((current) => applyReport(current, report));
         setErrors(report.warnings);
         onReport(report);
+        // z. B. neues Kapitel: erst nach dem Neusetzen gibt es seine Seite.
+        const target = scrollRef.current;
+        if (target)
+          firstPage(target.file)
+            .then((page) => page !== null && requestAnimationFrame(() => pageRefs.current[page]?.scrollIntoView?.({ behavior: "smooth" })))
+            .catch(() => {});
       })
       .catch((e) => setErrors(errorMessages(e)));
   }, [refresh]);

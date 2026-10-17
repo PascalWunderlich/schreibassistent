@@ -7,13 +7,23 @@ interface Props {
   onOpen: (node: TreeNode) => void;
   /** Neue Notiz mit diesem Namen anlegen. */
   onNewNote: (name: string) => void;
+  /** Neues Kapitel mit diesem Titel anlegen. */
+  onNewChapter: (title: string) => void;
 }
+
+/** Ordner mit „+“: Was wird angelegt, wie heißt das Eingabefeld? */
+const CREATE: Record<string, { title: string; placeholder: string }> = {
+  Arbeit: { title: "Neues Kapitel", placeholder: "Titel des Kapitels, Enter" },
+  Notizen: { title: "Neue Notiz", placeholder: "Name der Notiz, Enter" },
+};
 
 const LABELS: Record<string, string> = { Arbeit: "Arbeit", Notizen: "Meine Notizen", Wissen: "Wissen (KI-gepflegt)" };
 
 /** Seitenleiste: Dateibaum von Arbeit/, Notizen/, Wissen/. */
-export function Sidebar({ tree, selected, onOpen, onNewNote }: Props) {
-  const [naming, setNaming] = useState(false);
+export function Sidebar({ tree, selected, onOpen, onNewNote, onNewChapter }: Props) {
+  /** Ordner, in dem gerade ein Name eingegeben wird. */
+  const [naming, setNaming] = useState<string | null>(null);
+  const create = (folder: string, name: string) => (folder === "Arbeit" ? onNewChapter(name) : onNewNote(name));
   return (
     <nav className="sidebar" aria-label="Dateien">
       {tree.map((root) => (
@@ -21,26 +31,26 @@ export function Sidebar({ tree, selected, onOpen, onNewNote }: Props) {
           <h2>
             {LABELS[root.name] ?? root.name}
             {!root.writable && <span className="badge">nur lesen</span>}
-            {root.name === "Notizen" && (
-              <button className="add" title="Neue Notiz" onClick={() => setNaming(true)}>
+            {CREATE[root.name] && (
+              <button className="add" title={CREATE[root.name].title} onClick={() => setNaming(root.name)}>
                 +
               </button>
             )}
           </h2>
-          {root.name === "Notizen" && naming && (
+          {naming === root.name && (
             <input
               className="new-note"
               autoFocus
-              placeholder="Name der Notiz, Enter"
+              placeholder={CREATE[root.name].placeholder}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                  onNewNote(e.currentTarget.value.trim());
-                  setNaming(false);
+                  create(root.name, e.currentTarget.value.trim());
+                  setNaming(null);
                 } else if (e.key === "Escape") {
-                  setNaming(false);
+                  setNaming(null);
                 }
               }}
-              onBlur={() => setNaming(false)}
+              onBlur={() => setNaming(null)}
             />
           )}
           <Nodes nodes={root.children} depth={0} selected={selected} onOpen={onOpen} />

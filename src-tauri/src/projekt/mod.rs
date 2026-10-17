@@ -130,11 +130,63 @@ impl Project {
         Ok(true)
     }
 
+    /// Neues Kapitel `Arbeit/kapitel/NN-name.typ` mit Überschrift anlegen und in `main.typ`
+    /// hinter dem letzten Kapitel einbinden. Gibt den Pfad des Kapitels zurück.
+    pub fn new_chapter(&mut self, title: &str) -> Result<String, String> {
+        let title = title.trim();
+        let slug = slug(title);
+        if slug.is_empty() {
+            return Err("Bitte einen Titel für das Kapitel angeben.".to_owned());
+        }
+        let dir = self.root.join("Arbeit/kapitel");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let next = std::fs::read_dir(&dir)
+            .map_err(|e| e.to_string())?
+            .flatten()
+            .filter_map(|e| e.file_name().to_string_lossy().get(..2)?.parse::<u32>().ok())
+            .max()
+            .unwrap_or(0)
+            + 1;
+        let file = format!("kapitel/{next:02}-{slug}.typ");
+        let path = format!("Arbeit/{file}");
+
+        let main = self.satz.world().source_text(MAIN_FILE)?;
+        let include = format!("#include \"{file}\"");
+        let mut lines: Vec<&str> = main.lines().collect();
+        match lines.iter().rposition(|l| l.trim_start().starts_with("#include \"kapitel/")) {
+            Some(i) => lines.insert(i + 1, &include),
+            None => lines.push(&include),
+        }
+        let main = format!("{}\n", lines.join("\n"));
+
+        self.write(&path, &format!("= {title}\n\n"))?;
+        self.write(MAIN_FILE, &main)?;
+        self.satz.world().set_source_text(MAIN_FILE, &main)?;
+        Ok(path)
+    }
+
     /// Aktuellen Satz-Quelltext einer `.typ`-Datei auf die Platte schreiben.
     pub fn write_source(&mut self, relative: &str) -> Result<SaveInfo, String> {
         let text = self.satz.world().source_text(relative)?;
         self.write(relative, &text)
     }
+}
+
+/// Dateiname aus einem Titel: klein, Umlaute umschrieben, Wörter mit Bindestrich.
+pub fn slug(title: &str) -> String {
+    let mut out = String::new();
+    for c in title.to_lowercase().chars() {
+        match c {
+            'ä' => out.push_str("ae"),
+            'ö' => out.push_str("oe"),
+            'ü' => out.push_str("ue"),
+            'ß' => out.push_str("ss"),
+            c if c.is_ascii_alphanumeric() => out.push(c),
+            _ if !out.ends_with('-') && !out.is_empty() => out.push('-'),
+            _ => {}
+        }
+    }
+    out.trim_end_matches('-').to_owned()
 }
 
 /// Heutiges Datum (UTC) als `YYYY-MM-DD`, z. B. fürs Frontmatter neuer Notizen.
@@ -162,6 +214,32 @@ mod tests {
         assert!(status.success());
         let _ = std::fs::remove_dir_all(target.join(".schreibassistent"));
         target
+    }
+
+    #[test]
+    fn slug_from_title() {
+        assert_eq!(slug("Grundlagen & Begriffe"), "grundlagen-begriffe");
+        assert_eq!(slug("Größe der Lösung"), "groesse-der-loesung");
+        assert_eq!(slug("  !!  "), "");
+    }
+
+    #[test]
+    fn new_chapter_is_created_included_and_set() {
+        let root = copy_example("chapter");
+        let (mut project, _) = Project::open(&root, |_| {}).unwrap();
+        let before = project.satz.compile().unwrap().page_count;
+        let path = project.new_chapter("Kritische Reflexion").unwrap();
+        assert_eq!(path, "Arbeit/kapitel/06-kritische-reflexion.typ");
+        assert_eq!(std::fs::read_to_string(root.join(&path)).unwrap(), "= Kritische Reflexion\n\n");
+        let main = std::fs::read_to_string(root.join(MAIN_FILE)).unwrap();
+        assert!(
+            main.contains("#include \"kapitel/05-zusammenfassung.typ\"\n#include \"kapitel/06-kritische-reflexion.typ\""),
+            "{main}"
+        );
+        let report = project.satz.compile().unwrap();
+        assert!(report.page_count > before, "neues Kapitel beginnt auf einer neuen Seite");
+        assert!(project.satz.first_page_of(&path).is_some());
+        std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

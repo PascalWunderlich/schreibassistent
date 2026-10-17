@@ -16,6 +16,7 @@ import {
   initGit,
   lastProject,
   lspErrorCount,
+  newChapter,
   newNote,
   openProject,
   projectTree,
@@ -137,6 +138,21 @@ function App() {
     }
   }
 
+  async function createChapter(title: string) {
+    try {
+      const path = await newChapter(title);
+      setTree(await projectTree());
+      setSelected(path);
+      setSourceFile(path);
+      setSourceJump(null);
+      setCenter({ kind: "pages" });
+      setScrollTo({ file: path, nonce: Date.now() });
+      setRefresh((n) => n + 1);
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
   async function createNote(name: string) {
     try {
       const path = await newNote(name);
@@ -217,7 +233,7 @@ function App() {
         </div>
       )}
       <div className="workspace">
-        <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} />
+        <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} onNewChapter={createChapter} />
         <main className="center">
           {center.kind === "pages" && sourceMode ? (
             <div className="source-split">
@@ -248,6 +264,7 @@ function App() {
               onReport={setReport}
               onSaved={saved}
               onSaving={() => setSaveState("speichert …")}
+              refresh={refresh}
             />
           ) : (
             <NoteEditor
