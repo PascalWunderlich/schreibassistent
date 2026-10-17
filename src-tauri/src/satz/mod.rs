@@ -2,6 +2,7 @@
 //!
 //! P2: World, Seiten-SVG mit Erkennung geänderter Seiten, Klick → Absatz.
 
+pub mod commands;
 pub mod mapping;
 mod world;
 
