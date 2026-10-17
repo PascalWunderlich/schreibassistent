@@ -1,0 +1,18 @@
+= Zusammenfassung und Ausblick <kap:zusammenfassung>
+
+#lorem(120)
+
+#lorem(80)
+
+== Ausblick
+
+#lorem(150)
+
+// Erzwungener Seitenumbruch (Testfall).
+#pagebreak()
+
+#lorem(110)
+
+#lorem(140)
+
+#lorem(60)

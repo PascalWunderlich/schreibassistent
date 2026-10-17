@@ -4,6 +4,10 @@
 
 == Bestärkendes Lernen
 
+#lorem(140)
+
+#lorem(90)
+
 #lorem(70) Eine Einführung geben Sutton und Barto @sutton2018.
 
 == Produktlinien
@@ -20,3 +24,11 @@
 ) <abb:architektur>
 
 #lorem(40)
+
+== Verteilte Systeme
+
+#lorem(160)
+
+#lorem(120)
+
+#lorem(100)

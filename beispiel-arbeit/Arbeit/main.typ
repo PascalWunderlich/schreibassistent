@@ -16,3 +16,5 @@
 #include "kapitel/01-einleitung.typ"
 #include "kapitel/02-grundlagen.typ"
 #include "kapitel/03-umsetzung.typ"
+#include "kapitel/04-loesungskonzept.typ"
+#include "kapitel/05-zusammenfassung.typ"
