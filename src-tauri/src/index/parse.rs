@@ -19,12 +19,33 @@ pub struct Reference {
     /// Ergänzung wie „S. 14“.
     pub supplement: Option<String>,
     pub offset: usize,
+    /// Steht in einer Fußnote (FHDW S. 9: keine Fußnoten für Zitate).
+    #[serde(default)]
+    pub in_footnote: bool,
+}
+
+/// `#figure(…)` im Quelltext.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Figure {
+    pub offset: usize,
+    /// "abbildung" (`image`), "tabelle" (`table`), "listing" (Code-Block) oder `None`.
+    pub kind: Option<String>,
+    /// Byte-Bereiche von Inhalt und Beschriftung im Quelltext.
+    pub body: (usize, usize),
+    pub caption: Option<(usize, usize)>,
+    /// Label direkt nach der Abbildung, z. B. `abb:architektur`.
+    pub label: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TypFile {
     pub headings: Vec<Heading>,
     pub references: Vec<Reference>,
+    /// Im Text definierte Labels (`<name>`).
+    #[serde(default)]
+    pub labels: Vec<String>,
+    #[serde(default)]
+    pub figures: Vec<Figure>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -42,12 +63,22 @@ pub struct MdFile {
 pub fn parse_typ(text: &str) -> TypFile {
     let root = typst::syntax::parse(text);
     let mut out = TypFile::default();
-    walk(&LinkedNode::new(&root), text, &mut out);
+    walk(&LinkedNode::new(&root), text, false, &mut out);
     out
 }
 
-fn walk(node: &LinkedNode, text: &str, out: &mut TypFile) {
+/// Name der aufgerufenen Funktion, z. B. `figure` bei `#figure(…)`.
+fn callee<'a>(node: &LinkedNode, text: &'a str) -> Option<&'a str> {
+    let first = node.children().next()?;
+    (first.kind() == SyntaxKind::Ident).then(|| &text[first.range()])
+}
+
+fn walk(node: &LinkedNode, text: &str, in_footnote: bool, out: &mut TypFile) {
+    let mut in_footnote = in_footnote;
     match node.kind() {
+        SyntaxKind::Label => {
+            out.labels.push(text[node.range()].trim_start_matches('<').trim_end_matches('>').to_owned());
+        }
         SyntaxKind::Heading => {
             let level = node.children().find(|c| c.kind() == SyntaxKind::HeadingMarker).map_or(1, |m| m.range().len());
             let body = node.children().find(|c| c.kind() == SyntaxKind::Markup).map(|m| text[m.range()].trim().to_owned());
@@ -57,12 +88,22 @@ fn walk(node: &LinkedNode, text: &str, out: &mut TypFile) {
             let marker = node.children().find(|c| c.kind() == SyntaxKind::RefMarker);
             if let Some(marker) = marker {
                 let supplement = node.children().find(|c| c.kind() == SyntaxKind::ContentBlock).map(|c| block_text(&c, text));
-                out.references.push(Reference { key: text[marker.range()][1..].to_owned(), supplement, offset: node.offset() });
+                out.references.push(Reference {
+                    key: text[marker.range()][1..].to_owned(),
+                    supplement,
+                    offset: node.offset(),
+                    in_footnote,
+                });
+            }
+        }
+        SyntaxKind::FuncCall if callee(node, text) == Some("footnote") => in_footnote = true,
+        SyntaxKind::FuncCall if callee(node, text) == Some("figure") => {
+            if let Some(figure) = parse_figure(node, text) {
+                out.figures.push(figure);
             }
         }
         SyntaxKind::FuncCall => {
-            let callee = node.children().next();
-            if callee.as_ref().is_some_and(|c| c.kind() == SyntaxKind::Ident && &text[c.range()] == "cite")
+            if callee(node, text) == Some("cite")
                 && let Some(args) = node.children().find(|c| c.kind() == SyntaxKind::Args)
             {
                 let label = args.children().find(|c| c.kind() == SyntaxKind::Label);
@@ -74,15 +115,75 @@ fn walk(node: &LinkedNode, text: &str, out: &mut TypFile) {
                     .map(|c| block_text(&c, text));
                 if let Some(label) = label {
                     let key = text[label.range()].trim_start_matches('<').trim_end_matches('>').to_owned();
-                    out.references.push(Reference { key, supplement, offset: node.offset() });
+                    out.references.push(Reference { key, supplement, offset: node.offset(), in_footnote });
                 }
+                // Das Label in `cite(<key>)` ist ein Verweis, keine Definition.
+                return;
             }
         }
         _ => {}
     }
     for child in node.children() {
-        walk(&child, text, out);
+        walk(&child, text, in_footnote, out);
     }
+}
+
+fn parse_figure(node: &LinkedNode, text: &str) -> Option<Figure> {
+    let args = node.children().find(|c| c.kind() == SyntaxKind::Args)?;
+    let mut body = None;
+    let mut caption = None;
+    for arg in args.children() {
+        match arg.kind() {
+            SyntaxKind::Named => {
+                let name = arg.children().next().map(|n| &text[n.range()]);
+                if name == Some("caption") {
+                    let value = arg.children().filter(|c| !matches!(c.kind(), SyntaxKind::Ident | SyntaxKind::Colon | SyntaxKind::Space)).last()?;
+                    caption = Some((value.range().start, value.range().end));
+                }
+            }
+            SyntaxKind::LeftParen | SyntaxKind::RightParen | SyntaxKind::Comma | SyntaxKind::Space => {}
+            _ if body.is_none() => body = Some(arg),
+            _ => {}
+        }
+    }
+    let body = body?;
+    let kind = match body.kind() {
+        SyntaxKind::FuncCall => match callee(&body, text) {
+            Some("image") => Some("abbildung"),
+            Some("table") => Some("tabelle"),
+            _ => None,
+        },
+        SyntaxKind::Raw => Some("listing"),
+        SyntaxKind::ContentBlock if text[body.range()].contains("```") => Some("listing"),
+        _ => None,
+    };
+    // Label direkt dahinter (auf derselben Markup-Ebene, nach Leerraum).
+    let mut figure_node = node.clone();
+    while let Some(parent) = figure_node.parent() {
+        if parent.kind() == SyntaxKind::Markup {
+            break;
+        }
+        figure_node = parent.clone();
+    }
+    let mut label = None;
+    let mut next = figure_node.next_sibling_with_trivia();
+    while let Some(sibling) = next {
+        match sibling.kind() {
+            SyntaxKind::Space => next = sibling.next_sibling_with_trivia(),
+            SyntaxKind::Label => {
+                label = Some(text[sibling.range()].trim_start_matches('<').trim_end_matches('>').to_owned());
+                break;
+            }
+            _ => break,
+        }
+    }
+    Some(Figure {
+        offset: node.offset(),
+        kind: kind.map(str::to_owned),
+        body: (body.range().start, body.range().end),
+        caption,
+        label,
+    })
 }
 
 /// Text eines Inhaltsblocks `[…]` ohne Klammern.
@@ -165,6 +266,20 @@ mod tests {
             refs,
             [("sutton2018", None), ("greenyer2013", Some("S. 1")), ("kap:g", None), ("koenig2023", Some("S. 7")), ("omg2017", None)]
         );
+    }
+
+    #[test]
+    fn labels_footnotes_and_figures() {
+        let text = "= A <kap:a>\n\nText#footnote[Siehe @sutton2018.] und @kap:a.\n\n#figure(\n  image(\"x.svg\"),\n  caption: [Bild],\n) <abb:x>\n\n#figure(table(columns: 1, [a]))\n";
+        let file = parse_typ(text);
+        assert_eq!(file.labels, ["kap:a", "abb:x"]);
+        let refs: Vec<_> = file.references.iter().map(|r| (r.key.as_str(), r.in_footnote)).collect();
+        assert_eq!(refs, [("sutton2018", true), ("kap:a", false)]);
+        assert_eq!(file.figures.len(), 2);
+        let (a, b) = (&file.figures[0], &file.figures[1]);
+        assert_eq!((a.kind.as_deref(), a.label.as_deref()), (Some("abbildung"), Some("abb:x")));
+        assert_eq!(&text[a.caption.unwrap().0..a.caption.unwrap().1], "[Bild]");
+        assert_eq!((b.kind.as_deref(), b.caption, b.label.as_deref()), (Some("tabelle"), None, None));
     }
 
     #[test]

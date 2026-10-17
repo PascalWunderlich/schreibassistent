@@ -15,6 +15,8 @@
 „Heute werden oft nicht nur einzelne Softwareprodukte entwickelt, sondern ganze Produktlinien, es müssen also viele Varianten eines Produkts entwickelt werden.“ @greenyer2013[S. 1]
 
 #lorem(50) Formale Grundlagen dazu liefern König, Wolter und Kräuter @koenig2023.
+// FEHLERFALL zitierstil (Zitat in einer Fußnote)
+Auch die Semantik ist beschrieben#footnote[Vgl. @koenig2023.].
 
 @abb:architektur zeigt den Aufbau eines Beispielsystems. Die Komponenten sind als Rechtecke dargestellt, Pfeile zeigen die Aufrufrichtung.
 

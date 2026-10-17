@@ -260,6 +260,49 @@ impl Satz {
         })
     }
 
+    /// Art der Arbeit aus dem Metadatum der Vorlage (`<fhdw-arbeit>`), z. B. „Praxisarbeit“.
+    pub fn thesis_type(&self) -> Option<String> {
+        use typst::foundations::{Label, Selector, Value};
+        use typst::introspection::{Introspector, MetadataElem};
+        let document = self.document.as_ref()?;
+        let label = Label::new(typst::utils::PicoStr::intern("fhdw-arbeit"))?;
+        let found = document.introspector().query(&Selector::Label(label));
+        let metadata = found.first()?.to_packed::<MetadataElem>()?;
+        match &metadata.value {
+            Value::Dict(dict) => dict.get("thesis-type").ok().and_then(|v| v.clone().cast::<String>().ok()),
+            _ => None,
+        }
+    }
+
+    /// Seiten des Inhaltsteils im zuletzt gesetzten Dokument.
+    pub fn content_pages(&self) -> Option<usize> {
+        let document = self.document.as_ref()?;
+        let labels: Vec<String> = document.pages().iter().map(page_label).collect();
+        content_pages(document, &labels)
+    }
+
+    /// Lage von Text und Bildern aus `file` im Byte-Bereich `range`, je Seite vereinigt.
+    pub fn rects_of(&self, file: &str, range: std::ops::Range<usize>) -> Vec<(usize, Rect)> {
+        let Ok(id) = project_file(file) else { return Vec::new() };
+        let Some(document) = self.document.as_ref() else { return Vec::new() };
+        let boxes: Vec<_> = document
+            .pages()
+            .iter()
+            .enumerate()
+            .map(|(i, p)| {
+                let mut b = mapping::text_boxes(&self.world, &p.frame);
+                b.extend(mapping::image_boxes(&self.world, &p.frame));
+                (i, b)
+            })
+            .collect();
+        mapping::rects_for_range(&boxes, id, &range)
+    }
+
+    /// Text aller Seiten in Lesereihenfolge.
+    pub fn page_texts(&self) -> Vec<String> {
+        self.document.as_ref().map_or_else(Vec::new, |d| d.pages().iter().map(|p| mapping::page_text(&p.frame)).collect())
+    }
+
     /// Erste Seite (Index ab 0), auf der Text aus `file` steht, z. B. für „zu Kapitel springen“.
     pub fn first_page_of(&self, file: &str) -> Option<usize> {
         let id = project_file(file).ok()?;
@@ -465,7 +508,7 @@ mod tests {
         let report = satz.compile().unwrap();
         let path = "Arbeit/kapitel/04-loesungskonzept.typ";
         let text = satz.world().source_text(path).unwrap();
-        let offset = text.find("#lorem(420)").unwrap();
+        let offset = text.find("#lorem(900)").unwrap();
         let file = project_file(path).unwrap();
         let (page, rect) = (0..report.page_count)
             .find_map(|p| {
@@ -477,8 +520,8 @@ mod tests {
             })
             .expect("langer Absatz ist gesetzt");
         let hit = satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).unwrap();
-        assert_eq!(hit.text, "#lorem(420)");
-        assert_eq!(hit.rects.len(), 2, "{:?}", hit.rects);
+        assert_eq!(hit.text, "#lorem(900)");
+        assert!(hit.rects.len() >= 2, "läuft über einen Seitenumbruch: {:?}", hit.rects);
     }
 
     #[test]
@@ -681,6 +724,21 @@ mod tests {
         let (file, offset) = satz.error_location().unwrap();
         assert_eq!(file, path);
         assert!(satz.world().source_text(path).unwrap()[offset..].starts_with("gibtsnich"));
+    }
+
+    #[test]
+    fn thesis_type_page_texts_and_figure_rects() {
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        assert_eq!(satz.thesis_type().as_deref(), Some("Praxisarbeit"));
+        let texts = satz.page_texts();
+        assert!(texts[1].starts_with("Erklärung der Selbstständigkeit"), "{}", &texts[1][..60]);
+        let path = "Arbeit/kapitel/02-grundlagen.typ";
+        let text = satz.world().source_text(path).unwrap();
+        let image = text.find("image(").unwrap();
+        let rects = satz.rects_of(path, image..image + 10);
+        assert_eq!(rects.len(), 1, "Bild ist gesetzt");
+        assert!(rects[0].1.height > 50.0);
     }
 
     #[test]

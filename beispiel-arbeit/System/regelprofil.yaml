@@ -1,0 +1,130 @@
+# Regelprofil FHDW (technische Studiengänge), von Hand aus docs/fhdw-checkliste.md (P5).
+# Seitenangaben: gedruckte Seitenzahlen in „FHDW Hinweise wissenschaftliches Arbeiten (Stand 2026-09)“.
+# Kopie nach System/regelprofil.yaml der Arbeit. Erst nach Durchsicht bestaetigt: true setzen.
+profil: FHDW technische Studiengänge
+quelle: FHDW Hinweise wissenschaftliches Arbeiten (Stand 09/2026)
+bestaetigt: false
+regeln:
+  # ---------- maschinell geprüft ----------
+  - id: umfang-praxisarbeit
+    klasse: maschinell
+    art: seitenumfang
+    gilt_fuer: Praxisarbeit
+    bereich: inhaltsteil
+    min: 20
+    max: 22
+    schwere: warnung
+    fundstelle: "S. 3, Abschnitt 2.3, Tabelle 2.1"
+  - id: umfang-bachelorarbeit
+    klasse: maschinell
+    art: seitenumfang
+    gilt_fuer: Bachelorarbeit
+    bereich: inhaltsteil
+    min: 40
+    max: 44
+    schwere: warnung
+    fundstelle: "S. 3, Abschnitt 2.3, Tabelle 2.1"
+  - id: beschriftung-abbildung
+    klasse: maschinell
+    art: beschriftung
+    element: abbildung
+    position: unten
+    referenziert: true
+    schwere: fehler
+    fundstelle: "S. 5, Abschnitt 2.5 (Unterschrift); S. 6, Abschnitt 2.7 (im Text referenziert)"
+  - id: beschriftung-tabelle
+    klasse: maschinell
+    art: beschriftung
+    element: tabelle
+    position: oben
+    schwere: fehler
+    fundstelle: "S. 5, Abschnitt 2.5"
+  - id: beschriftung-listing
+    klasse: maschinell
+    art: beschriftung
+    element: listing
+    position: oben
+    schwere: fehler
+    fundstelle: "S. 5, Abschnitt 2.5"
+  - id: gliederung
+    klasse: maschinell
+    art: gliederungstiefe
+    max: 3
+    unterabschnitt_allein: true
+    schwere: hinweis
+    fundstelle: "S. 4, Abschnitt 2.5 (Dezimalsystem 1, 1.1, 1.1.1; zweiter Unterabschnitt)"
+  - id: zitierstil
+    klasse: maschinell
+    art: zitierstil
+    erlaubt: [numerisch, alphabetisch]
+    fussnoten: verboten
+    schwere: fehler
+    fundstelle: "S. 8–9, Abschnitt 2.9"
+  - id: quellen
+    klasse: maschinell
+    art: quellen_vollstaendig
+    pruefe: [zitiert_fehlt, ungenutzt, pflichtfelder]
+    schwere: warnung
+    fundstelle: "S. 9 (nur zitierte Quellen); S. 9–10, Abschnitt 2.9.1 (Angaben je Quellentyp)"
+  - id: erklaerung-wortlaut
+    klasse: vorlage
+    art: textbaustein
+    schwere: fehler
+    fundstelle: "S. 4, Punkt 2; Wortlaut S. i"
+    wortlaut: >-
+      Hiermit versichere ich, dass ich die vorliegende {art} selbständig verfasst und keine anderen
+      als die angegebenen Quellen verwendet habe. Alle Textstellen und andere Inhalte wie Bilder,
+      Quellcode oder Daten, die wörtlich oder sinngemäß aus anderen Quellen entnommen sind, habe ich
+      eindeutig mit korrekten Quellenangaben versehen. Über Zitierrichtlinien bin ich schriftlich
+      informiert worden. Diese Arbeit wurde bisher in gleicher oder ähnlicher Form, auch nicht in
+      Teilen, keiner anderen Prüfungsbehörde vorgelegt. Falls ich während der Erstellung dieser
+      Arbeit generative KI oder andere KI-gestützte Technologien verwendet habe, die über
+      grundlegende Werkzeuge für Übersetzungen und zur Überprüfung von Grammatik oder
+      Rechtschreibung hinausgehen, erkläre ich, nach der Nutzung dieser Tools den Inhalt meiner
+      {art} überprüft und bearbeitet zu haben und übernehme die volle Verantwortung für die
+      diesbezüglichen Ausführungen. Eine Verwendung solcher Werkzeuge habe ich in meiner Arbeit
+      dokumentiert (bspw. im Abschnitt „Struktur der Arbeit, Methodik“ oder durch separate
+      Erläuterungen zur Nutzung im Anhang{fn}).
+  # ---------- Stil: keine FHDW-Vorgabe, allgemeine Empfehlung (Vale, nur Hinweis) ----------
+  - id: stil-man
+    klasse: maschinell
+    art: stilregel
+    vale: FHDW.Man
+    schwere: hinweis
+    fundstelle: "keine FHDW-Vorgabe; Stilempfehlung (aktive, benannte Handelnde, vgl. S. 7)"
+  - id: stil-fuellwoerter
+    klasse: maschinell
+    art: stilregel
+    vale: FHDW.Fuellwoerter
+    schwere: hinweis
+    fundstelle: "keine FHDW-Vorgabe; Stilempfehlung"
+  # ---------- durch die Vorlage erfüllt (nur dokumentiert) ----------
+  - id: reihenfolge
+    klasse: vorlage
+    text: Bestandteile in der Reihenfolge Titelblatt, Erklärung, Sperrvermerk, Zusammenfassung, Inhaltsverzeichnis, Abkürzungen, Inhalt, Quellverzeichnis, Glossar, Verzeichnisse, Anhang
+    fundstelle: "S. 4, Abschnitt 2.4"
+  - id: seitenzaehlung
+    klasse: vorlage
+    text: Vorspann römisch, ab Inhaltsteil arabisch bis zum Ende
+    fundstelle: "S. 4, Abschnitt 2.4"
+  - id: satz
+    klasse: vorlage
+    text: A4, 11 pt, Blocksatz, Ränder einseitig links 3–4 cm, rechts 4–5 cm, oben/unten 4–5 cm
+    fundstelle: "S. 5–6, Abschnitt 2.6"
+  # ---------- nur mit Urteil prüfbar (KI auf Nachfrage, P8) ----------
+  - id: firmenwebsites
+    klasse: urteil
+    text: Firmenwebsites für die Erklärung wissenschaftlicher Konzepte meiden
+    fundstelle: "S. 11"
+  - id: wissenschaftliche-quellen
+    klasse: urteil
+    text: In Bachelor- und Master-Thesis möglichst wissenschaftliche Quellen zitieren; Internetquellen nur ohne passende wissenschaftliche Quelle
+    fundstelle: "S. 10–11"
+  - id: abbildung-beschrieben
+    klasse: urteil
+    text: Jede Abbildung im Text beschreiben (was sieht man, was bedeuten Pfeile)
+    fundstelle: "S. 6, Abschnitt 2.7"
+  - id: zitate-gekennzeichnet
+    klasse: urteil
+    text: Wörtliche und übersetzte Zitate in Anführungszeichen; übernommene Bilder, Code, Daten kennzeichnen
+    fundstelle: "S. 10–11, Abschnitte 2.9.2 und 2.10"

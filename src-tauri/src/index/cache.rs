@@ -8,7 +8,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Serialize, de::DeserializeOwned};
 
 /// Bei Änderungen am Format der gespeicherten Ergebnisse erhöhen: alter Cache wird verworfen.
-const VERSION: i64 = 1;
+const VERSION: i64 = 2;
 
 pub struct Cache {
     db: Mutex<Connection>,

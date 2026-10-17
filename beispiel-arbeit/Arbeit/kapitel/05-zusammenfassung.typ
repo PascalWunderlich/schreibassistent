@@ -4,6 +4,7 @@
 
 #lorem(80)
 
+// FEHLERFALL gliederung (einziger Unterabschnitt)
 == Ausblick
 
 #lorem(150) Weiterführend sei auf #cite(<sutton2018>, supplement: [S. 42]) verwiesen.

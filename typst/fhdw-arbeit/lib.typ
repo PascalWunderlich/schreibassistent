@@ -138,6 +138,8 @@
   }
 
   set document(title: title, author: author)
+  // Für Prüfungen der App (Regelprofil, z. B. Seitenumfang je Art der Arbeit); unsichtbar.
+  [#metadata((thesis-type: thesis-type)) <fhdw-arbeit>]
   show: base-style
   set page(header: page-header, footer: page-footer)
 

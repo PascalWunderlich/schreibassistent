@@ -35,6 +35,8 @@ biblatex = "0.12"
 rusqlite = { version = "0.40", features = ["bundled"] }
 ureq = { version = "3", default-features = false, features = ["json"] }
 tauri-plugin-opener = "2"
+serde_norway = "0.9"
+regex = "1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

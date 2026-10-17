@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schreibassistent.local/regelprofil.schema.json",
+  "title": "Regelprofil (System/regelprofil.yaml)",
+  "description": "Formvorgaben einer Hochschule. Klassen: maschinell (feste Prüfung), vorlage (durch die Vorlage erfüllt, ggf. geprüft), urteil (nur auf Nachfrage mit KI, P8). Siehe docs/DATA-FORMATS.md.",
+  "type": "object",
+  "required": [
+    "profil",
+    "quelle",
+    "bestaetigt",
+    "regeln"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "profil": {
+      "type": "string"
+    },
+    "quelle": {
+      "type": "string",
+      "description": "Vorgaben-Dokument mit Stand"
+    },
+    "bestaetigt": {
+      "type": "boolean",
+      "description": "Erst true, wenn der Mensch das Profil durchgesehen hat"
+    },
+    "regeln": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/regel"
+      }
+    }
+  },
+  "$defs": {
+    "regel": {
+      "type": "object",
+      "required": [
+        "id",
+        "klasse",
+        "fundstelle"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "klasse": {
+          "enum": [
+            "maschinell",
+            "vorlage",
+            "urteil"
+          ]
+        },
+        "art": {
+          "description": "Festes Vokabular; unbekannte Arten sind ein Validierungsfehler. Bei klasse urteil entfällt art.",
+          "enum": [
+            "seitenumfang",
+            "beschriftung",
+            "gliederungstiefe",
+            "zitierstil",
+            "quellen_vollstaendig",
+            "textbaustein",
+            "stilregel"
+          ]
+        },
+        "fundstelle": {
+          "type": "string",
+          "description": "Seite/Abschnitt im Vorgaben-Dokument"
+        },
+        "schwere": {
+          "enum": [
+            "fehler",
+            "warnung",
+            "hinweis"
+          ],
+          "default": "warnung"
+        },
+        "text": {
+          "type": "string",
+          "description": "Regel in Worten (Pflicht bei klasse urteil)"
+        },
+        "gilt_fuer": {
+          "type": "string",
+          "description": "Art der Arbeit, z. B. Praxisarbeit; ohne Angabe für alle"
+        },
+        "bereich": {
+          "enum": [
+            "inhaltsteil"
+          ]
+        },
+        "min": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "element": {
+          "enum": [
+            "abbildung",
+            "tabelle",
+            "listing"
+          ]
+        },
+        "position": {
+          "enum": [
+            "oben",
+            "unten"
+          ]
+        },
+        "unterabschnitt_allein": {
+          "type": "boolean",
+          "description": "Hinweis, wenn ein Abschnitt genau einen Unterabschnitt hat"
+        },
+        "erlaubt": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "numerisch",
+              "alphabetisch"
+            ]
+          }
+        },
+        "fussnoten": {
+          "enum": [
+            "erlaubt",
+            "verboten"
+          ]
+        },
+        "pruefe": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "zitiert_fehlt",
+              "ungenutzt",
+              "pflichtfelder"
+            ]
+          }
+        },
+        "wortlaut": {
+          "type": "string",
+          "description": "Exakter Text; {art} steht für die Art der Arbeit"
+        },
+        "vale": {
+          "type": "string",
+          "description": "Name der Vale-Regel, z. B. FHDW.Man"
+        },
+        "referenziert": {
+          "type": "boolean",
+          "description": "Jedes Element dieser Art muss im Text referenziert werden"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

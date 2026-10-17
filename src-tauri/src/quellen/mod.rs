@@ -32,6 +32,13 @@ pub struct Source {
     pub doi: Option<String>,
     /// Dateipfad des PDFs, falls Better BibTeX ihn exportiert (`file`).
     pub file: Option<String>,
+    pub volume: Option<String>,
+    pub pages: Option<String>,
+    /// Zugriffsdatum (Internetquellen).
+    pub urldate: Option<String>,
+    pub editors: Vec<String>,
+    /// Zeile des Eintrags in der `.bib` (ab 1).
+    pub line: usize,
 }
 
 /// Liest `System/quellen.bib`. Fehlt die Datei, gibt es keine Quellen (kein Fehler).
@@ -50,7 +57,16 @@ pub fn parse(text: &str) -> Result<Vec<Source>, String> {
         .iter()
         .map(|entry| {
             let people = field(entry, "author").or_else(|| field(entry, "editor")).unwrap_or_default();
+            let split = |s: Option<String>| -> Vec<String> {
+                s.unwrap_or_default().split(" and ").map(|p| p.trim().to_owned()).filter(|p| !p.is_empty()).collect()
+            };
+            let marker = text.find(&format!("{{{},", entry.key)).unwrap_or(0);
             Source {
+                volume: field(entry, "volume"),
+                pages: field(entry, "pages"),
+                urldate: field(entry, "urldate"),
+                editors: split(field(entry, "editor")),
+                line: text[..marker].matches('\n').count() + 1,
                 citekey: entry.key.clone(),
                 kind: entry.entry_type.to_string().to_lowercase(),
                 authors: people.split(" and ").map(|p| p.trim().to_owned()).filter(|p| !p.is_empty()).collect(),

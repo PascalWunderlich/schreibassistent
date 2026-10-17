@@ -30,3 +30,30 @@
 #lorem(130)
 
 #lorem(110)
+
+Die Messwerte stehen in @tab:messwerte, der Aufruf in @lst:aufruf.
+
+// FEHLERFALL beschriftung-tabelle (Überschrift absichtlich unten)
+#[
+  #show figure: set figure.caption(position: bottom)
+  #figure(
+    table(
+      columns: (1fr, auto),
+      table.header[Messung][Wert],
+      [Antwortzeit], [180 ms],
+      [Fehlerrate], [0,2 %],
+    ),
+    caption: [Messwerte des Beispielsystems],
+  ) <tab:messwerte>
+]
+
+// FEHLERFALL beschriftung-listing (Überschrift absichtlich unten)
+#[
+  #show figure: set figure.caption(position: bottom)
+  #figure(
+    ```sh
+    curl http://localhost:8080/status
+    ```,
+    caption: [Aufruf des Statusdienstes],
+  ) <lst:aufruf>
+]

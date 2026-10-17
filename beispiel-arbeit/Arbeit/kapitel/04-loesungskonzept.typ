@@ -15,6 +15,12 @@
 
 @abb:konzept zeigt die Komponenten. #lorem(60)
 
+// FEHLERFALL beschriftung-abbildung (kein Label, nicht referenziert)
+#figure(
+  image("../abbildungen/architektur.svg", width: 50%),
+  caption: [Dieselben Komponenten, verkleinert],
+)
+
 == Abläufe
 
 === Anmeldung
@@ -26,9 +32,14 @@
 === Datenabgleich
 
 // Langer Absatz: läuft über einen Seitenumbruch (Testfall für den Seiteneditor).
-#lorem(420)
+#lorem(900)
 
 #lorem(75)
+
+// FEHLERFALL gliederung (vierte Ebene, zugleich einziger Unterabschnitt)
+==== Feinabstimmung
+
+#lorem(40)
 
 == Alternativen
 

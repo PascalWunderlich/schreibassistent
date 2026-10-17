@@ -99,6 +99,75 @@ fn collect(world: &SatzWorld, frame: &Frame, ts: Transform, out: &mut Vec<TextBo
     }
 }
 
+/// Bilder einer Seite mit ihrer Herkunft (Span des `image(…)`-Aufrufs).
+pub fn image_boxes(world: &SatzWorld, frame: &Frame) -> Vec<TextBox> {
+    let mut out = Vec::new();
+    collect_images(world, frame, Transform::identity(), &mut out);
+    out
+}
+
+fn collect_images(world: &SatzWorld, frame: &Frame, ts: Transform, out: &mut Vec<TextBox>) {
+    for (pos, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => {
+                let ts = ts.pre_concat(Transform::translate(pos.x, pos.y)).pre_concat(group.transform);
+                collect_images(world, &group.frame, ts, out);
+            }
+            FrameItem::Image(_, size, span) => {
+                let Some(file) = span.id().filter(|id| matches!(id.root(), VirtualRoot::Project)) else { continue };
+                let Some(range) = world.range(*span) else { continue };
+                let a = pos.transform(ts);
+                let b = Point::new(pos.x + size.x, pos.y + size.y).transform(ts);
+                let rect = Rect {
+                    x: a.x.to_pt().min(b.x.to_pt()),
+                    y: a.y.to_pt().min(b.y.to_pt()),
+                    width: (b.x - a.x).to_pt().abs(),
+                    height: (b.y - a.y).to_pt().abs(),
+                };
+                out.push(TextBox { rect, size: 0.0, file, range });
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Text einer Seite in Lesereihenfolge: Zeilen von oben nach unten, je Zeile von links.
+pub fn page_text(frame: &Frame) -> String {
+    let mut items: Vec<(f64, f64, String)> = Vec::new();
+    collect_text(frame, Transform::identity(), &mut items);
+    items.sort_by(|a, b| (a.0, a.1).partial_cmp(&(b.0, b.1)).unwrap());
+    let mut out = String::new();
+    let mut last_y = f64::NEG_INFINITY;
+    for (y, _, text) in items {
+        if (y - last_y).abs() > 2.0 {
+            if !out.is_empty() {
+                out.push('\n');
+            }
+            last_y = y;
+        } else if !out.ends_with(' ') {
+            out.push(' ');
+        }
+        out.push_str(&text);
+    }
+    out
+}
+
+fn collect_text(frame: &Frame, ts: Transform, out: &mut Vec<(f64, f64, String)>) {
+    for (pos, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => {
+                let ts = ts.pre_concat(Transform::translate(pos.x, pos.y)).pre_concat(group.transform);
+                collect_text(&group.frame, ts, out);
+            }
+            FrameItem::Text(text) => {
+                let p = pos.transform(ts);
+                out.push((p.y.to_pt(), p.x.to_pt(), text.text.to_string()));
+            }
+            _ => {}
+        }
+    }
+}
+
 /// Textstück an (x, y) in pt; ohne Treffer das vertikal nächste innerhalb von `tolerance` pt.
 pub fn box_at(boxes: &[TextBox], x: f64, y: f64, tolerance: f64) -> Option<&TextBox> {
     if let Some(hit) = boxes.iter().find(|b| b.rect.contains(x, y)) {
