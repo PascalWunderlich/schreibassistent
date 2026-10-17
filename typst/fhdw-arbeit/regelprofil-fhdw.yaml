@@ -1,9 +1,9 @@
 # Regelprofil FHDW (technische Studiengänge), von Hand aus docs/fhdw-checkliste.md (P5).
 # Seitenangaben: gedruckte Seitenzahlen in „FHDW Hinweise wissenschaftliches Arbeiten (Stand 2026-09)“.
-# Kopie nach System/regelprofil.yaml der Arbeit. Erst nach Durchsicht bestaetigt: true setzen.
+# Kopie nach System/regelprofil.yaml der Arbeit. Freigegeben von Pascal am 2026-10-17.
 profil: FHDW technische Studiengänge
 quelle: FHDW Hinweise wissenschaftliches Arbeiten (Stand 09/2026)
-bestaetigt: false
+bestaetigt: true  # freigegeben von Pascal am 2026-10-17
 regeln:
   # ---------- maschinell geprüft ----------
   - id: umfang-praxisarbeit

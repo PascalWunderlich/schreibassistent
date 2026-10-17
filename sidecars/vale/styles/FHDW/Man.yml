@@ -1,0 +1,7 @@
+# Unpersönliches „man“: besser benennen, wer handelt (vgl. FHDW-Hinweise S. 7, aktiver Stil).
+extends: existence
+message: "„%s“ ist unpersönlich – besser benennen, wer handelt (z. B. „ich“ beim eigenen Vorgehen)."
+level: suggestion
+ignorecase: true
+tokens:
+  - man

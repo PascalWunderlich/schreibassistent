@@ -2,6 +2,7 @@
 
 pub mod engine;
 pub mod profil;
+pub mod vale;
 
 pub const NAME: &str = "pruefung";
 
@@ -64,7 +65,13 @@ mod tests {
         let profil = profil::load(root).unwrap().unwrap();
         let sources = quellen::load(root).unwrap();
         let index = Index::build(root, None).unwrap();
-        engine::check(&profil, &engine::Kontext { satz: &satz, index: &index, sources: &sources })
+        let mut out = engine::check(&profil, &engine::Kontext { satz: &satz, index: &index, sources: &sources });
+        let files: Vec<String> = index.typ.keys().cloned().collect();
+        match super::vale::check(&profil, root, &files) {
+            Ok(hinweise) => out.extend(hinweise),
+            Err(e) => eprintln!("Vale übersprungen: {e}"),
+        }
+        out
     }
 
     fn covers(m: &Marker, h: &Hinweis) -> bool {

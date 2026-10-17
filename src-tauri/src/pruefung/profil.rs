@@ -152,9 +152,9 @@ mod tests {
     }
 
     #[test]
-    fn fhdw_profile_is_valid_and_unconfirmed() {
+    fn fhdw_profile_is_valid_and_confirmed() {
         let profil = parse(&fhdw()).unwrap();
-        assert!(!profil.bestaetigt, "erst nach Freigabe durch Pascal");
+        assert!(profil.bestaetigt, "von Pascal am 2026-10-17 freigegeben");
         assert!(profil.regeln.iter().all(|r| !r.fundstelle.is_empty()), "jede Regel mit Fundstelle");
         assert!(profil.regeln.iter().any(|r| r.art == Some(Art::Seitenumfang)));
     }

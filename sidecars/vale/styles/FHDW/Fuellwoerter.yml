@@ -1,0 +1,15 @@
+# Füllwörter ohne Aussage. Bewusst kurze Liste, damit es keine Fehlalarme gibt.
+extends: existence
+message: "„%s“ ist ein Füllwort – streichen oder genauer sagen."
+level: suggestion
+ignorecase: true
+tokens:
+  - eigentlich
+  - quasi
+  - sozusagen
+  - irgendwie
+  - gewissermaßen
+  - letztendlich
+  - schlussendlich
+  - im Grunde genommen
+  - im Prinzip
