@@ -73,7 +73,7 @@ ohne das Zeichnen in der Vorschau.
 | Markup im Absatz (`#lorem(60)`, `@omg2017`, `*fett*`) | Feld zeigt Quelltext; Zeilenumbruch im Feld weicht dann vom Satz ab | Quelltext wie immer |
 | Zeilenumbruch reiner Fließtext | gleiche Schrift und Spalte, aber Typst (Knuth-Plass) und Browser trennen/brechen an einzelnen Stellen anders | – |
 | Viele große Seiten im Fenster | inline-SVG ließ die Webansicht hängen (Fehler gefunden); als Bilder (`<img>`) behoben | keine Probleme beobachtet |
-| Sprung Quelltext → Vorschau nach Kapitelwechsel | – | **unzuverlässig**: Tinymist sendet den Sprung nachweislich (`jump,6 …` auf der Vorschau-Verbindung), die Vorschau setzt ihn nicht immer um; Ursache in Tinymists Vorschau-Oberfläche, offen |
+| Sprung Quelltext → Vorschau nach Kapitelwechsel | – | im ersten Test nach einem Kapitelwechsel ausgeblieben, bei der Abnahme funktionierte er; Tinymist sendet den Sprung nachweislich (`jump,6 …`). Beobachten |
 | Klick in die Vorschau → Quelltext | – | funktioniert (`window/showDocument`), auch über Dateien hinweg |
 
 ## Restaufwand
@@ -126,4 +126,6 @@ dann die Vorschau aus `satz` statt aus Tinymist bauen, um Flackern und Sprungfeh
 
 ## Entscheidung
 
-Offen – trifft Pascal; danach in `docs/DECISIONS.md`.
+2026-10-17, Pascal: **A als Hauptansicht, mit Quelltextmodus** für Stellen mit viel Markup
+(siehe `docs/DECISIONS.md`). Abnahme P2 am selben Tag; Sprünge in B funktionierten bei der Abnahme
+in beide Richtungen.

@@ -20,3 +20,7 @@
 | 2026-10-17 | Schrift New Computer Modern 11pt | mit Typst ausgeliefert, entspricht Latin Modern der FHDW-LaTeX-Vorlage (S. 5) |
 | 2026-10-17 | Nur glossarium als Fremdpaket; codelst und hydra aus clean-dhbw entfernt | weniger Abhängigkeiten und Downloads |
 | 2026-10-17 | Parameter und Funktionen der Vorlage auf Englisch (`title`, `examiner`, `fhdw-thesis` …); ausgegebene Werte und Dateinamen deutsch | „Bezeichner Englisch“ (CLAUDE.md), von Pascal bestätigt; Dateinamen wie `erklaerung.typ` laut DATA-FORMATS |
+| 2026-10-17 | Editor: Seiteneditor (A) als Hauptansicht, Quelltextmodus für Tabellen, Abbildungen, Code | in der App 44–68 ms statt erlaubter 300 ms; Tippgefühl „Top“; passt zur Vision und liefert Seitenpositionen für P5 (docs/editor-test.md) |
+| 2026-10-17 | Seiten als Bilder (`<img>` mit SVG), nicht als Inline-SVG | 23 Inline-SVGs ließen die Webansicht hängen |
+| 2026-10-17 | Typst-Pakete nur aus lokalem Cache und `@local`, kein Download | Leitplanke 4; fehlendes Paket → Fehlermeldung |
+| 2026-10-17 | Absätze mit `#show`, `#set`, `#let`, `#import`, `#include` sind im Seiteneditor nie editierbar | schützt die Einbindung der Vorlage vor versehentlichem Überschreiben |
