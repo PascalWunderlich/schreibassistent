@@ -1,27 +1,156 @@
-import { useState } from "react";
-import { PageEditor } from "./prototypes/a/PageEditor";
-import { PreviewEditor } from "./prototypes/b/PreviewEditor";
+import { useEffect, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
+import { PageEditor } from "./editor/PageEditor";
+import { NoteEditor } from "./editor/NoteEditor";
+import {
+  CompileReport,
+  ProjectInfo,
+  SaveInfo,
+  TreeNode,
+  errorMessages,
+  initGit,
+  lastProject,
+  openProject,
+  projectTree,
+} from "./editor/api";
+import { Sidebar } from "./layout/Sidebar";
+import { RightPanel } from "./layout/RightPanel";
+import { SaveState, StatusBar } from "./layout/StatusBar";
 import "./App.css";
 
-type Prototype = "a" | "b";
+/** Was in der Mitte steht: die Seiten der Arbeit oder eine Notiz/Wissensseite. */
+type Center = { kind: "pages" } | { kind: "note"; path: string; readOnly: boolean };
 
 function App() {
-  const [prototype, setPrototype] = useState<Prototype>("a");
+  const [project, setProject] = useState<ProjectInfo | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [center, setCenter] = useState<Center>({ kind: "pages" });
+  const [scrollTo, setScrollTo] = useState<{ file: string; nonce: number } | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [report, setReport] = useState<CompileReport | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("gespeichert");
+  const [lastAutosave, setLastAutosave] = useState<number | null>(null);
+  const [gitError, setGitError] = useState<string | null>(null);
+
+  async function load(path: string) {
+    setLoading(true);
+    try {
+      const info = await openProject(path);
+      setProject(info);
+      setLastAutosave(info.last_autosave);
+      setReport(info.report);
+      setTree(await projectTree());
+      setCenter({ kind: "pages" });
+      setErrors([]);
+    } catch (e) {
+      setErrors(errorMessages(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    lastProject()
+      .then((path) => (path ? load(path) : setLoading(false)))
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function choose() {
+    const path = await open({ directory: true, title: "Arbeits-Vault öffnen" });
+    if (typeof path === "string") await load(path);
+  }
+
+  async function setupGit() {
+    try {
+      await initGit();
+      setProject((p) => (p ? { ...p, git: true } : p));
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
+  function saved(save: SaveInfo) {
+    setSaveState("gespeichert");
+    if (save.autosaved) setLastAutosave(save.autosaved);
+    setGitError(save.git_error);
+  }
+
+  function openNode(node: TreeNode) {
+    setSelected(node.path);
+    if (node.path.endsWith(".typ")) {
+      setCenter({ kind: "pages" });
+      setScrollTo({ file: node.path, nonce: Date.now() });
+    } else if (node.path.endsWith(".md")) {
+      setCenter({ kind: "note", path: node.path, readOnly: !node.writable });
+    }
+  }
+
+  if (!project) {
+    return (
+      <div className="start">
+        <h1>Schreibassistent</h1>
+        {loading ? (
+          <p>Öffne Arbeit …</p>
+        ) : (
+          <>
+            <p>Öffne den Ordner deiner Arbeit (Arbeits-Vault mit Arbeit/main.typ).</p>
+            <button onClick={choose}>Arbeit öffnen …</button>
+          </>
+        )}
+        {errors.map((e, i) => (
+          <p key={i} className="errors">
+            {e}
+          </p>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="app">
       <header className="topbar">
         <h1>Schreibassistent</h1>
-        <nav>
-          <button aria-pressed={prototype === "a"} onClick={() => setPrototype("a")}>
-            A: Seiteneditor
-          </button>
-          <button aria-pressed={prototype === "b"} onClick={() => setPrototype("b")}>
-            B: Vorschau
-          </button>
-        </nav>
+        <span className="project-name">{project.name}</span>
+        <span className="spacer" />
+        <button onClick={choose}>Andere Arbeit …</button>
       </header>
-      <main>{prototype === "a" ? <PageEditor /> : <PreviewEditor />}</main>
+      {!project.git && (
+        <div className="hint">
+          Diese Arbeit hat noch keine automatische Sicherung. <button onClick={setupGit}>Git-Sicherung einrichten</button>
+        </div>
+      )}
+      <div className="workspace">
+        <Sidebar tree={tree} selected={selected} onOpen={openNode} />
+        <main className="center">
+          {center.kind === "pages" ? (
+            <PageEditor
+              key={project.root}
+              scrollTo={scrollTo}
+              onReport={setReport}
+              onSaved={saved}
+              onSaving={() => setSaveState("speichert …")}
+            />
+          ) : (
+            <NoteEditor
+              key={center.path}
+              path={center.path}
+              readOnly={center.readOnly}
+              onSaved={saved}
+              onSaving={() => setSaveState("speichert …")}
+            />
+          )}
+        </main>
+        <RightPanel />
+      </div>
+      <StatusBar
+        pageCount={report?.page_count ?? null}
+        saveState={saveState}
+        lastAutosave={lastAutosave}
+        git={project.git}
+        gitError={gitError}
+      />
     </div>
   );
 }

@@ -3,18 +3,24 @@ import { ParagraphEditor } from "./ParagraphEditor";
 import {
   CompileReport,
   ParagraphHit,
-  debugLog,
+  SaveInfo,
+  allPages,
   errorMessages,
+  firstPage,
   loadEditorFont,
-  openExample,
+  log,
   paragraphAt,
   paragraphAtOffset,
   replaceText,
+  saveDraft,
   utf8Length,
-} from "../satz";
+} from "./api";
 
 /** Pixel je pt auf dem Bildschirm. */
 const SCALE = 1.4;
+
+/** Entwurf spätestens nach dieser Zeit ohne Tippen speichern. */
+const DRAFT_DELAY_MS = 1000;
 
 interface Page {
   /** Objekt-URL des Seiten-SVG; jede Seite ist ein eigenes Bild (leicht für den Browser). */
@@ -23,13 +29,6 @@ interface Page {
   height: number;
   /** Gedruckte Seitenzahl („i“, „1“ …). */
   label: string;
-}
-
-interface Timing {
-  totalMs: number;
-  compileMs: number;
-  svgMs: number;
-  changedPages: number[];
 }
 
 const svgUrl = (svg: string) => URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
@@ -47,61 +46,69 @@ function applyReport(pages: Page[], report: CompileReport): Page[] {
   return next;
 }
 
-const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
-
 const TEMPLATE_HINT =
-  "Hier ist kein bearbeitbarer Absatz. Titelblatt, Erklärung, Verzeichnisse, Kopfzeilen und Tabellen aus Vorlagenfunktionen kommen aus der Vorlage; dein Text beginnt bei Kapitel 1.";
+  "Hier ist kein bearbeitbarer Absatz. Titelblatt, Erklärung, Verzeichnisse und Kopfzeilen kommen aus der Vorlage (Angaben in Arbeit/metadaten.typ).";
 
-/** Prototyp A: echte Seiten, Klick auf einen Absatz öffnet seinen Quelltext an Ort und Stelle. */
-export function PageEditor() {
+interface Props {
+  /** Datei, zu deren erster Seite gesprungen werden soll (`nonce` erzwingt erneuten Sprung). */
+  scrollTo: { file: string; nonce: number } | null;
+  onReport: (report: CompileReport) => void;
+  onSaved: (save: SaveInfo) => void;
+  onSaving: () => void;
+}
+
+/** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [timings, setTimings] = useState<Timing[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const busy = useRef(false);
   const currentText = useRef<(() => string) | null>(null);
+  const draftTimer = useRef<number | undefined>(undefined);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    debugLog("A: open");
-    openExample()
+    allPages()
       .then((report) => {
-        debugLog(`A: ${report.page_count} Seiten geladen (${report.compile_ms.toFixed(0)} ms)`);
         setPages(applyReport([], report));
-        loadEditorFont().catch((e) => debugLog(`A: Schrift nicht geladen ${errorMessages(e).join(" | ")}`));
-        // Direkt beim Inhaltsteil starten: davor steht nur Text aus der Vorlage.
-        requestAnimationFrame(() => document.getElementById("first-chapter")?.scrollIntoView?.());
+        onReport(report);
+        const first = report.page_labels.indexOf("1");
+        requestAnimationFrame(() => pageRefs.current[first]?.scrollIntoView?.());
       })
-      .catch((e) => {
-        debugLog(`A: Fehler beim Öffnen ${errorMessages(e).join(" | ")}`);
-        setErrors(errorMessages(e));
-      });
+      .catch((e) => setErrors(errorMessages(e)));
+    loadEditorFont().catch((e) => log(`Schrift nicht geladen: ${errorMessages(e).join(" | ")}`));
   }, []);
 
-  /** Ersetzt den Absatz, misst die Zeit bis zum Neuzeichnen. Gibt `false` bei Fehlern zurück. */
-  async function replace(hit: ParagraphHit, text: string, what: string): Promise<boolean> {
-    const start = performance.now();
+  useEffect(() => {
+    if (!scrollTo) return;
+    firstPage(scrollTo.file)
+      .then((page) => page !== null && pageRefs.current[page]?.scrollIntoView?.({ behavior: "smooth" }))
+      .catch(() => {});
+  }, [scrollTo]);
+
+  function scheduleDraft(text: string) {
+    const hit = editing;
+    if (!hit) return;
+    onSaving();
+    window.clearTimeout(draftTimer.current);
+    draftTimer.current = window.setTimeout(() => {
+      saveDraft(hit.file, hit.start, hit.end, text).then(onSaved).catch((e) => setErrors(errorMessages(e)));
+    }, DRAFT_DELAY_MS);
+  }
+
+  /** Ersetzt den Absatz, setzt neu, speichert. Gibt `false` bei Fehlern zurück. */
+  async function replace(hit: ParagraphHit, text: string): Promise<boolean> {
+    window.clearTimeout(draftTimer.current);
     try {
-      const report = await replaceText(hit.file, hit.start, hit.end, text);
+      const { report, save } = await replaceText(hit.file, hit.start, hit.end, text);
       setPages((current) => applyReport(current, report));
       setErrors(report.warnings);
-      debugLog(
-        `A: ${what}, Satz ${report.compile_ms.toFixed(1)} ms, SVG ${report.svg_ms.toFixed(1)} ms, Seiten ${report.changed_pages.map((p) => p + 1).join(",")}`,
-      );
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          const totalMs = performance.now() - start;
-          debugLog(`A: ${what} bis gezeichnet ${totalMs.toFixed(1)} ms`);
-          setTimings((t) => [
-            ...t,
-            { totalMs, compileMs: report.compile_ms, svgMs: report.svg_ms, changedPages: report.changed_pages },
-          ]);
-        }),
-      );
+      onReport(report);
+      onSaved(save);
       return true;
     } catch (e) {
       // Bei Fehlern (z. B. Syntaxfehler) bleibt das Feld mit dem Text offen.
-      debugLog(`A: Fehler (${what}) ${errorMessages(e).join(" | ")}`);
       setErrors(errorMessages(e));
       return false;
     }
@@ -113,7 +120,7 @@ export function PageEditor() {
     if (!hit || busy.current) return;
     busy.current = true;
     try {
-      if (text === hit.text || (await replace(hit, text, "übernommen"))) setEditing(null);
+      if (text === hit.text || (await replace(hit, text))) setEditing(null);
     } finally {
       busy.current = false;
     }
@@ -127,10 +134,8 @@ export function PageEditor() {
     try {
       const before = text.slice(0, cursor).trimEnd();
       const after = text.slice(cursor).trimStart();
-      if (!(await replace(hit, `${before}\n\n${after}`, "Enter (neuer Absatz)"))) return;
-      const next = await paragraphAtOffset(hit.file, hit.start + utf8Length(before) + 2);
-      debugLog(next ? `A: neuer Absatz ${next.start}..${next.end}` : "A: neuer Absatz nicht gefunden");
-      setEditing(next);
+      if (!(await replace(hit, `${before}\n\n${after}`))) return;
+      setEditing(await paragraphAtOffset(hit.file, hit.start + utf8Length(before) + 2));
     } finally {
       busy.current = false;
     }
@@ -140,45 +145,24 @@ export function PageEditor() {
     const box = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - box.left) / SCALE;
     const y = (event.clientY - box.top) / SCALE;
-    debugLog(`A: Klick Seite ${page + 1} bei (${x.toFixed(0)}, ${y.toFixed(0)}) pt`);
     if (busy.current) return;
-    // Offenes Feld zuerst übernehmen.
-    if (editing && currentText.current) {
-      await commit(currentText.current());
-    }
+    if (editing && currentText.current) await commit(currentText.current());
     try {
       const hit = await paragraphAt(page, x, y);
-      debugLog(hit ? `A: Treffer ${hit.file} ${hit.start}..${hit.end}` : "A: kein Absatz");
       setEditing(hit);
       setHint(hit ? null : TEMPLATE_HINT);
     } catch (e) {
-      debugLog(`A: Fehler beim Klick ${errorMessages(e).join(" | ")}`);
       setErrors(errorMessages(e));
     }
   }
 
-  const last = timings[timings.length - 1];
-  const totals = timings.map((t) => t.totalMs);
-  const firstChapter = pages.findIndex((p) => p.label === "1");
-
   return (
     <div className="page-editor">
-      <div className="status">
-        {last ? (
-          <span>
-            Letzte Änderung: <b>{last.totalMs.toFixed(0)} ms</b> (Satz {last.compileMs.toFixed(0)} ms, SVG{" "}
-            {last.svgMs.toFixed(0)} ms), neu gezeichnet: Seite {last.changedPages.map((p) => p + 1).join(", ") || "–"}{" "}
-            · Median {median(totals).toFixed(0)} ms · schlechtester {Math.max(...totals).toFixed(0)} ms · n ={" "}
-            {timings.length}
-          </span>
-        ) : (
-          <span>Absatz anklicken. Enter: neuer Absatz · Shift+Enter: Zeilenumbruch · Esc oder Klick daneben: fertig.</span>
-        )}{" "}
-        <button className="link" onClick={() => document.getElementById("first-chapter")?.scrollIntoView?.()}>
-          Zu Kapitel 1
-        </button>
-      </div>
-      {hint && <div className="hint">{hint}</div>}
+      {hint && (
+        <div className="hint" onClick={() => setHint(null)}>
+          {hint}
+        </div>
+      )}
       {errors.length > 0 && (
         <div className="errors" role="alert">
           {errors.map((e, i) => (
@@ -190,7 +174,9 @@ export function PageEditor() {
         {pages.map((page, i) => (
           <div
             key={i}
-            id={i === firstChapter ? "first-chapter" : undefined}
+            ref={(el) => {
+              pageRefs.current[i] = el;
+            }}
             className="page"
             style={{ width: page.width * SCALE, height: page.height * SCALE }}
             onClick={(e) => handleClick(i, e)}
@@ -220,6 +206,7 @@ export function PageEditor() {
                     bold={editing.text.trimStart().startsWith("=")}
                     onSplit={split}
                     onCommit={commit}
+                    onChange={scheduleDraft}
                     textRef={currentText}
                   />
                 </div>

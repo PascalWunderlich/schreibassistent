@@ -15,6 +15,8 @@ interface Props {
   onSplit: (text: string, cursor: number) => void;
   /** Esc: übernehmen und schließen. */
   onCommit: (text: string) => void;
+  /** Jede Änderung (für das Speichern als Entwurf). */
+  onChange: (text: string) => void;
   /** Zugriff auf den aktuellen Text, z. B. beim Klick außerhalb. */
   textRef: React.RefObject<(() => string) | null>;
 }
@@ -23,10 +25,10 @@ interface Props {
  * Quelltext eines Absatzes. Enter beginnt einen neuen Absatz, Shift+Enter bricht die
  * Quelltextzeile um, Esc oder ein Klick daneben übernimmt und schließt.
  */
-export function ParagraphEditor({ text, fontSize, lineHeight, indent, bold, onSplit, onCommit, textRef }: Props) {
+export function ParagraphEditor({ text, fontSize, lineHeight, indent, bold, onSplit, onCommit, onChange, textRef }: Props) {
   const host = useRef<HTMLDivElement>(null);
-  const callbacks = useRef({ onSplit, onCommit });
-  callbacks.current = { onSplit, onCommit };
+  const callbacks = useRef({ onSplit, onCommit, onChange });
+  callbacks.current = { onSplit, onCommit, onChange };
 
   useEffect(() => {
     const keys = Prec.highest(
@@ -43,7 +45,13 @@ export function ParagraphEditor({ text, fontSize, lineHeight, indent, bold, onSp
       parent: host.current!,
       state: EditorState.create({
         doc: text,
-        extensions: [keys, history(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping],
+        extensions: [
+          keys,
+          history(),
+          keymap.of([...defaultKeymap, ...historyKeymap]),
+          EditorView.lineWrapping,
+          EditorView.updateListener.of((u) => u.docChanged && callbacks.current.onChange(u.state.doc.toString())),
+        ],
       }),
     });
     textRef.current = () => view.state.doc.toString();
