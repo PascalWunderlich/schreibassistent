@@ -29,6 +29,11 @@ pub fn run() {
             satz::commands::satz_all_pages,
             satz::commands::satz_font,
             satz::commands::satz_first_page,
+            lsp::commands::lsp_completion,
+            lsp::commands::lsp_hover,
+            lsp::commands::lsp_definition,
+            lsp::commands::lsp_field_diagnostics,
+            lsp::commands::lsp_error_count,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

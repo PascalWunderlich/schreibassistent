@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
 import {
@@ -10,6 +11,7 @@ import {
   errorMessages,
   initGit,
   lastProject,
+  lspErrorCount,
   openProject,
   projectTree,
 } from "./editor/api";
@@ -33,6 +35,16 @@ function App() {
   const [saveState, setSaveState] = useState<SaveState>("gespeichert");
   const [lastAutosave, setLastAutosave] = useState<number | null>(null);
   const [gitError, setGitError] = useState<string | null>(null);
+  const [errorCount, setErrorCount] = useState(0);
+
+  // Fehlerzahl von Tinymist für die Statusleiste.
+  useEffect(() => {
+    if (!project) return;
+    const unlisten = listen("lsp_diagnostics", () => lspErrorCount().then(setErrorCount).catch(() => {}));
+    return () => {
+      unlisten.then((f) => f()).catch(() => {});
+    };
+  }, [project]);
 
   async function load(path: string) {
     setLoading(true);
@@ -116,6 +128,7 @@ function App() {
         <span className="spacer" />
         <button onClick={choose}>Andere Arbeit …</button>
       </header>
+      {project.lsp_error && <div className="hint">{project.lsp_error} – ohne Vervollständigung und Fehleranzeige.</div>}
       {!project.git && (
         <div className="hint">
           Diese Arbeit hat noch keine automatische Sicherung. <button onClick={setupGit}>Git-Sicherung einrichten</button>
@@ -150,6 +163,7 @@ function App() {
         lastAutosave={lastAutosave}
         git={project.git}
         gitError={gitError}
+        errorCount={errorCount}
       />
     </div>
   );

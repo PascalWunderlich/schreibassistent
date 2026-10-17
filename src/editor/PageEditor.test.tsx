@@ -30,6 +30,8 @@ const invoke = vi.fn(async (command: string, _args?: unknown): Promise<unknown> 
         column_width: 80,
         first_line_indent: 0,
       };
+    case "lsp_field_diagnostics":
+      return [];
     case "satz_font":
       throw "keine Schrift im Test";
     default:
@@ -37,6 +39,7 @@ const invoke = vi.fn(async (command: string, _args?: unknown): Promise<unknown> 
   }
 });
 vi.mock("@tauri-apps/api/core", () => ({ invoke: (c: string, a?: unknown) => invoke(c, a) }));
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn(async () => () => {}) }));
 
 // jsdom kennt keine Objekt-URLs.
 URL.createObjectURL = vi.fn(() => "blob:seite");

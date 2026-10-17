@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ParagraphEditor } from "./ParagraphEditor";
 import {
   CompileReport,
+  Definition,
   ParagraphHit,
   SaveInfo,
   allPages,
@@ -152,6 +153,19 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
     }
   }
 
+  /** ⌘-Klick im Feld: zum definierenden Absatz springen (z. B. Label in einem anderen Kapitel). */
+  async function goToDefinition(definition: Definition) {
+    if (editing && currentText.current) await commit(currentText.current());
+    const target = definition.file?.endsWith(".typ") ? await paragraphAtOffset(definition.file, definition.offset) : null;
+    if (target) {
+      setEditing(target);
+      setHint(null);
+      pageRefs.current[target.rects[0][0]]?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    } else {
+      setHint(`Definiert in ${definition.file ?? definition.absolute}, Zeile ${definition.line + 1}.`);
+    }
+  }
+
   async function handleClick(page: number, event: React.MouseEvent<HTMLDivElement>) {
     const box = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - box.left) / SCALE;
@@ -210,6 +224,9 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ParagraphEditor
+                    file={editing.file}
+                    start={editing.start}
+                    end={editing.end}
                     text={editing.text}
                     fontSize={editing.font_size * SCALE}
                     lineHeight={editing.line_height * SCALE}
@@ -218,6 +235,7 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
                     onSplit={split}
                     onCommit={commit}
                     onChange={scheduleDraft}
+                    onDefinition={goToDefinition}
                     textRef={currentText}
                   />
                 </div>

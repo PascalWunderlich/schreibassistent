@@ -295,3 +295,28 @@ button {
 .note-body .cm-editor.cm-focused {
   outline: none;
 }
+
+/* ---------- Tinymist im Feld ---------- */
+.lsp-hover {
+  max-width: 28rem;
+  padding: 0.4rem 0.6rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  text-indent: 0;
+  text-align: left;
+}
+
+.paragraph-editor .cm-tooltip-autocomplete {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.85rem;
+  text-indent: 0;
+  text-align: left;
+}
+
+.paragraph-editor .cm-lintRange-error {
+  background-image: none;
+  text-decoration: underline wavy #c0392b;
+  text-decoration-skip-ink: none;
+}

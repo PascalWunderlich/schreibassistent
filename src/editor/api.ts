@@ -47,6 +47,7 @@ export interface ProjectInfo {
   git: boolean;
   last_autosave: number | null;
   report: CompileReport;
+  lsp_error: string | null;
 }
 
 export interface TreeNode {
@@ -107,3 +108,42 @@ export function errorMessages(error: unknown): string[] {
 export function log(message: string) {
   invoke("projekt_log", { message }).catch(() => {});
 }
+
+// ---------- lsp (Tinymist im Feld) ----------
+/** Absatz im Feld: `start..end` im Quelltext von `file` wird durch `text` ersetzt. */
+export interface Field {
+  file: string;
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface Completion {
+  label: string;
+  detail: string | null;
+  kind: number | null;
+  /** Bereich im Feld (UTF-16) und Ersatztext. */
+  from: number;
+  to: number;
+  insert: string;
+}
+
+export interface FieldDiagnostic {
+  from: number;
+  to: number;
+  severity: "error" | "warning" | "info";
+  message: string;
+}
+
+export interface Definition {
+  file: string | null;
+  absolute: string;
+  offset: number;
+  line: number;
+}
+
+export const lspCompletion = (field: Field, cursor: number) => invoke<Completion[]>("lsp_completion", { field, cursor });
+export const lspHover = (field: Field, cursor: number) => invoke<string | null>("lsp_hover", { field, cursor });
+export const lspDefinition = (field: Field, cursor: number) => invoke<Definition | null>("lsp_definition", { field, cursor });
+export const lspFieldDiagnostics = (field: Field) => invoke<FieldDiagnostic[]>("lsp_field_diagnostics", { field });
+export const lspErrorCount = () => invoke<number>("lsp_error_count");

@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use super::files::{self, TreeNode};
 use super::settings::{self, Settings};
@@ -34,7 +34,10 @@ pub async fn projekt_last(app: AppHandle) -> Result<Option<String>, String> {
 
 #[tauri::command]
 pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: String) -> Result<ProjectInfo, Vec<String>> {
-    let (project, info) = Project::open(std::path::Path::new(&path))?;
+    let emitter = app.clone();
+    let (project, info) = Project::open(std::path::Path::new(&path), move |file| {
+        let _ = emitter.emit("lsp_diagnostics", file.to_owned());
+    })?;
     // Vorheriges Projekt beim Wechsel sichern (Regel: höchstens alle 5 Minuten).
     if let Some(mut previous) = state.0.lock().unwrap().replace(project) {
         previous.autosave(false);
