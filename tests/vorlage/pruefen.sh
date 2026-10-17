@@ -33,7 +33,7 @@ else
 fi
 erwarte_ok beispiel-arbeit beispiel-arbeit/Arbeit/erklaerung-einzeln.typ
 erwarte_ok . tests/vorlage/bachelor-voll.typ
-erwarte_abbruch . tests/vorlage/bachelor-ohne-zweitpruefer.typ "zweitpruefer"
+erwarte_abbruch . tests/vorlage/bachelor-ohne-zweitpruefer.typ "second-examiner"
 
 rm -rf "$aus"
 exit $fehler

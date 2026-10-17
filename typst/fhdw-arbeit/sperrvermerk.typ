@@ -4,7 +4,7 @@
 // (misc/datarestriction.sty, Overleaf/FHDW-Git). Bis er vorliegt, erzeugt diese Seite
 // einen deutlich sichtbaren Platzhalter. Keinen eigenen Text erfinden.
 
-#let sperrvermerk() = {
+#let confidentiality-notice-page() = {
   heading(level: 1, numbering: none, outlined: false)[Sperrvermerk]
   block(
     width: 100%,

@@ -2,17 +2,17 @@
 // „im Abschnitt ‚Struktur der Arbeit, Methodik' oder […] im Anhang“).
 // Spalten wie der spätere Export aus System/ki-protokoll.jsonl (docs/DATA-FORMATS.md).
 //
-// Aufruf: #ki-nutzung(
+// Aufruf: #ai-usage(
 //   ("2026-11-02", "Claude (Anthropic)", "Belegprüfung Kap. 2", "Hinweise geprüft, Text selbst überarbeitet"),
 // )
 
-#let ki-nutzung(caption: [Nutzung von KI-Werkzeugen], ..eintraege) = figure(
+#let ai-usage(caption: [Nutzung von KI-Werkzeugen], ..entries) = figure(
   kind: table,
   caption: caption,
   table(
     columns: (auto, auto, 1fr, 1fr),
     align: left,
     table.header[Datum][Werkzeug/Modell][Zweck][Verwendung],
-    ..eintraege.pos().flatten(),
+    ..entries.pos().flatten(),
   ),
 )

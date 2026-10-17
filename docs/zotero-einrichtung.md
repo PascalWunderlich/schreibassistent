@@ -47,9 +47,9 @@ Sekunden in der Datei stehen.
 ## 4. In Typst verwenden
 
 ```typst
-#show: fhdw-arbeit.with(
+#show: fhdw-thesis.with(
   …,
-  quellen: bibliography("../System/quellen.bib"),
+  bibliography: bibliography("../System/quellen.bib"),
 )
 
 Wie Sutton und Barto zeigen @sutton2018 …

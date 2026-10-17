@@ -19,4 +19,4 @@
 | 2026-10-17 | Vorlage als `@local/fhdw-arbeit` per Symlink, Kompilieren mit `--root <Arbeits-Vault>` | gleiche Vorlage für Beispiel und echte Arbeit; `System/quellen.bib` liegt außerhalb von `Arbeit/` |
 | 2026-10-17 | Schrift New Computer Modern 11pt | mit Typst ausgeliefert, entspricht Latin Modern der FHDW-LaTeX-Vorlage (S. 5) |
 | 2026-10-17 | Nur glossarium als Fremdpaket; codelst und hydra aus clean-dhbw entfernt | weniger Abhängigkeiten und Downloads |
-| 2026-10-17 | Parameter der Vorlage auf Deutsch (`titel`, `pruefer` …) | Ausnahme von „Bezeichner Englisch“ (CLAUDE.md): die Parameter sind die Oberfläche für den Schreibenden; noch zu bestätigen |
+| 2026-10-17 | Parameter und Funktionen der Vorlage auf Englisch (`title`, `examiner`, `fhdw-thesis` …); ausgegebene Werte und Dateinamen deutsch | „Bezeichner Englisch“ (CLAUDE.md), von Pascal bestätigt; Dateinamen wie `erklaerung.typ` laut DATA-FORMATS |

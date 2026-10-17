@@ -1,54 +1,55 @@
 // Titelblatt nach FHDW-Hinweisen S. 4, Punkt 1 (Aufbau wie Muster S. 1):
 // Titel (exakt wie im FHDW-Portal), Art der Arbeit, Studiengang, Name, Prüfer
 // (bei Bachelorarbeit Erst- und Zweitprüfer), Abgabedatum.
-// Matrikelnummer und Partnerunternehmen sind keine FHDW-Vorgabe und erscheinen nur, wenn gesetzt.
+// Matrikelnummer (`student-id`) und Partnerunternehmen (`company`) sind keine FHDW-Vorgabe
+// und erscheinen nur, wenn gesetzt.
 
-#import "datum.typ": datum-lang
+#import "datum.typ": long-date-de
 
-#let titelblatt(
-  titel: none,
-  art: none,
-  studiengang: none,
-  autor: none,
-  matrikelnummer: none,
-  firma: none,
-  pruefer: none,
-  zweitpruefer: none,
-  ort: none,
-  datum: none,
+#let title-page(
+  title: none,
+  thesis-type: none,
+  study-program: none,
+  author: none,
+  student-id: none,
+  company: none,
+  examiner: none,
+  second-examiner: none,
+  city: none,
+  date: none,
 ) = {
   set align(center)
   set par(first-line-indent: 0pt, justify: false)
   set text(hyphenate: false)
 
   v(2cm)
-  text(size: 20pt, weight: "bold", titel)
+  text(size: 20pt, weight: "bold", title)
   v(1.5cm)
-  text(size: 14pt, art)
+  text(size: 14pt, thesis-type)
   linebreak()
-  [im Studiengang #studiengang]
+  [im Studiengang #study-program]
   v(1.5cm)
   [von]
   linebreak()
   v(0.3em)
-  text(size: 14pt, autor)
-  if matrikelnummer != none {
+  text(size: 14pt, author)
+  if student-id != none {
     linebreak()
-    [Matrikelnummer: #matrikelnummer]
+    [Matrikelnummer: #student-id]
   }
-  if firma != none {
+  if company != none {
     linebreak()
-    [Partnerunternehmen: #firma]
+    [Partnerunternehmen: #company]
   }
 
   v(1fr)
-  if zweitpruefer != none {
-    [Prüfer: #pruefer]
+  if second-examiner != none {
+    [Prüfer: #examiner]
     linebreak()
-    [Zweitprüfer: #zweitpruefer]
+    [Zweitprüfer: #second-examiner]
   } else {
-    [Prüfer: #pruefer]
+    [Prüfer: #examiner]
   }
   v(1.5cm)
-  [#ort, #datum-lang(datum)]
+  [#city, #long-date-de(date)]
 }

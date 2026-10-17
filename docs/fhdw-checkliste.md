@@ -16,18 +16,18 @@ arabisch ab Kapitel 1, z. B. S. 4 = PDF-Seite 10).
 | # | Regel | Art | Fundstelle | Umsetzung | Status |
 |---|---|---|---|---|---|
 | 1 | Reihenfolge: Titelblatt → Erklärung → Sperrvermerk → Zusammenfassung → Inhaltsverzeichnis → Abkürzungsverzeichnis → Inhaltsteil → Quellverzeichnis → Glossar → Abbildungs-/Tabellenverzeichnis → Anhang | P | S. 4 | `lib.typ`, Abschnitte 1–11 in genau dieser Reihenfolge | ✅ |
-| 2 | Titelblatt mit Name, Studiengang, Prüfer (Bachelor: Erst- und Zweitprüfer), Abgabedatum | P | S. 4, Muster S. 1 | `titelblatt.typ`; Abbruch bei Bachelorarbeit ohne `zweitpruefer` | ✅ |
-| 3 | Titel exakt wie im FHDW-Portal angemeldet | P | S. 4, S. 25 | Parameter `titel`; Abgleich mit dem Portal macht der Mensch | 👤 |
-| 4 | Ehrenwörtliche Erklärung im genauen Wortlaut der Vorlage | P | S. 4, Wortlaut S. i | `erklaerung.typ`, Text und Fußnote 1:1 (maschinell gegen das PDF verglichen); Platzhalter durch `art`, `ort`, `datum`, `autor` ersetzt | ✅ (bitte gegenlesen) |
-| 5 | Optional: Geheimhaltungserklärung / Sperrvermerk | E | S. 4 | `sperrvermerk: true` erzeugt die Seite; **Wortlaut fehlt** | ❓ U3 |
-| 6 | Optional: Zusammenfassung, max. eine Seite, optional englisch (Abstract) | E | S. 4 | `zusammenfassung`, `abstract` | ✅ / Länge 🔎 |
+| 2 | Titelblatt mit Name, Studiengang, Prüfer (Bachelor: Erst- und Zweitprüfer), Abgabedatum | P | S. 4, Muster S. 1 | `titelblatt.typ`; Abbruch bei Bachelorarbeit ohne `second-examiner` | ✅ |
+| 3 | Titel exakt wie im FHDW-Portal angemeldet | P | S. 4, S. 25 | Parameter `title`; Abgleich mit dem Portal macht der Mensch | 👤 |
+| 4 | Ehrenwörtliche Erklärung im genauen Wortlaut der Vorlage | P | S. 4, Wortlaut S. i | `erklaerung.typ`, Text und Fußnote 1:1 (maschinell gegen das PDF verglichen); Platzhalter durch `thesis-type`, `city`, `date`, `author` ersetzt | ✅ (bitte gegenlesen) |
+| 5 | Optional: Geheimhaltungserklärung / Sperrvermerk | E | S. 4 | `confidentiality-notice: true` erzeugt die Seite; **Wortlaut fehlt** | ❓ U3 |
+| 6 | Optional: Zusammenfassung, max. eine Seite, optional englisch (Abstract) | E | S. 4 | `summary`, `abstract` | ✅ / Länge 🔎 |
 | 7 | Inhaltsverzeichnis mit Seitenangaben, in jedem Fall | P | S. 4, S. 21 | immer erzeugt, Tiefe 3 | ✅ |
-| 8 | Optional: Abkürzungsverzeichnis | E | S. 4 | Einträge mit `long` in `glossar` | ✅ |
+| 8 | Optional: Abkürzungsverzeichnis | E | S. 4 | Einträge mit `long` in `glossary` | ✅ |
 | 9 | Inhaltsteil inkl. Abbildungen und Tabellen | P | S. 4 | `body` | ✅ |
-| 10 | Quellverzeichnis | P | S. 4 | `quellen: bibliography(...)`, Titel „Quellverzeichnis“ | ✅ |
-| 11 | Optional: Glossar | E | S. 4 | Einträge ohne `long` in `glossar` | ✅ |
-| 12 | Optional: Abbildungs- und/oder Tabellenverzeichnis | E | S. 4 | `abbildungsverzeichnis`, `tabellenverzeichnis` | ✅ |
-| 13 | Optional: Anhang | E | S. 4 | `anhang`, Überschriften als „Anhang A“, Nummerierung A.1 | ✅ |
+| 10 | Quellverzeichnis | P | S. 4 | `bibliography: bibliography(...)`, Titel „Quellverzeichnis“ | ✅ |
+| 11 | Optional: Glossar | E | S. 4 | Einträge ohne `long` in `glossary` | ✅ |
+| 12 | Optional: Abbildungs- und/oder Tabellenverzeichnis | E | S. 4 | `list-of-figures`, `list-of-tables` | ✅ |
+| 13 | Optional: Anhang | E | S. 4 | `appendix`, Überschriften als „Anhang A“, Nummerierung A.1 | ✅ |
 | 14 | Anhang im Regelfall nicht über 50 % des Inhaltsteils; keine ausgelagerten Abbildungen | E | S. 32 (Anhang A) | – | 🔎 / 👤 |
 
 ## Seitenzählung (S. 4)
@@ -77,7 +77,7 @@ arabisch ab Kapitel 1, z. B. S. 4 = PDF-Seite 10).
 
 | # | Regel | Art | Fundstelle | Umsetzung | Status |
 |---|---|---|---|---|---|
-| 38 | Numerischer oder alphabetischer Verweisstil | P | S. 8 | `zitierstil: "alphanumerisch"` (Standard, [SB18]) oder `"numerisch"` ([1]); eigene CSL-Stile | ✅ |
+| 38 | Numerischer oder alphabetischer Verweisstil | P | S. 8 | `citation-style: "alphanumeric"` (Standard, [SB18]) oder `"numeric"` ([1]); eigene CSL-Stile | ✅ |
 | 39 | Keine Fußnoten für Zitate | P | S. 9 | Vorlage zitiert im Text in eckigen Klammern | ✅ / 🔎 |
 | 40 | Im Quellverzeichnis alle zitierten Quellen und nur diese | P | S. 9 | Typst druckt nur zitierte Einträge | ✅ |
 | 41 | Optional mehrere Quellverzeichnisse nach Publikationstyp | E | S. 9 | nicht umgesetzt (optional) | – |
@@ -90,7 +90,7 @@ arabisch ab Kapitel 1, z. B. S. 4 = PDF-Seite 10).
 | 48 | Fußnoten nur in Ausnahmefällen | E | S. 10 | – | 🔎 (Hinweis) |
 | 49 | Übernommene Bilder, Code, Daten kennzeichnen („Grafik entnommen aus …“) | P | S. 11 | – | 👤 |
 | 50 | Wörtlich übernommene KI-Antworten in Anführungszeichen | P | S. 12 | – | 👤 |
-| 51 | KI-Nutzung dokumentieren (Methodik-Abschnitt oder Anhang) | P | S. i, S. 12, S. 14 | `ki-nutzung(...)`, im Beispiel als Anhang A; später aus `System/ki-protokoll.jsonl` (P6) | ✅ |
+| 51 | KI-Nutzung dokumentieren (Methodik-Abschnitt oder Anhang) | P | S. i, S. 12, S. 14 | `ai-usage(...)`, im Beispiel als Anhang A; später aus `System/ki-protokoll.jsonl` (P6) | ✅ |
 
 ## Abkürzungen und Glossar (S. 21)
 

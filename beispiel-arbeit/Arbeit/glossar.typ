@@ -1,6 +1,6 @@
 // Abkürzungen (mit `long`) erscheinen im Abkürzungsverzeichnis, Begriffe im Glossar.
 // Im Text: #gls("api"). Nur verwendete Einträge werden gedruckt.
-#let glossar = (
+#let glossary = (
   (key: "api", short: "API", long: "Application Programming Interface"),
   (
     key: "memoization",

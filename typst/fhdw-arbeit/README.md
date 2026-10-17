@@ -16,24 +16,38 @@ typst/installieren.sh      # verlinkt das Paket als @local/fhdw-arbeit:0.1.0
 ```typst
 #import "@local/fhdw-arbeit:0.1.0": *
 
-#show: fhdw-arbeit.with(
-  titel: "Titel exakt wie im FHDW-Portal",
-  art: "Praxisarbeit",            // oder "Bachelorarbeit" (dann zweitpruefer Pflicht)
-  studiengang: "Informatik",
-  autor: "Vorname Nachname",
-  pruefer: "Name des Prüfers",
-  datum: datetime(year: 2027, month: 3, day: 26),
-  quellen: bibliography("../System/quellen.bib"),
+#show: fhdw-thesis.with(
+  title: "Titel exakt wie im FHDW-Portal",
+  thesis-type: "Praxisarbeit",    // oder "Bachelorarbeit" (dann second-examiner Pflicht)
+  study-program: "Informatik",
+  author: "Vorname Nachname",
+  examiner: "Name des Prüfers",
+  date: datetime(year: 2027, month: 3, day: 26),
+  bibliography: bibliography("../System/quellen.bib"),
 )
 ```
 
-Optionale Parameter: `matrikelnummer`, `firma`, `zweitpruefer`, `ort` (Standard
-Hannover), `sperrvermerk`, `zusammenfassung`, `abstract`, `glossar`,
-`zitierstil` (`"alphanumerisch"` [SB18] oder `"numerisch"` [1]),
-`abbildungsverzeichnis`, `tabellenverzeichnis`, `anhang`.
+| Parameter | Bedeutung | Standard |
+|---|---|---|
+| `title` | Titel, exakt wie im FHDW-Portal | Pflicht |
+| `thesis-type` | `"Praxisarbeit"` oder `"Bachelorarbeit"` | `"Praxisarbeit"` |
+| `study-program` | Studiengang | Pflicht |
+| `author` | Vorname Nachname | Pflicht |
+| `examiner` | Prüfer | Pflicht |
+| `second-examiner` | Zweitprüfer | Pflicht bei Bachelorarbeit |
+| `student-id` | Matrikelnummer (nur wenn gesetzt) | `none` |
+| `company` | Partnerunternehmen (nur wenn gesetzt) | `none` |
+| `city`, `date` | Ort und Abgabedatum | `"Hannover"`, heute |
+| `confidentiality-notice` | Sperrvermerk | `false` |
+| `summary`, `abstract` | Zusammenfassung, englisches Abstract | `none` |
+| `glossary` | glossarium-Einträge (mit `long` → Abkürzungsverzeichnis, sonst Glossar) | `()` |
+| `bibliography` | `bibliography("…/quellen.bib")` | `none` |
+| `citation-style` | `"alphanumeric"` [SB18] oder `"numeric"` [1] | `"alphanumeric"` |
+| `list-of-figures`, `list-of-tables` | Abbildungs-, Tabellenverzeichnis | `false` |
+| `appendix` | Anhang, eigene Überschriften → „Anhang A“ | `none` |
 
-Weitere Funktionen: `ki-nutzung(...)` (Tabelle zur KI-Nutzung),
-`erklaerung-dokument(...)` (nur die Erklärung als eigenes PDF zum Unterschreiben),
+Weitere Funktionen: `ai-usage(...)` (Tabelle zur KI-Nutzung),
+`declaration-document(...)` (nur die Erklärung als eigenes PDF zum Unterschreiben),
 `gls`, `glspl` (Abkürzungen und Glossar, aus glossarium).
 
 Kompilieren mit dem Arbeits-Vault als Root, damit `System/quellen.bib` erreichbar ist:
