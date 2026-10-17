@@ -202,6 +202,8 @@ mod tests {
         let status = rx.recv_timeout(Duration::from_secs(10)).expect("compileStatus nach Änderung");
         assert!(status.get("status").is_some(), "{status}");
         session.scroll_preview(&file.path, 2, 0).unwrap();
+        // Klicks in die Vorschau (`window/showDocument`) brauchen eine verbundene Vorschau
+        // im Browser und werden nur manuell getestet.
         assert_eq!(session.relative(&root.canonicalize().unwrap().join(&file.path).to_string_lossy()).unwrap(), file.path);
     }
 }

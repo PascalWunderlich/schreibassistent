@@ -25,7 +25,8 @@ pub async fn lsp_open_example(app: AppHandle, state: State<'_, LspState>) -> Res
     // Alte Sitzung zuerst beenden (Drop beendet den Prozess).
     state.0.lock().unwrap().take();
     let (session, files) = TinymistSession::start(&program, root, "Arbeit/main.typ", move |method, params| {
-        if matches!(method, "tinymist/preview/scrollSource" | "tinymist/compileStatus") {
+        // Klick in der Vorschau kommt als `window/showDocument` (Datei-URI + Auswahl).
+        if matches!(method, "window/showDocument" | "tinymist/preview/scrollSource" | "tinymist/compileStatus") {
             let _ = app.emit("lsp_notification", json!({ "method": method, "params": params }));
         }
     })?;
@@ -49,10 +50,15 @@ pub async fn lsp_scroll_preview(
     with_session(&state, |s| s.scroll_preview(&path, line, character))
 }
 
-/// Absoluter Pfad aus `scrollSource` → Pfad relativ zum Vault (oder `null`).
+/// Absoluter Pfad oder `file://`-URI aus einer Tinymist-Meldung → Pfad relativ zum Vault.
 #[tauri::command]
 pub async fn lsp_relative_path(state: State<'_, LspState>, absolute: String) -> Result<Value, String> {
-    with_session(&state, |s| Ok(json!(s.relative(&absolute))))
+    let path = url::Url::parse(&absolute)
+        .ok()
+        .and_then(|u| u.to_file_path().ok())
+        .map(|p| p.to_string_lossy().into_owned())
+        .unwrap_or(absolute);
+    with_session(&state, |s| Ok(json!(s.relative(&path))))
 }
 
 fn with_session<T>(

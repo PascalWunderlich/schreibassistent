@@ -51,12 +51,19 @@ export function PreviewEditor() {
           debugLog(`B: Änderung bis gesetzt ${ms.toFixed(1)} ms (${status})`);
           setTimings((t) => [...t, ms]);
         }
-      } else if (payload.method === "tinymist/preview/scrollSource") {
-        const params = payload.params as { filepath?: string; start?: unknown };
+      } else if (payload.method === "window/showDocument" || payload.method === "tinymist/preview/scrollSource") {
+        // Klick in der Vorschau: Tinymist 0.15 schickt `window/showDocument` {uri, selection}.
+        const params = payload.params as {
+          uri?: string;
+          filepath?: string;
+          selection?: { start?: unknown };
+          start?: unknown;
+        };
         setLastJump(JSON.stringify(params));
-        debugLog(`B: scrollSource ${JSON.stringify(params)}`);
-        const target = params.filepath ? await relativePath(params.filepath) : null;
-        const position = readPosition(params.start);
+        debugLog(`B: ${payload.method} ${JSON.stringify(params)}`);
+        const file = params.uri ?? params.filepath;
+        const target = file ? await relativePath(file) : null;
+        const position = readPosition(params.selection?.start ?? params.start);
         if (!target || !position) return;
         pendingJump.current = position;
         setPath((current) => {
@@ -100,15 +107,19 @@ export function PreviewEditor() {
               sentAt.current = performance.now();
               changeFile(current, text).catch((e) => setError(String(e)));
             }
-            if (update.selectionSet && update.view.hasFocus) {
+          }),
+          // Vorschau nur bei einem Klick in den Quelltext springen lassen, nicht beim Tippen:
+          // Jeder Sprung lässt Tinymist das Dokument neu an die Vorschau schicken (Flackern).
+          EditorView.domEventHandlers({
+            mouseup: (_event, v) => {
               window.clearTimeout(scrollTimer.current);
-              const head = update.state.selection.main.head;
-              const line = update.state.doc.lineAt(head);
-              scrollTimer.current = window.setTimeout(
-                () => scrollPreview(current, line.number - 1, head - line.from).catch(() => {}),
-                150,
-              );
-            }
+              scrollTimer.current = window.setTimeout(() => {
+                const head = v.state.selection.main.head;
+                const line = v.state.doc.lineAt(head);
+                debugLog(`B: Sprung zur Vorschau ${current}:${line.number - 1}:${head - line.from}`);
+                scrollPreview(current, line.number - 1, head - line.from).catch(() => {});
+              }, 50);
+            },
           }),
         ],
       }),

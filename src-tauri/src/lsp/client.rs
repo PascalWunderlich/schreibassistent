@@ -19,7 +19,7 @@ type Pending = Arc<Mutex<HashMap<i64, Sender<Result<Value, String>>>>>;
 
 pub struct LspClient {
     child: Child,
-    stdin: Mutex<ChildStdin>,
+    stdin: Arc<Mutex<ChildStdin>>,
     next_id: AtomicI64,
     pending: Pending,
 }
@@ -41,7 +41,9 @@ impl LspClient {
         let stdout = child.stdout.take().ok_or("kein stdout")?;
         let pending: Pending = Arc::default();
 
+        let stdin = Arc::new(Mutex::new(stdin));
         let reader_pending = pending.clone();
+        let reply_stdin = stdin.clone();
         thread::spawn(move || {
             let mut reader = BufReader::new(stdout);
             while let Some(message) = read_message(&mut reader) {
@@ -59,14 +61,25 @@ impl LspClient {
                         let params = message.get("params").cloned().unwrap_or(Value::Null);
                         on_notification(method.as_str().unwrap_or_default(), params);
                     }
-                    // Anfragen des Servers an uns (z. B. workspace/configuration) beantworten
-                    // wir im Prototyp nicht.
+                    // Anfrage des Servers an uns, z. B. `window/showDocument` beim Klick in die
+                    // Vorschau: wie eine Benachrichtigung weiterreichen und beantworten.
+                    (Some(id), Some(method)) => {
+                        let method = method.as_str().unwrap_or_default();
+                        let params = message.get("params").cloned().unwrap_or(Value::Null);
+                        let result = match method {
+                            "window/showDocument" => json!({ "success": true }),
+                            "workspace/configuration" => json!([]),
+                            _ => Value::Null,
+                        };
+                        on_notification(method, params);
+                        let _ = write_message(&reply_stdin, &json!({ "jsonrpc": "2.0", "id": id, "result": result }));
+                    }
                     _ => {}
                 }
             }
         });
 
-        Ok(Self { child, stdin: Mutex::new(stdin), next_id: AtomicI64::new(1), pending })
+        Ok(Self { child, stdin, next_id: AtomicI64::new(1), pending })
     }
 
     pub fn request(&self, method: &str, params: Value) -> Result<Value, String> {
@@ -83,12 +96,16 @@ impl LspClient {
     }
 
     fn write(&self, message: &Value) -> Result<(), String> {
-        let body = message.to_string();
-        let mut stdin = self.stdin.lock().unwrap();
-        write!(stdin, "Content-Length: {}\r\n\r\n{body}", body.len())
-            .and_then(|_| stdin.flush())
-            .map_err(|e| format!("Tinymist nicht erreichbar: {e}"))
+        write_message(&self.stdin, message)
     }
+}
+
+fn write_message(stdin: &Mutex<ChildStdin>, message: &Value) -> Result<(), String> {
+    let body = message.to_string();
+    let mut stdin = stdin.lock().unwrap();
+    write!(stdin, "Content-Length: {}\r\n\r\n{body}", body.len())
+        .and_then(|_| stdin.flush())
+        .map_err(|e| format!("Tinymist nicht erreichbar: {e}"))
 }
 
 impl Drop for LspClient {
