@@ -25,7 +25,8 @@ Docling (Python via uv, Sidecar) · Vale + typst2vast · LTeX+
 - `pnpm tauri dev` – App starten
 - `cargo test --manifest-path src-tauri/Cargo.toml` – Rust-Tests
 - `pnpm test` – Frontend-Tests
-- `typst compile beispiel-arbeit/Arbeit/main.typ` – Vorlage prüfen
+- `typst compile --root beispiel-arbeit beispiel-arbeit/Arbeit/main.typ` – Vorlage prüfen
+- `tests/vorlage/pruefen.sh` – Vorlagentests (installiert vorher `@local/fhdw-arbeit`)
 
 ## Arbeitsweise
 - Lies zu Beginn `docs/ROADMAP.md` (aktuelle Phase) und die im Prompt genannten docs.

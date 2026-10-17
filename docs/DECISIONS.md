@@ -12,3 +12,11 @@
 | 2026-10-17 | Node 24 (LTS) über `node@24` | aktuelle LTS-Linie, stabil für Vite/Tauri |
 | 2026-10-17 | Frontend-Tests mit Vitest + jsdom + Testing Library | passt zu Vite, keine eigene Build-Konfiguration |
 | 2026-10-17 | Opener-Plugin und Demo-Code aus der Tauri-Vorlage entfernt | nicht benötigt; weniger Rechte (nur `core:default`) |
+| 2026-10-17 | Ränder l 3 / r 4 / o 4 / u 4 cm, nur einseitig | jeweils kleinster erlaubter Wert (FHDW S. 6); für zweiseitig keine Angaben |
+| 2026-10-17 | Erklärung wörtlich inkl. Fußnote 1 und Schreibweise „selbständig“/„Selbstständigkeit“ | Pflicht „genauer Wortlaut“ (FHDW S. 4) |
+| 2026-10-17 | Matrikelnummer und Firma nur optional auf dem Titelblatt | keine FHDW-Vorgabe (S. 4) |
+| 2026-10-17 | Zitierstil alphanumerisch als Standard, numerisch wählbar; eigene CSL-Stile | wie im FHDW-Dokument; Typst hat keinen alphanumerischen Stil für Verzeichnisse, IEEE kürzt Vornamen entgegen S. 9 |
+| 2026-10-17 | Vorlage als `@local/fhdw-arbeit` per Symlink, Kompilieren mit `--root <Arbeits-Vault>` | gleiche Vorlage für Beispiel und echte Arbeit; `System/quellen.bib` liegt außerhalb von `Arbeit/` |
+| 2026-10-17 | Schrift New Computer Modern 11pt | mit Typst ausgeliefert, entspricht Latin Modern der FHDW-LaTeX-Vorlage (S. 5) |
+| 2026-10-17 | Nur glossarium als Fremdpaket; codelst und hydra aus clean-dhbw entfernt | weniger Abhängigkeiten und Downloads |
+| 2026-10-17 | Parameter der Vorlage auf Deutsch (`titel`, `pruefer` …) | Ausnahme von „Bezeichner Englisch“ (CLAUDE.md): die Parameter sind die Oberfläche für den Schreibenden; noch zu bestätigen |
