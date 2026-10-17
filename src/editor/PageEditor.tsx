@@ -61,6 +61,8 @@ interface Props {
 export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
+  /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
+  const fromSplit = useRef(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const busy = useRef(false);
@@ -120,7 +122,13 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
     if (!hit || busy.current) return;
     busy.current = true;
     try {
-      if (text === hit.text || (await replace(hit, text))) setEditing(null);
+      if (fromSplit.current && hit.start === hit.end && text.trim() === "") {
+        // Leer gebliebenen neuen Absatz samt der eingefügten Leerzeile wieder entfernen.
+        if (await replace({ ...hit, start: hit.start - 2 }, "")) setEditing(null);
+      } else if (text === hit.text || (await replace(hit, text))) {
+        setEditing(null);
+      }
+      fromSplit.current = false;
     } finally {
       busy.current = false;
     }
@@ -134,8 +142,11 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving }: Props) {
     try {
       const before = text.slice(0, cursor).trimEnd();
       const after = text.slice(cursor).trimStart();
+      // Enter in einem leeren Absatz erzeugt keine weiteren Leerzeilen.
+      if (before === "" && after === "") return;
       if (!(await replace(hit, `${before}\n\n${after}`))) return;
       setEditing(await paragraphAtOffset(hit.file, hit.start + utf8Length(before) + 2));
+      fromSplit.current = after === "";
     } finally {
       busy.current = false;
     }

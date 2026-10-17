@@ -40,15 +40,31 @@ pub fn is_own_repo(root: &Path) -> bool {
     top == root
 }
 
-/// Legt das Repo an: `.gitignore` mit `.schreibassistent/` (Cache) und erster Commit.
+/// Was nie in die Sicherung gehört: Cache der App und Dateien des Finders.
+const IGNORED: [&str; 2] = [".schreibassistent/", ".DS_Store"];
+
+/// Ergänzt fehlende Einträge in `.gitignore` (vorhandene bleiben unverändert).
+pub fn ensure_gitignore(root: &Path) -> Result<(), String> {
+    let ignore = root.join(".gitignore");
+    let mut text = std::fs::read_to_string(&ignore).unwrap_or_default();
+    let missing: Vec<_> = IGNORED.iter().filter(|e| !text.lines().any(|l| l.trim() == **e)).collect();
+    if missing.is_empty() {
+        return Ok(());
+    }
+    if !text.is_empty() && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    for entry in missing {
+        text.push_str(entry);
+        text.push('\n');
+    }
+    super::files::atomic_write(&ignore, &text)
+}
+
+/// Legt das Repo an: `.gitignore` (siehe `IGNORED`) und erster Commit.
 pub fn init(root: &Path) -> Result<(), String> {
     git(root, &["init", "-q"])?;
-    let ignore = root.join(".gitignore");
-    let current = std::fs::read_to_string(&ignore).unwrap_or_default();
-    if !current.lines().any(|l| l.trim() == ".schreibassistent/") {
-        let text = format!("{current}{}.schreibassistent/\n", if current.is_empty() || current.ends_with('\n') { "" } else { "\n" });
-        super::files::atomic_write(&ignore, &text)?;
-    }
+    ensure_gitignore(root)?;
     git(root, &["add", "-A"])?;
     git(root, &["commit", "-q", "-m", "Arbeit angelegt"])?;
     Ok(())
@@ -61,7 +77,7 @@ pub fn last_autosave(root: &Path) -> Option<u64> {
 }
 
 /// Committet alle Änderungen als „autosave“, wenn der letzte Autosave mindestens
-/// `AUTOSAVE_INTERVAL` her ist (oder `force`) und es Änderungen gibt.
+/// `AUTOSAVE_INTERVAL` her ist (oder `force`, nur für Tests) und es Änderungen gibt.
 /// Gibt den Zeitpunkt des neuen Commits zurück.
 pub fn autosave(root: &Path, force: bool) -> Result<Option<u64>, String> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
@@ -98,7 +114,8 @@ mod tests {
         assert!(!is_own_repo(&root));
         init(&root).unwrap();
         assert!(is_own_repo(&root));
-        assert!(std::fs::read_to_string(root.join(".gitignore")).unwrap().contains(".schreibassistent/"));
+        let ignore = std::fs::read_to_string(root.join(".gitignore")).unwrap();
+        assert!(ignore.contains(".schreibassistent/") && ignore.contains(".DS_Store"), "{ignore}");
         assert_eq!(commits(&root), ["Arbeit angelegt"]);
         std::fs::remove_dir_all(&root).unwrap();
     }

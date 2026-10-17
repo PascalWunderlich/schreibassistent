@@ -52,6 +52,9 @@ impl Project {
         let mut satz = Satz::open(&root, MAIN_FILE).map_err(|e| vec![e])?;
         let report = satz.compile()?;
         let git = git::is_own_repo(&root);
+        if git {
+            git::ensure_gitignore(&root).map_err(|e| vec![e])?;
+        }
         let last_autosave = if git { git::last_autosave(&root) } else { None };
         let info = ProjectInfo {
             root: root.to_string_lossy().into_owned(),
@@ -72,7 +75,8 @@ impl Project {
         Ok(self.autosave(false))
     }
 
-    /// Git-Sicherung, höchstens alle 5 Minuten (oder erzwungen, z. B. beim Schließen).
+    /// Git-Sicherung, höchstens alle 5 Minuten. Erzwingen ist nicht nötig: Jede Änderung
+    /// liegt sofort auf der Platte, der nächste Autosave nimmt sie mit.
     pub fn autosave(&mut self, force: bool) -> SaveInfo {
         if !git::is_own_repo(&self.root) {
             return SaveInfo::default();

@@ -35,9 +35,9 @@ pub async fn projekt_last(app: AppHandle) -> Result<Option<String>, String> {
 #[tauri::command]
 pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: String) -> Result<ProjectInfo, Vec<String>> {
     let (project, info) = Project::open(std::path::Path::new(&path))?;
-    // Vorheriges Projekt beim Wechsel sichern.
+    // Vorheriges Projekt beim Wechsel sichern (Regel: höchstens alle 5 Minuten).
     if let Some(mut previous) = state.0.lock().unwrap().replace(project) {
-        previous.autosave(true);
+        previous.autosave(false);
     }
     let file = settings_file(&app).map_err(|e| vec![e])?;
     settings::save(&file, &Settings { last_vault: Some(PathBuf::from(&info.root)) }).map_err(|e| vec![e])?;
@@ -74,12 +74,13 @@ pub async fn projekt_write(state: State<'_, AppState>, path: String, text: Strin
     })
 }
 
-/// Beim Schließen der App: letzte Sicherung erzwingen.
+/// Beim Schließen der App: sichern, falls der letzte Autosave mindestens 5 Minuten her ist.
+/// Nicht erzwungen, sonst entstünden bei schnellen Neustarts viele Commits.
 pub fn on_exit(app: &AppHandle) {
     if let Some(state) = app.try_state::<AppState>()
         && let Some(project) = state.0.lock().unwrap().as_mut()
     {
-        project.autosave(true);
+        project.autosave(false);
     }
 }
 
