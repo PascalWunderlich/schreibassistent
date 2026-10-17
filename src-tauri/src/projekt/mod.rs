@@ -44,6 +44,10 @@ pub struct ProjectInfo {
     pub report: CompileReport,
     /// Warum Tinymist nicht läuft (z. B. nicht installiert).
     pub lsp_error: Option<String>,
+    /// Fehler beim Setzen (die Arbeit öffnet trotzdem, damit man sie beheben kann).
+    pub compile_errors: Vec<String>,
+    /// Ort des ersten Fehlers: Datei (relativ) und Byte-Position.
+    pub error_location: Option<(String, usize)>,
 }
 
 /// Ergebnis eines Speichervorgangs.
@@ -63,7 +67,12 @@ impl Project {
             return Err(vec![format!("{} ist kein Arbeits-Vault: {MAIN_FILE} fehlt.", root.display())]);
         }
         let mut satz = Satz::open(&root, MAIN_FILE).map_err(|e| vec![e])?;
-        let report = satz.compile()?;
+        // Auch eine Arbeit mit Fehlern öffnen: Sonst käme man an den Text nicht mehr heran
+        // (z. B. nach einem Absturz mitten in einer Eingabe).
+        let (report, compile_errors) = match satz.compile() {
+            Ok(report) => (report, Vec::new()),
+            Err(errors) => (CompileReport::default(), errors),
+        };
         let git = git::is_own_repo(&root);
         if git {
             git::ensure_gitignore(&root).map_err(|e| vec![e])?;
@@ -83,6 +92,8 @@ impl Project {
             last_autosave,
             report,
             lsp_error,
+            compile_errors,
+            error_location: satz.error_location(),
         };
         Ok((Self { root, satz, lsp, last_autosave, written: HashMap::new(), watcher: None }, info))
     }
@@ -239,6 +250,19 @@ mod tests {
         let report = project.satz.compile().unwrap();
         assert!(report.page_count > before, "neues Kapitel beginnt auf einer neuen Seite");
         assert!(project.satz.first_page_of(&path).is_some());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn opens_vault_even_if_it_does_not_compile() {
+        let root = copy_example("broken");
+        let path = root.join("Arbeit/kapitel/05-zusammenfassung.typ");
+        let text = std::fs::read_to_string(&path).unwrap();
+        std::fs::write(&path, format!("{text}\n@sutton2018 #gibtsnich\n")).unwrap();
+        let (_, info) = Project::open(&root, |_| {}).expect("öffnet trotz Fehler");
+        assert_eq!(info.report.page_count, 0);
+        assert!(info.compile_errors[0].contains("unknown variable: gibtsnich"), "{:?}", info.compile_errors);
+        assert_eq!(info.error_location.unwrap().0, "Arbeit/kapitel/05-zusammenfassung.typ");
         std::fs::remove_dir_all(&root).unwrap();
     }
 

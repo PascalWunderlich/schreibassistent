@@ -40,8 +40,8 @@ pub fn is_own_repo(root: &Path) -> bool {
     top == root
 }
 
-/// Was nie in die Sicherung gehört: Cache der App und Dateien des Finders.
-const IGNORED: [&str; 2] = [".schreibassistent/", ".DS_Store"];
+/// Was nie in die Sicherung gehört: Cache der App, Dateien des Finders, PDF-Exporte.
+const IGNORED: [&str; 3] = [".schreibassistent/", ".DS_Store", "Export/"];
 
 /// Ergänzt fehlende Einträge in `.gitignore` (vorhandene bleiben unverändert).
 pub fn ensure_gitignore(root: &Path) -> Result<(), String> {

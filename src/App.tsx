@@ -12,6 +12,7 @@ import {
   SaveInfo,
   TreeNode,
   errorMessages,
+  exportDir,
   exportPdf,
   initGit,
   lastProject,
@@ -76,7 +77,15 @@ function App() {
       setReport(info.report);
       setTree(await projectTree());
       setCenter({ kind: "pages" });
-      setErrors([]);
+      setErrors(info.compile_errors);
+      // Lässt sich die Arbeit nicht setzen, direkt an die Fehlerstelle im Quelltext.
+      if (info.error_location) {
+        const [file, offset] = info.error_location;
+        setSourceMode(true);
+        setSourceFile(file);
+        setSelected(file);
+        setSourceJump({ file, offset, nonce: Date.now() });
+      }
     } catch (e) {
       setErrors(errorMessages(e));
     } finally {
@@ -108,7 +117,7 @@ function App() {
     if (!project) return;
     const path = await save({
       title: "PDF exportieren",
-      defaultPath: `${project.root}/${project.name}.pdf`,
+      defaultPath: `${await exportDir()}/${project.name}.pdf`,
       filters: [{ name: "PDF", extensions: ["pdf"] }],
     });
     if (!path) return;

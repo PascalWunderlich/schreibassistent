@@ -17,7 +17,7 @@ use mapping::Rect;
 pub const NAME: &str = "satz";
 
 /// Ergebnis einer Kompilierung: welche Seiten sich geändert haben und wie lange es dauerte.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct CompileReport {
     pub page_count: usize,
     /// Indizes (ab 0) der Seiten, deren Inhalt sich seit der letzten Kompilierung geändert hat.
@@ -60,6 +60,8 @@ pub struct ParagraphHit {
 /// Hält World und letztes Dokument eines Arbeits-Vaults.
 pub struct Satz {
     world: SatzWorld,
+    /// Ort des ersten Fehlers der letzten Kompilierung: Datei (relativ) und Byte-Position.
+    error_location: Option<(String, usize)>,
     page_hashes: Vec<u128>,
     document: Option<PagedDocument>,
     /// Textspalte (linke Kante, Breite) in pt; einmal ermittelt, die Ränder ändern sich nicht.
@@ -68,7 +70,13 @@ pub struct Satz {
 
 impl Satz {
     pub fn open(root: impl Into<std::path::PathBuf>, main: &str) -> Result<Self, String> {
-        Ok(Self { world: SatzWorld::new(root, main)?, page_hashes: Vec::new(), document: None, column: None })
+        Ok(Self {
+            world: SatzWorld::new(root, main)?,
+            error_location: None,
+            page_hashes: Vec::new(),
+            document: None,
+            column: None,
+        })
     }
 
     pub fn world(&self) -> &SatzWorld {
@@ -77,6 +85,30 @@ impl Satz {
 
     pub fn document(&self) -> Option<&PagedDocument> {
         self.document.as_ref()
+    }
+
+    /// Ort des ersten Fehlers der letzten Kompilierung (Datei relativ, Byte-Position).
+    pub fn error_location(&self) -> Option<(String, usize)> {
+        self.error_location.clone()
+    }
+
+    /// Datei (relativ zum Vault) und Byte-Position eines Spans in einer Projektdatei.
+    fn location(&self, span: typst::syntax::DiagSpan) -> Option<(String, usize)> {
+        use typst::WorldExt;
+        let id = span.clone().id().filter(|id| matches!(id.root(), typst::syntax::VirtualRoot::Project))?;
+        let range = self.world.range(span)?;
+        Some((id.vpath().get_without_slash().to_string(), range.start))
+    }
+
+    /// Meldung mit Ort, z. B. „Arbeit/kapitel/06-x.typ, Zeile 3: unknown variable: x“.
+    fn describe(&self, diagnostic: &typst::diag::SourceDiagnostic) -> String {
+        match self.location(diagnostic.span) {
+            Some((file, offset)) => {
+                let line = self.world.source_text(&file).map_or(0, |t| t[..offset.min(t.len())].matches('\n').count() + 1);
+                format!("{file}, Zeile {line}: {}", diagnostic.message)
+            }
+            None => diagnostic.message.to_string(),
+        }
     }
 
     /// Beim nächsten Kompilieren alle Seiten als geändert melden (z. B. neue Ansicht).
@@ -93,10 +125,17 @@ impl Satz {
         // Speicher begrenzen; ältere Zwischenergebnisse verwerfen (wie typst-cli).
         comemo::evict(10);
 
-        let warnings = warned.warnings.iter().map(|w| w.message.to_string()).collect();
-        let document = warned
-            .output
-            .map_err(|errors| errors.iter().map(|e| e.message.to_string()).collect::<Vec<_>>())?;
+        let warnings = warned.warnings.iter().map(|w| self.describe(w)).collect();
+        let document = match warned.output {
+            Ok(document) => {
+                self.error_location = None;
+                document
+            }
+            Err(errors) => {
+                self.error_location = errors.iter().find_map(|e| self.location(e.span));
+                return Err(errors.iter().map(|e| self.describe(e)).collect());
+            }
+        };
 
         let start = Instant::now();
         let hashes: Vec<u128> =
@@ -628,6 +667,20 @@ mod tests {
     fn unix_timestamp_to_datetime() {
         let d = datetime_from_unix(1_792_000_000).unwrap();
         assert_eq!((d.year(), d.month(), d.day(), d.hour(), d.minute()), (Some(2026), Some(10), Some(14), Some(17), Some(46)));
+    }
+
+    #[test]
+    fn compile_error_names_file_line_and_location() {
+        let mut satz = beispiel();
+        let path = "Arbeit/kapitel/03-umsetzung.typ";
+        let text = satz.world().source_text(path).unwrap();
+        satz.world().set_source_text(path, &format!("{text}\n#gibtsnich\n")).unwrap();
+        let errors = satz.compile().unwrap_err();
+        let line = text.matches('\n').count() + 2;
+        assert!(errors[0].starts_with(&format!("{path}, Zeile {line}: unknown variable")), "{errors:?}");
+        let (file, offset) = satz.error_location().unwrap();
+        assert_eq!(file, path);
+        assert!(satz.world().source_text(path).unwrap()[offset..].starts_with("gibtsnich"));
     }
 
     #[test]

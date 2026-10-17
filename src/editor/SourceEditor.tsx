@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { Definition, Field, SaveInfo, errorMessages, readFile, writeFile } from "./api";
+import { Definition, Field, SaveInfo, errorMessages, log, readFile, writeFile } from "./api";
 import { lspExtensions, watchDiagnostics } from "./lspExtensions";
 
 /** Speichern und neu setzen kurz nach dem letzten Tastendruck. */
@@ -26,6 +26,7 @@ function utf16Index(text: string, byte: number): number {
 }
 
 function jumpTo(view: EditorView, offset: number) {
+  log(`Quelltext: Sprung zu Byte ${offset}`);
   const pos = Math.min(utf16Index(view.state.doc.toString(), offset), view.state.doc.length);
   view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) });
   view.focus();
@@ -62,6 +63,7 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
     };
     readFile(path)
       .then((text) => {
+        log(`Quelltext: ${path} gelesen (${text.length} Zeichen)${cancelled ? ", Effekt schon abgebaut" : ""}`);
         if (cancelled) return;
         const editor = new EditorView({
           parent: host.current!,
@@ -84,11 +86,16 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
           }),
         });
         view.current = editor;
+        const box = host.current!.getBoundingClientRect();
+        log(`Quelltext: Editor für ${path} erstellt, Bereich ${box.width.toFixed(0)}×${box.height.toFixed(0)} px, Editoren: ${host.current!.querySelectorAll(".cm-editor").length}`);
         stopDiagnostics = watchDiagnostics(editor, path, field);
         // Nur springen, wenn das Ziel in dieser Datei liegt; sonst steht Zeile 1 oben.
         if (jumpRef.current?.file === path) jumpTo(editor, jumpRef.current.offset);
       })
-      .catch((e) => setError(errorMessages(e).join(" ")));
+      .catch((e) => {
+        log(`Quelltext: ${path} nicht lesbar: ${errorMessages(e).join(" ")}`);
+        setError(errorMessages(e).join(" "));
+      });
     return () => {
       cancelled = true;
       window.clearTimeout(timer);

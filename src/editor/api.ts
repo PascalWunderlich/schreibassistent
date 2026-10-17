@@ -50,6 +50,10 @@ export interface ProjectInfo {
   last_autosave: number | null;
   report: CompileReport;
   lsp_error: string | null;
+  /** Fehler beim Setzen; die Arbeit ist trotzdem offen. */
+  compile_errors: string[];
+  /** Ort des ersten Fehlers: Datei (relativ) und Byte-Position. */
+  error_location: [string, number] | null;
 }
 
 export interface TreeNode {
@@ -66,6 +70,7 @@ export const openProject = (path: string) => invoke<ProjectInfo>("projekt_open",
 export const initGit = () => invoke<void>("projekt_git_init");
 export const projectTree = () => invoke<TreeNode[]>("projekt_tree");
 export const readFile = (path: string) => invoke<string>("projekt_read", { path });
+export const exportDir = () => invoke<string>("projekt_export_dir");
 export const newChapter = (title: string) => invoke<string>("projekt_new_chapter", { title });
 export const newNote = (name: string) => invoke<string>("projekt_new_note", { name });
 export const writeFile = (path: string, text: string) => invoke<SaveInfo>("projekt_write", { path, text });
@@ -112,6 +117,12 @@ export function errorMessages(error: unknown): string[] {
 /** Protokolliert in `<Vault>/.schreibassistent/app.log` (nicht im Git). */
 export function log(message: string) {
   invoke("projekt_log", { message }).catch(() => {});
+}
+
+// Unbehandelte Fehler der Oberfläche protokollieren (Fehlersuche ohne Entwicklerwerkzeuge).
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (e) => log(`Fehler in der Oberfläche: ${e.message} (${e.filename}:${e.lineno})`));
+  window.addEventListener("unhandledrejection", (e) => log(`Unbehandelte Ablehnung: ${String(e.reason)}`));
 }
 
 // ---------- lsp (Tinymist im Feld) ----------

@@ -81,6 +81,16 @@ pub async fn projekt_read(state: State<'_, AppState>, path: String) -> Result<St
     })
 }
 
+/// Ordner für PDF-Exporte (`Export/`, nicht in der Git-Sicherung); wird bei Bedarf angelegt.
+#[tauri::command]
+pub async fn projekt_export_dir(state: State<'_, AppState>) -> Result<String, String> {
+    with_project(&state, |p| {
+        let dir = p.root.join("Export");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        Ok(dir.to_string_lossy().into_owned())
+    })
+}
+
 /// Neues Kapitel anlegen und einbinden; danach setzt die Oberfläche neu.
 #[tauri::command]
 pub async fn projekt_new_chapter(state: State<'_, AppState>, title: String) -> Result<String, String> {
