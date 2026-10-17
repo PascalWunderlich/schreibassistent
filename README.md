@@ -34,6 +34,18 @@ cargo test --manifest-path src-tauri/Cargo.toml     # Rust-Tests
 pnpm test                                           # Frontend-Tests
 ```
 
+## Benutzen
+
+1. `typst/installieren.sh` einmal ausführen (Vorlage `@local/fhdw-arbeit`).
+2. `pnpm tauri dev`, „Arbeit öffnen …“ und den Ordner der Arbeit wählen
+   (Arbeits-Vault mit `Arbeit/main.typ`, Aufbau siehe `docs/DATA-FORMATS.md`).
+3. Auf einen Absatz klicken und schreiben. Enter: neuer Absatz, Shift+Enter:
+   Zeilenumbruch im Quelltext, Esc oder Klick daneben: fertig. `@` bzw. `#` schlägt
+   Citekeys, Labels und Funktionen vor; ⌘-Klick springt zur Definition.
+4. „Quelltext“ oben zeigt die ganze Datei mit den Seiten daneben (Tabellen, Abbildungen).
+5. Gespeichert wird automatisch; mit eigenem Git-Repo entsteht höchstens alle
+   5 Minuten ein lokaler Commit „autosave“. „PDF“ exportiert die Arbeit.
+
 ## Dokumentation
 
 - `CLAUDE.md` – Leitplanken und Arbeitsweise

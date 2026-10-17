@@ -24,3 +24,9 @@
 | 2026-10-17 | Seiten als Bilder (`<img>` mit SVG), nicht als Inline-SVG | 23 Inline-SVGs ließen die Webansicht hängen |
 | 2026-10-17 | Typst-Pakete nur aus lokalem Cache und `@local`, kein Download | Leitplanke 4; fehlendes Paket → Fehlermeldung |
 | 2026-10-17 | Absätze mit `#show`, `#set`, `#let`, `#import`, `#include` sind im Seiteneditor nie editierbar | schützt die Einbindung der Vorlage vor versehentlichem Überschreiben |
+| 2026-10-17 | Speichern ohne Knopf: Feld spätestens nach 1 s, Enter/Esc sofort, atomar (temporäre Datei + Umbenennen) | kein Datenverlust bei Absturz außer höchstens der letzten Sekunde; Speichern von Hand später (ROADMAP) |
+| 2026-10-17 | Git-Autosave höchstens alle 5 Minuten, auch nicht erzwungen beim Schließen; nie in ein fremdes Repo | Vorgabe P3; Text liegt ohnehin sofort auf der Platte; App-Repo bleibt sauber |
+| 2026-10-17 | Tinymist erhält den Stand über die Platte (`didChangeWatchedFiles`), nicht über `didOpen`/`didChange` | Tinymist 0.15.10 übernahm Texte im Speicher nicht zuverlässig, liest geänderte Dateien aber nach ~50 ms |
+| 2026-10-17 | Satz lädt Systemschriften wie die CLI | sonst fehlen z. B. Helvetica in SVG-Abbildungen und das PDF weicht ab |
+| 2026-10-17 | PDF „identisch zur CLI“ = gleicher Inhalt aller Datenströme; Byte-Gleichheit nicht erreichbar | CLI (Homebrew) nutzt eine andere Deflate-Bibliothek; Unterschied nur in Kompression und davon abgeleiteter XMP-InstanceID |
+| 2026-10-17 | Quelltextmodus mit eigenen Seiten aus `satz` statt Tinymist-Vorschau | kein Flackern, gleiche Seiten wie im Seiteneditor |
