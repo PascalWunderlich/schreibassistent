@@ -1,14 +1,17 @@
 //! Typst-World, Kompilieren, SVG je Seite, PDF, Positions-Mapping.
 //!
-//! P2: World und Seiten-SVG mit Erkennung geänderter Seiten; Mapping folgt.
+//! P2: World, Seiten-SVG mit Erkennung geänderter Seiten, Klick → Absatz.
 
+pub mod mapping;
 mod world;
 
 use std::time::Instant;
 
 use typst_layout::PagedDocument;
 
-pub use world::SatzWorld;
+pub use world::{SatzWorld, project_file};
+
+use mapping::Rect;
 
 pub const NAME: &str = "satz";
 
@@ -23,6 +26,21 @@ pub struct CompileReport {
     pub compile_ms: f64,
     pub svg_ms: f64,
     pub warnings: Vec<String>,
+    /// Seitengrößen in pt (Breite, Höhe), alle Seiten.
+    pub page_sizes: Vec<(f64, f64)>,
+}
+
+/// Absatz unter einem Klickpunkt: Quelltext und Lage auf den Seiten.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ParagraphHit {
+    /// Pfad relativ zum Arbeits-Vault, z. B. `Arbeit/kapitel/01-einleitung.typ`.
+    pub file: String,
+    /// Byte-Bereich im Quelltext.
+    pub start: usize,
+    pub end: usize,
+    pub text: String,
+    /// Je Seite (Index ab 0) das umschließende Rechteck in pt.
+    pub rects: Vec<(usize, Rect)>,
 }
 
 /// Hält World und letztes Dokument eines Arbeits-Vaults.
@@ -74,8 +92,46 @@ impl Satz {
 
         self.page_hashes = hashes;
         let page_count = document.pages().len();
+        let page_sizes = document.pages().iter().map(|p| mapping::page_size(&p.frame)).collect();
         self.document = Some(document);
-        Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings })
+        Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings, page_sizes })
+    }
+
+    /// Absatz an (x, y) in pt auf Seite `page` (ab 0). `None`, wenn dort kein Text
+    /// aus einer Projektdatei steht (z. B. Kopfzeile aus der Vorlage).
+    pub fn paragraph_at(&self, page: usize, x: f64, y: f64) -> Option<ParagraphHit> {
+        let document = self.document.as_ref()?;
+        let pages = document.pages();
+        let boxes = mapping::text_boxes(&self.world, &pages.get(page)?.frame);
+        let hit = mapping::box_at(&boxes, x, y, 6.0)?;
+        let source = typst::World::source(&self.world, hit.file).ok()?;
+        let range = mapping::paragraph_range(&source, hit.range.start)?;
+
+        // Ein Absatz kann über einen Seitenumbruch laufen: Nachbarseiten mit ansehen.
+        let neighbours = page.saturating_sub(1)..(page + 2).min(pages.len());
+        let page_boxes: Vec<_> = neighbours
+            .map(|p| (p, if p == page { boxes.clone() } else { mapping::text_boxes(&self.world, &pages[p].frame) }))
+            .collect();
+        let rects = mapping::rects_for_range(&page_boxes, hit.file, &range);
+
+        Some(ParagraphHit {
+            file: hit.file.vpath().get_without_slash().to_string(),
+            text: source.text()[range.clone()].to_owned(),
+            start: range.start,
+            end: range.end,
+            rects,
+        })
+    }
+
+    /// Ersetzt `start..end` in `file` durch `text` (nur im Speicher) und kompiliert neu.
+    pub fn replace(&mut self, file: &str, start: usize, end: usize, text: &str) -> Result<CompileReport, Vec<String>> {
+        let mut source = self.world.source_text(file).map_err(|e| vec![e])?;
+        if start > end || end > source.len() || !source.is_char_boundary(start) || !source.is_char_boundary(end) {
+            return Err(vec![format!("Ungültiger Bereich {start}..{end} in {file}")]);
+        }
+        source.replace_range(start..end, text);
+        self.world.set_source_text(file, &source).map_err(|e| vec![e])?;
+        self.compile()
     }
 }
 
@@ -122,6 +178,67 @@ mod tests {
         let report = satz.compile().unwrap();
         assert!(!report.changed_pages.is_empty());
         assert!(report.changed_pages.len() < first.page_count);
+    }
+
+    #[test]
+    fn click_on_paragraph_finds_its_source_and_replace_recompiles() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        // Seite mit „Kapitel 3“ suchen: dort steht der Absatz mit „Die Modellierung erfolgt“.
+        let path = "Arbeit/kapitel/03-umsetzung.typ";
+        let text = satz.world().source_text(path).unwrap();
+        let offset = text.find("Die Modellierung erfolgt").unwrap();
+        let file = project_file(path).unwrap();
+        let (page, rect) = (0..report.page_count)
+            .find_map(|p| {
+                let frame = &satz.document().unwrap().pages()[p].frame;
+                mapping::text_boxes(satz.world(), frame)
+                    .into_iter()
+                    .find(|b| b.file == file && b.range.contains(&offset))
+                    .map(|b| (p, b.rect))
+            })
+            .expect("Absatz ist gesetzt");
+
+        let hit = satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).expect("Treffer");
+        assert_eq!(hit.file, path);
+        assert!(hit.text.starts_with("#lorem(60) Die Modellierung erfolgt"), "{}", hit.text);
+        assert!(hit.rects.iter().any(|(p, _)| *p == page));
+
+        let new_text = hit.text.replace("Die Modellierung", "Die neue Modellierung");
+        let report = satz.replace(&hit.file, hit.start, hit.end, &new_text).unwrap();
+        assert!(!report.changed_pages.is_empty());
+        assert!(satz.world().source_text(path).unwrap().contains("Die neue Modellierung"));
+    }
+
+    #[test]
+    fn click_on_template_header_is_not_editable() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        // Kopfzeile auf der zweiten Inhaltsseite (Seitenindex 6) stammt aus dem Paket.
+        assert!(report.page_count > 7);
+        assert!(satz.paragraph_at(6, 100.0, 95.0).is_none());
+    }
+
+    #[test]
+    fn long_paragraph_spans_two_pages() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        let path = "Arbeit/kapitel/04-loesungskonzept.typ";
+        let text = satz.world().source_text(path).unwrap();
+        let offset = text.find("#lorem(420)").unwrap();
+        let file = project_file(path).unwrap();
+        let (page, rect) = (0..report.page_count)
+            .find_map(|p| {
+                let frame = &satz.document().unwrap().pages()[p].frame;
+                mapping::text_boxes(satz.world(), frame)
+                    .into_iter()
+                    .find(|b| b.file == file && b.range.contains(&(offset + 1)))
+                    .map(|b| (p, b.rect))
+            })
+            .expect("langer Absatz ist gesetzt");
+        let hit = satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).unwrap();
+        assert_eq!(hit.text, "#lorem(420)");
+        assert_eq!(hit.rects.len(), 2, "{:?}", hit.rects);
     }
 
     #[test]
