@@ -1,86 +1,102 @@
 //! Tauri-Befehle des Moduls `satz` (Benennung `satz_<aktion>`, siehe docs/ARCHITECTURE.md).
-
-use std::sync::Mutex;
+//! Arbeiten auf dem geöffneten Projekt (`projekt::commands::AppState`).
 
 use tauri::State;
 
-use super::{CompileReport, ParagraphHit, Satz};
+use super::{CompileReport, ParagraphHit};
+use crate::projekt::SaveInfo;
+use crate::projekt::commands::{AppState, with_project};
 
-#[derive(Default)]
-pub struct SatzState(pub Mutex<Option<Satz>>);
-
-/// P2-Prototyp: öffnet `beispiel-arbeit/` aus dem Repo und kompiliert alle Seiten.
-#[tauri::command]
-pub async fn satz_open_example(state: State<'_, SatzState>) -> Result<CompileReport, Vec<String>> {
-    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit");
-    let mut satz = Satz::open(root, "Arbeit/main.typ").map_err(|e| vec![e])?;
-    let report = satz.compile()?;
-    *state.0.lock().unwrap() = Some(satz);
-    Ok(report)
+#[derive(serde::Serialize)]
+pub struct ReplaceResult {
+    pub report: CompileReport,
+    pub save: SaveInfo,
 }
 
 #[tauri::command]
 pub async fn satz_paragraph_at(
-    state: State<'_, SatzState>,
+    state: State<'_, AppState>,
     page: usize,
     x: f64,
     y: f64,
-) -> Result<Option<ParagraphHit>, Vec<String>> {
-    let guard = state.0.lock().unwrap();
-    let satz = guard.as_ref().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
-    Ok(satz.paragraph_at(page, x, y))
+) -> Result<Option<ParagraphHit>, String> {
+    with_project(&state, |p| Ok(p.satz.paragraph_at(page, x, y)))
 }
 
 #[tauri::command]
 pub async fn satz_paragraph_at_offset(
-    state: State<'_, SatzState>,
+    state: State<'_, AppState>,
     file: String,
     offset: usize,
-) -> Result<Option<ParagraphHit>, Vec<String>> {
-    let guard = state.0.lock().unwrap();
-    let satz = guard.as_ref().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
-    Ok(satz.paragraph_at_offset(&file, offset))
+) -> Result<Option<ParagraphHit>, String> {
+    with_project(&state, |p| Ok(p.satz.paragraph_at_offset(&file, offset)))
 }
 
-/// Schriftdatei für das Editierfeld (roh, ohne JSON-Umweg).
-#[tauri::command]
-pub async fn satz_font(
-    state: State<'_, SatzState>,
-    family: String,
-    bold: bool,
-) -> Result<tauri::ipc::Response, Vec<String>> {
-    let guard = state.0.lock().unwrap();
-    let satz = guard.as_ref().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
-    let data = satz.font_data(&family, bold).ok_or_else(|| vec![format!("Schrift {family} fehlt")])?;
-    Ok(tauri::ipc::Response::new(data))
-}
-
+/// Absatz ersetzen, neu setzen und sofort speichern. Bei Fehlern im Satz bleibt die
+/// Datei unverändert (Satz rollt zurück), die Meldungen gehen an die Oberfläche.
 #[tauri::command]
 pub async fn satz_replace(
-    state: State<'_, SatzState>,
+    state: State<'_, AppState>,
     file: String,
     start: usize,
     end: usize,
     text: String,
-) -> Result<CompileReport, Vec<String>> {
+) -> Result<ReplaceResult, Vec<String>> {
     let mut guard = state.0.lock().unwrap();
-    let satz = guard.as_mut().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
-    satz.replace(&file, start, end, &text)
+    let project = guard.as_mut().ok_or_else(|| vec!["Kein Arbeits-Vault geöffnet".to_owned()])?;
+    let report = project.satz.replace(&file, start, end, &text)?;
+    let save = project.write_source(&file).map_err(|e| vec![e])?;
+    Ok(ReplaceResult { report, save })
 }
 
-/// P2: Ereignisse der Oberfläche (Klicks, Zeiten, Fehler) für die Auswertung protokollieren.
-/// Ziel: `beispiel-arbeit/.schreibassistent/editor-test.log` (Cache-Ordner, nicht im Git).
+/// Entwurf während des Tippens: Absatz in den Quelltext einsetzen und auf die Platte
+/// schreiben, ohne neu zu setzen. Der Satz behält den Stand bis zur Übernahme (Enter),
+/// damit `start..end` gültig bleiben.
 #[tauri::command]
-pub async fn satz_debug_log(message: String) -> Result<(), String> {
-    use std::io::Write;
-    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit/.schreibassistent");
-    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let mut file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(format!("{dir}/editor-test.log"))
-        .map_err(|e| e.to_string())?;
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-    eprintln!("[ui] {message}");
-    writeln!(file, "{:.3} {message}", now.as_secs_f64()).map_err(|e| e.to_string())
+pub async fn satz_draft(
+    state: State<'_, AppState>,
+    file: String,
+    start: usize,
+    end: usize,
+    text: String,
+) -> Result<SaveInfo, String> {
+    with_project(&state, |p| {
+        let mut source = p.satz.world().source_text(&file)?;
+        if end > source.len() || start > end || !source.is_char_boundary(start) || !source.is_char_boundary(end) {
+            return Err(format!("Ungültiger Bereich {start}..{end} in {file}"));
+        }
+        source.replace_range(start..end, &text);
+        p.write(&file, &source)
+    })
+}
+
+/// Satz neu, z. B. nach Änderungen im Quelltextmodus (`projekt_write`).
+#[tauri::command]
+pub async fn satz_compile(state: State<'_, AppState>) -> Result<CompileReport, Vec<String>> {
+    let mut guard = state.0.lock().unwrap();
+    let project = guard.as_mut().ok_or_else(|| vec!["Kein Arbeits-Vault geöffnet".to_owned()])?;
+    project.satz.compile()
+}
+
+/// Alle Seiten neu als SVG (nach dem Öffnen in der Oberfläche).
+#[tauri::command]
+pub async fn satz_all_pages(state: State<'_, AppState>) -> Result<CompileReport, Vec<String>> {
+    let mut guard = state.0.lock().unwrap();
+    let project = guard.as_mut().ok_or_else(|| vec!["Kein Arbeits-Vault geöffnet".to_owned()])?;
+    project.satz.forget_pages();
+    project.satz.compile()
+}
+
+/// Schriftdatei für das Editierfeld (roh, ohne JSON-Umweg).
+#[tauri::command]
+pub async fn satz_font(state: State<'_, AppState>, family: String, bold: bool) -> Result<tauri::ipc::Response, String> {
+    with_project(&state, |p| {
+        let data = p.satz.font_data(&family, bold).ok_or_else(|| format!("Schrift {family} fehlt"))?;
+        Ok(tauri::ipc::Response::new(data))
+    })
+}
+
+#[tauri::command]
+pub async fn satz_first_page(state: State<'_, AppState>, file: String) -> Result<Option<usize>, String> {
+    with_project(&state, |p| Ok(p.satz.first_page_of(&file)))
 }

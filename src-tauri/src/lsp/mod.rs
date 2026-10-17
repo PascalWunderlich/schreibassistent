@@ -5,7 +5,7 @@
 //! 127.0.0.1 und meldet Klicks als `tinymist/preview/scrollSource` zurück.
 
 pub mod client;
-pub mod commands;
+
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

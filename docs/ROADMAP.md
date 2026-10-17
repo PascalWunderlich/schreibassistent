@@ -12,3 +12,9 @@ Aktuelle Phase: P3
 | P7 Ingest & Wissen | offen | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
+
+## Später (notiert)
+| Datum | Punkt | Herkunft |
+|---|---|---|
+| 2026-10-17 | Speichern von Hand / benannte Versionen zusätzlich zum automatischen Speichern | Pascal, Planung P3 |
+| 2026-10-17 | Startbare `.app` ohne Terminal, Tinymist als Sidecar eingebaut (T14) | Pascal, Planung P3 |

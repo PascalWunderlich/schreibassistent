@@ -11,20 +11,30 @@ pub mod ingest;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(satz::commands::SatzState::default())
-        .manage(lsp::commands::LspState::default())
+        .plugin(tauri_plugin_dialog::init())
+        .manage(projekt::commands::AppState::default())
         .invoke_handler(tauri::generate_handler![
-            satz::commands::satz_open_example,
+            projekt::commands::projekt_last,
+            projekt::commands::projekt_open,
+            projekt::commands::projekt_git_init,
+            projekt::commands::projekt_tree,
+            projekt::commands::projekt_read,
+            projekt::commands::projekt_write,
+            projekt::commands::projekt_log,
             satz::commands::satz_paragraph_at,
-            satz::commands::satz_replace,
             satz::commands::satz_paragraph_at_offset,
+            satz::commands::satz_replace,
+            satz::commands::satz_draft,
+            satz::commands::satz_compile,
+            satz::commands::satz_all_pages,
             satz::commands::satz_font,
-            satz::commands::satz_debug_log,
-            lsp::commands::lsp_open_example,
-            lsp::commands::lsp_change,
-            lsp::commands::lsp_scroll_preview,
-            lsp::commands::lsp_relative_path,
+            satz::commands::satz_first_page,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                projekt::commands::on_exit(app);
+            }
+        });
 }

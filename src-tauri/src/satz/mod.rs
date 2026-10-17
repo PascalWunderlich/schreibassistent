@@ -76,6 +76,11 @@ impl Satz {
         self.document.as_ref()
     }
 
+    /// Beim nächsten Kompilieren alle Seiten als geändert melden (z. B. neue Ansicht).
+    pub fn forget_pages(&mut self) {
+        self.page_hashes.clear();
+    }
+
     /// Kompiliert und erzeugt SVG nur für Seiten, deren Frame sich geändert hat.
     pub fn compile(&mut self) -> Result<CompileReport, Vec<String>> {
         self.world.reset_time();
@@ -200,6 +205,16 @@ impl Satz {
             column_width,
             first_line_indent,
         })
+    }
+
+    /// Erste Seite (Index ab 0), auf der Text aus `file` steht, z. B. für „zu Kapitel springen“.
+    pub fn first_page_of(&self, file: &str) -> Option<usize> {
+        let id = project_file(file).ok()?;
+        let pages = self.document.as_ref()?.pages();
+        // Nur Seiten mit arabischer Zählung: Überschriften stehen auch im Inhaltsverzeichnis.
+        (0..pages.len())
+            .filter(|&i| page_label(&pages[i]).starts_with(|c: char| c.is_ascii_digit()))
+            .find(|&i| mapping::text_boxes(&self.world, &pages[i].frame).iter().any(|b| b.file == id))
     }
 
     /// Schriftdatei, mit der Typst eine Familie setzt (für das Editierfeld in der Oberfläche).
@@ -454,6 +469,16 @@ mod tests {
         assert_eq!(cell.text, "Das System lädt eine Konfiguration beim Start.");
         let heading = click_on(&satz, "Arbeit/kapitel/04-loesungskonzept.typ", "Datenabgleich");
         assert_eq!(heading.text, "=== Datenabgleich");
+    }
+
+    #[test]
+    fn first_page_of_chapter_file() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        let page = satz.first_page_of("Arbeit/kapitel/01-einleitung.typ").unwrap();
+        assert_eq!(report.page_labels[page], "1");
+        assert!(satz.first_page_of("Arbeit/kapitel/02-grundlagen.typ").unwrap() > page);
+        assert_eq!(satz.first_page_of("Arbeit/gibt-es-nicht.typ"), None);
     }
 
     #[test]
