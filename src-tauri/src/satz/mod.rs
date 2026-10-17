@@ -219,9 +219,16 @@ impl Satz {
         if start > end || end > source.len() || !source.is_char_boundary(start) || !source.is_char_boundary(end) {
             return Err(vec![format!("Ungültiger Bereich {start}..{end} in {file}")]);
         }
+        let previous = source.clone();
         source.replace_range(start..end, text);
         self.world.set_source_text(file, &source).map_err(|e| vec![e])?;
-        self.compile()
+        let result = self.compile();
+        if result.is_err() {
+            // Fehlerhafte Eingabe nicht im Quelltext lassen: Die Oberfläche hält den Text
+            // offen und schickt ihn korrigiert mit demselben Bereich erneut.
+            self.world.set_source_text(file, &previous).map_err(|e| vec![e])?;
+        }
+        result
     }
 }
 
@@ -402,6 +409,51 @@ mod tests {
         satz.replace(path, offset, offset, "Zweiter Absatz der Zusammenfassung.").unwrap();
         let after = satz.world().source_text(path).unwrap();
         assert!(after.contains("summary: [#lorem(120)\n\nZweiter Absatz der Zusammenfassung.]"), "{after}");
+    }
+
+    /// Absatz, dessen Quelltext mit `needle` beginnt, über einen Klick auf seinen Text öffnen.
+    fn click_on(satz: &Satz, path: &str, needle: &str) -> ParagraphHit {
+        let text = satz.world().source_text(path).unwrap();
+        let offset = text.find(needle).unwrap_or_else(|| panic!("{needle} fehlt"));
+        let file = project_file(path).unwrap();
+        let pages = satz.document().unwrap().pages();
+        let (page, rect) = (0..pages.len())
+            .find_map(|p| {
+                mapping::text_boxes(satz.world(), &pages[p].frame)
+                    .into_iter()
+                    .find(|b| b.file == file && b.range.contains(&offset))
+                    .map(|b| (p, b.rect))
+            })
+            .unwrap_or_else(|| panic!("{needle} ist nicht gesetzt"));
+        satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).expect("Treffer")
+    }
+
+    #[test]
+    fn syntax_error_is_reported_and_rolled_back() {
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        let path = "Arbeit/kapitel/03-umsetzung.typ";
+        let before = satz.world().source_text(path).unwrap();
+        let hit = click_on(&satz, path, "Die Modellierung erfolgt");
+        let errors = satz.replace(path, hit.start, hit.end, "#lorem(").unwrap_err();
+        assert!(!errors.is_empty());
+        assert_eq!(satz.world().source_text(path).unwrap(), before, "Quelltext zurückgerollt");
+        // Korrigiert mit demselben Bereich erneut senden.
+        satz.replace(path, hit.start, hit.end, "Korrigierter Absatz.").unwrap();
+        let after = satz.world().source_text(path).unwrap();
+        assert!(after.contains("= Umsetzung und Evaluierung <kap:umsetzung>\n\nKorrigierter Absatz.\n"), "{}", &after[..200]);
+    }
+
+    #[test]
+    fn figure_caption_and_table_cell_are_their_own_paragraphs() {
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        let caption = click_on(&satz, "Arbeit/kapitel/02-grundlagen.typ", "Aufbau des Beispielsystems");
+        assert_eq!(caption.text, "Aufbau des Beispielsystems mit drei Komponenten");
+        let cell = click_on(&satz, "Arbeit/kapitel/03-umsetzung.typ", "Das System lädt");
+        assert_eq!(cell.text, "Das System lädt eine Konfiguration beim Start.");
+        let heading = click_on(&satz, "Arbeit/kapitel/04-loesungskonzept.typ", "Datenabgleich");
+        assert_eq!(heading.text, "=== Datenabgleich");
     }
 
     #[test]
