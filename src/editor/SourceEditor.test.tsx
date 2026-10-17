@@ -21,6 +21,7 @@ describe("SourceEditor", () => {
         onSaving={vi.fn()}
         onWritten={vi.fn()}
         onDefinition={vi.fn()}
+        onCursor={vi.fn()}
       />,
     );
     await waitFor(() => expect(container.querySelector(".cm-content")?.textContent).toContain("fhdw-thesis"));

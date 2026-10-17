@@ -49,6 +49,7 @@ function App() {
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
   const [sourceJump, setSourceJump] = useState<{ file: string; offset: number; nonce: number } | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [reveal, setReveal] = useState<{ file: string; offset: number; nonce: number } | null>(null);
 
   // Änderungen von außen: Dateibaum aktualisieren (neue oder gelöschte Dateien).
   useEffect(() => {
@@ -254,6 +255,7 @@ function App() {
                 onSaving={() => setSaveState("speichert …")}
                 onWritten={() => setRefresh((n) => n + 1)}
                 onDefinition={definitionInSource}
+                onCursor={(offset) => setReveal({ file: sourceFile, offset, nonce: Date.now() })}
               />
               <PageEditor
                 key={`${project.root}:quelltext`}
@@ -264,6 +266,7 @@ function App() {
                 onPick={pick}
                 refresh={refresh}
                 scale={0.9}
+                reveal={reveal}
               />
             </div>
           ) : center.kind === "pages" ? (

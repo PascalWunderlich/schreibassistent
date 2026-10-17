@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { Definition, Field, SaveInfo, errorMessages, log, readFile, writeFile } from "./api";
+import { Definition, Field, SaveInfo, errorMessages, log, readFile, utf8Length, writeFile } from "./api";
 import { lspExtensions, watchDiagnostics } from "./lspExtensions";
 
 /** Speichern und neu setzen kurz nach dem letzten Tastendruck. */
@@ -17,6 +17,8 @@ interface Props {
   /** Nach dem Speichern: Seiten neu setzen. */
   onWritten: () => void;
   onDefinition: (definition: Definition) => void;
+  /** Klick in den Quelltext: Byte-Position, damit die Vorschau dorthin springt. */
+  onCursor: (offset: number) => void;
 }
 
 /** Byte-Offset (Rust) → UTF-16-Index (CodeMirror). */
@@ -33,14 +35,14 @@ function jumpTo(view: EditorView, offset: number) {
 }
 
 /** Quelltextmodus: ganze Datei mit Tinymist, z. B. für Tabellen, Abbildungen und Code. */
-export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefinition }: Props) {
+export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefinition, onCursor }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const jumpRef = useRef(jump);
   jumpRef.current = jump;
   const [error, setError] = useState<string | null>(null);
-  const callbacks = useRef({ onSaved, onSaving, onWritten, onDefinition });
-  callbacks.current = { onSaved, onSaving, onWritten, onDefinition };
+  const callbacks = useRef({ onSaved, onSaving, onWritten, onDefinition, onCursor });
+  callbacks.current = { onSaved, onSaving, onWritten, onDefinition, onCursor };
 
   useEffect(() => {
     // Wurde der Effekt schon wieder abgebaut, bevor die Datei gelesen war (z. B. doppelter
@@ -75,6 +77,17 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
               keymap.of([...defaultKeymap, ...historyKeymap]),
               EditorView.lineWrapping,
               ...lspExtensions(field, (d) => callbacks.current.onDefinition(d)),
+              // Klick (ohne ⌘) in den Quelltext: Vorschau zur Stelle bewegen.
+              EditorView.domEventHandlers({
+                mouseup: (event, v) => {
+                  if (event.metaKey) return false;
+                  window.setTimeout(() => {
+                    const head = v.state.selection.main.head;
+                    callbacks.current.onCursor(utf8Length(v.state.doc.sliceString(0, head)));
+                  }, 0);
+                  return false;
+                },
+              }),
               EditorView.updateListener.of((u) => {
                 if (!u.docChanged) return;
                 pending = u.state.doc.toString();

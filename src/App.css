@@ -411,3 +411,22 @@ button {
   border-radius: 5px;
   font: inherit;
 }
+
+.reveal {
+  position: absolute;
+  border-radius: 3px;
+  background: rgba(47, 111, 222, 0.14);
+  outline: 1.5px solid rgba(47, 111, 222, 0.6);
+  pointer-events: none;
+  animation: reveal 1.5s ease-out forwards;
+}
+
+@keyframes reveal {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

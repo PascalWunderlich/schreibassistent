@@ -64,16 +64,20 @@ interface Props {
   refresh?: number;
   /** Pixel je pt. */
   scale?: number;
+  /** Quelltextmodus: Absatz an dieser Stelle zeigen und kurz hervorheben. */
+  reveal?: { file: string; offset: number; nonce: number } | null;
 }
 
 /** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
-export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE }: Props) {
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
   const fromSplit = useRef(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [hint, setHint] = useState<string | null>(null);
+  /** Kurz hervorgehobener Absatz (Quelltextmodus: Sprung aus dem Quelltext). */
+  const [highlight, setHighlight] = useState<ParagraphHit | null>(null);
   const busy = useRef(false);
   const currentText = useRef<(() => string) | null>(null);
   const draftTimer = useRef<number | undefined>(undefined);
@@ -116,6 +120,25 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
       unlisten.then((f) => f?.()).catch(() => {});
     };
   }, []);
+
+  useEffect(() => {
+    if (!reveal) return;
+    paragraphAtOffset(reveal.file, reveal.offset)
+      .then((hit) => {
+        if (!hit) return;
+        const [page, rect] = hit.rects[0];
+        const element = pageRefs.current[page];
+        const container = element?.parentElement;
+        if (element && container) {
+          // Absatz in die Mitte der Vorschau holen (nur diese Spalte scrollt).
+          const top = element.offsetTop + rect.y * scale - container.clientHeight / 2;
+          container.scrollTo({ top, behavior: "smooth" });
+        }
+        setHighlight(hit);
+        window.setTimeout(() => setHighlight((h) => (h === hit ? null : h)), 1500);
+      })
+      .catch(() => {});
+  }, [reveal]);
 
   const scrollRef = useRef(scrollTo);
   scrollRef.current = scrollTo;
@@ -265,6 +288,20 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
             onClick={(e) => handleClick(i, e)}
           >
             {page.url && <img className="page-image" src={page.url} alt={`Seite ${page.label || i + 1}`} draggable={false} />}
+            {highlight?.rects
+              .filter(([p]) => p === i)
+              .map(([, rect], k) => (
+                <div
+                  key={k}
+                  className="reveal"
+                  style={{
+                    left: rect.x * scale - 4,
+                    top: rect.y * scale - 3,
+                    width: rect.width * scale + 8,
+                    height: rect.height * scale + 6,
+                  }}
+                />
+              ))}
             {editing?.rects
               .filter(([p]) => p === i)
               .slice(0, 1)
