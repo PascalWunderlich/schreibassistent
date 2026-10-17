@@ -29,6 +29,8 @@ pub struct CompileReport {
     pub warnings: Vec<String>,
     /// Seitengrößen in pt (Breite, Höhe), alle Seiten.
     pub page_sizes: Vec<(f64, f64)>,
+    /// Gedruckte Seitenzahl je Seite („“, „i“, „1“ …), alle Seiten.
+    pub page_labels: Vec<String>,
 }
 
 /// Absatz unter einem Klickpunkt: Quelltext und Lage auf den Seiten.
@@ -94,8 +96,9 @@ impl Satz {
         self.page_hashes = hashes;
         let page_count = document.pages().len();
         let page_sizes = document.pages().iter().map(|p| mapping::page_size(&p.frame)).collect();
+        let page_labels = document.pages().iter().map(page_label).collect();
         self.document = Some(document);
-        Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings, page_sizes })
+        Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings, page_sizes, page_labels })
     }
 
     /// Absatz an (x, y) in pt auf Seite `page` (ab 0). `None`, wenn dort kein Text
@@ -136,6 +139,15 @@ impl Satz {
     }
 }
 
+fn page_label(page: &typst_layout::Page) -> String {
+    match &page.numbering {
+        Some(typst::model::Numbering::Pattern(pattern)) => {
+            pattern.apply(None, &[page.number]).map(|s| s.to_string()).unwrap_or_default()
+        }
+        _ => String::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,6 +169,7 @@ mod tests {
         assert!(report.page_count > 5);
         assert_eq!(report.changed_pages.len(), report.page_count);
         assert!(report.svgs[0].starts_with("<svg"));
+        assert_eq!(&report.page_labels[..6], ["", "i", "ii", "iii", "iv", "1"]);
     }
 
     #[test]
@@ -240,6 +253,25 @@ mod tests {
         let hit = satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).unwrap();
         assert_eq!(hit.text, "#lorem(420)");
         assert_eq!(hit.rects.len(), 2, "{:?}", hit.rects);
+    }
+
+    #[test]
+    fn clicks_anywhere_never_panic() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        let mut hits = 0;
+        for page in 0..report.page_count {
+            let (w, h) = report.page_sizes[page];
+            for ix in 0..=20 {
+                for iy in 0..=40 {
+                    let (x, y) = (w * ix as f64 / 20.0, h * iy as f64 / 40.0);
+                    if satz.paragraph_at(page, x, y).is_some() {
+                        hits += 1;
+                    }
+                }
+            }
+        }
+        assert!(hits > 100, "nur {hits} Treffer");
     }
 
     #[test]

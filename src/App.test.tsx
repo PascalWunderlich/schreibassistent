@@ -12,6 +12,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     svg_ms: 0,
     warnings: [],
     page_sizes: [],
+    page_labels: [],
   })),
 }));
 

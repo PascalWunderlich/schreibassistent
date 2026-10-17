@@ -43,3 +43,20 @@ pub async fn satz_replace(
     let satz = guard.as_mut().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
     satz.replace(&file, start, end, &text)
 }
+
+/// P2: Ereignisse der Oberfläche (Klicks, Zeiten, Fehler) für die Auswertung protokollieren.
+/// Ziel: `beispiel-arbeit/.schreibassistent/editor-test.log` (Cache-Ordner, nicht im Git).
+#[tauri::command]
+pub async fn satz_debug_log(message: String) -> Result<(), String> {
+    use std::io::Write;
+    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit/.schreibassistent");
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(format!("{dir}/editor-test.log"))
+        .map_err(|e| e.to_string())?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+    eprintln!("[ui] {message}");
+    writeln!(file, "{:.3} {message}", now.as_secs_f64()).map_err(|e| e.to_string())
+}

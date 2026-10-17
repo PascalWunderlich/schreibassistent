@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { EditorState } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { debugLog } from "../satz";
 import {
   LspNotification,
   PreviewSession,
@@ -36,7 +37,10 @@ export function PreviewEditor() {
         setSession(s);
         setPath(s.files.find((f) => f.path.includes("kapitel/"))?.path ?? s.files[0]?.path ?? "");
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => {
+        debugLog(`B: Fehler beim Start ${String(e)}`);
+        setError(String(e));
+      });
 
     const unlisten = listen<LspNotification>("lsp_notification", async ({ payload }) => {
       if (payload.method === "tinymist/compileStatus") {
@@ -44,11 +48,13 @@ export function PreviewEditor() {
         if (status && status !== "compiling" && sentAt.current !== null) {
           const ms = performance.now() - sentAt.current;
           sentAt.current = null;
+          debugLog(`B: Änderung bis gesetzt ${ms.toFixed(1)} ms (${status})`);
           setTimings((t) => [...t, ms]);
         }
       } else if (payload.method === "tinymist/preview/scrollSource") {
         const params = payload.params as { filepath?: string; start?: unknown };
         setLastJump(JSON.stringify(params));
+        debugLog(`B: scrollSource ${JSON.stringify(params)}`);
         const target = params.filepath ? await relativePath(params.filepath) : null;
         const position = readPosition(params.start);
         if (!target || !position) return;

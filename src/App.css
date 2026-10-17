@@ -156,3 +156,21 @@ main {
   border: 0;
   background: #e9e9ec;
 }
+
+.hint {
+  padding: 0.35rem 1rem;
+  background: #fff8e1;
+  color: #6b5200;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f0dc9a;
+}
+
+button.link {
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+  padding: 0;
+}

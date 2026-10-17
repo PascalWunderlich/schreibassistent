@@ -9,6 +9,7 @@ export interface CompileReport {
   svg_ms: number;
   warnings: string[];
   page_sizes: [number, number][];
+  page_labels: string[];
 }
 
 export interface Rect {
@@ -37,4 +38,27 @@ export const replaceText = (file: string, start: number, end: number, text: stri
 /** Fehler aus Rust kommen als Liste von Meldungen. */
 export function errorMessages(error: unknown): string[] {
   return Array.isArray(error) ? error.map(String) : [String(error)];
+}
+
+/** Protokolliert in beispiel-arbeit/.schreibassistent/editor-test.log (P2-Auswertung). */
+export function debugLog(message: string) {
+  invoke("satz_debug_log", { message }).catch(() => {});
+}
+
+// Unbehandelte Fehler der Oberfläche ebenfalls protokollieren.
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (e) => debugLog(`window.error ${e.message}`));
+  window.addEventListener("unhandledrejection", (e) => debugLog(`unhandledrejection ${String(e.reason)}`));
+}
+
+// Jeder Mausklick im Fenster, um zu sehen, ob Klicks überhaupt ankommen (P2-Diagnose).
+if (typeof document !== "undefined") {
+  document.addEventListener(
+    "pointerdown",
+    (e) => {
+      const target = e.target as Element | null;
+      debugLog(`pointerdown (${e.clientX}, ${e.clientY}) auf <${target?.tagName?.toLowerCase()} class="${target?.getAttribute?.("class") ?? ""}">`);
+    },
+    true,
+  );
 }
