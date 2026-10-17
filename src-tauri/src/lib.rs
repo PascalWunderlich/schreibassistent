@@ -29,6 +29,7 @@ pub fn run() {
             satz::commands::satz_all_pages,
             satz::commands::satz_font,
             satz::commands::satz_first_page,
+            satz::commands::satz_export_pdf,
             lsp::commands::lsp_completion,
             lsp::commands::lsp_hover,
             lsp::commands::lsp_definition,

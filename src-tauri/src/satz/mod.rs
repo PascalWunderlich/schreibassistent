@@ -31,6 +31,9 @@ pub struct CompileReport {
     pub page_sizes: Vec<(f64, f64)>,
     /// Gedruckte Seitenzahl je Seite („“, „i“, „1“ …), alle Seiten.
     pub page_labels: Vec<String>,
+    /// Seiten des Inhaltsteils: von Seite „1“ bis vor das Quellverzeichnis
+    /// (FHDW-Hinweise S. 3). `None`, wenn es kein Quellverzeichnis gibt.
+    pub content_pages: Option<usize>,
 }
 
 /// Absatz unter einem Klickpunkt: Quelltext und Lage auf den Seiten.
@@ -111,7 +114,7 @@ impl Satz {
         self.page_hashes = hashes;
         let page_count = document.pages().len();
         let page_sizes = document.pages().iter().map(|p| mapping::page_size(&p.frame)).collect();
-        let page_labels = document.pages().iter().map(page_label).collect();
+        let page_labels: Vec<String> = document.pages().iter().map(page_label).collect();
         if self.column.is_none() {
             let boxes: Vec<_> = document
                 .pages()
@@ -121,8 +124,19 @@ impl Satz {
                 .collect();
             self.column = mapping::column(&boxes);
         }
+        let content_pages = content_pages(&document, &page_labels);
         self.document = Some(document);
-        Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings, page_sizes, page_labels })
+        Ok(CompileReport {
+            page_count,
+            changed_pages,
+            svgs,
+            compile_ms,
+            svg_ms,
+            warnings,
+            page_sizes,
+            page_labels,
+            content_pages,
+        })
     }
 
     /// Absatz an (x, y) in pt auf Seite `page` (ab 0). `None`, wenn dort kein Text
@@ -217,6 +231,20 @@ impl Satz {
             .find(|&i| mapping::text_boxes(&self.world, &pages[i].frame).iter().any(|b| b.file == id))
     }
 
+    /// PDF des zuletzt gesetzten Dokuments, wie `typst compile` (gleiche Typst-Version).
+    /// `timestamp`: Erstellungszeit (UNIX); ohne Angabe die aktuelle Zeit.
+    pub fn export_pdf(&self, timestamp: Option<i64>) -> Result<Vec<u8>, Vec<String>> {
+        let document = self.document.as_ref().ok_or_else(|| vec!["Noch nicht gesetzt".to_owned()])?;
+        let seconds = timestamp.unwrap_or_else(|| {
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64)
+        });
+        let options = typst_pdf::PdfOptions {
+            timestamp: datetime_from_unix(seconds).map(typst_pdf::Timestamp::new_utc),
+            ..Default::default()
+        };
+        typst_pdf::pdf(document, &options).map_err(|errors| errors.iter().map(|e| e.message.to_string()).collect())
+    }
+
     /// Schriftdatei, mit der Typst eine Familie setzt (für das Editierfeld in der Oberfläche).
     pub fn font_data(&self, family: &str, bold: bool) -> Option<Vec<u8>> {
         use typst::text::{FontVariant, FontWeight};
@@ -245,6 +273,42 @@ impl Satz {
         }
         result
     }
+}
+
+/// Seiten von der ersten mit Zahl „1“ bis vor die Seite, auf der das Quellverzeichnis beginnt.
+fn content_pages(document: &PagedDocument, labels: &[String]) -> Option<usize> {
+    use typst::foundations::{NativeElement, Selector};
+    use typst::introspection::Introspector;
+    use typst::model::BibliographyElem;
+    let first = labels.iter().position(|l| l == "1")?;
+    let introspector = document.introspector();
+    let bibliography = introspector.query(&Selector::Elem(BibliographyElem::ELEM, None));
+    let page = introspector.page(bibliography.first()?.location()?)?.get() - 1;
+    Some(page.saturating_sub(first))
+}
+
+/// UNIX-Zeitstempel → Typst-Datum (UTC), wie `typst compile --creation-timestamp`.
+fn datetime_from_unix(seconds: i64) -> Option<typst::foundations::Datetime> {
+    let days = seconds.div_euclid(86_400);
+    let rest = seconds.rem_euclid(86_400);
+    // Tage seit 1970 → Kalenderdatum (Algorithmus von H. Hinnant).
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    typst::foundations::Datetime::from_ymd_hms(
+        year as i32,
+        month as u8,
+        day as u8,
+        (rest / 3600) as u8,
+        (rest % 3600 / 60) as u8,
+        (rest % 60) as u8,
+    )
 }
 
 fn page_label(page: &typst_layout::Page) -> String {
@@ -479,6 +543,91 @@ mod tests {
         assert_eq!(report.page_labels[page], "1");
         assert!(satz.first_page_of("Arbeit/kapitel/02-grundlagen.typ").unwrap() > page);
         assert_eq!(satz.first_page_of("Arbeit/gibt-es-nicht.typ"), None);
+    }
+
+    #[test]
+    fn content_pages_count_from_page_one_to_bibliography() {
+        let mut satz = beispiel();
+        let report = satz.compile().unwrap();
+        let first = report.page_labels.iter().position(|l| l == "1").unwrap();
+        let bibliography = (0..report.page_count)
+            .find(|&p| {
+                let frame = &satz.document().unwrap().pages()[p].frame;
+                format!("{:?}", frame).contains("Quellverzeichnis") && p > first
+            })
+            .map(|p| p - first);
+        let pages = report.content_pages.expect("Quellverzeichnis vorhanden");
+        assert!(pages > 10 && pages < report.page_count, "{pages}");
+        if let Some(expected) = bibliography {
+            assert_eq!(pages, expected);
+        }
+    }
+
+    #[test]
+    fn pdf_is_identical_to_typst_cli() {
+        let typst = ["/opt/homebrew/bin/typst", "/usr/local/bin/typst"].into_iter().find(|p| std::path::Path::new(p).is_file());
+        let Some(typst) = typst else {
+            eprintln!("typst-CLI nicht gefunden, Test übersprungen");
+            return;
+        };
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit");
+        let out = std::env::temp_dir().join(format!("sa-cli-{}.pdf", std::process::id()));
+        let timestamp = 1_792_000_000;
+        let status = std::process::Command::new(typst)
+            .args(["compile", "--root", root, "--creation-timestamp", &timestamp.to_string()])
+            .arg(format!("{root}/Arbeit/main.typ"))
+            .arg(&out)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let cli = std::fs::read(&out).unwrap();
+        std::fs::remove_file(&out).unwrap();
+
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        let ours = satz.export_pdf(Some(timestamp)).unwrap();
+        // Byte-Gleichheit scheitert nur an der Deflate-Bibliothek, mit der die CLI gebaut
+        // wurde. Verglichen wird deshalb der Inhalt: alle Datenströme entpackt, ohne den
+        // Querverweis-Strom (Byte-Positionen) und ohne die XMP-InstanceID (Prüfsumme der
+        // fertigen Bytes). Die DocumentID bleibt im Vergleich.
+        let a = pdf_streams(&ours);
+        let b = pdf_streams(&cli);
+        assert_eq!(a.len(), b.len(), "gleich viele Datenströme");
+        for (i, (x, y)) in a.iter().zip(&b).enumerate() {
+            assert!(x == y, "Datenstrom {i} unterscheidet sich inhaltlich");
+        }
+    }
+
+    /// Datenströme eines PDFs, Flate-Ströme entpackt, ohne Querverweis-Strom.
+    fn pdf_streams(pdf: &[u8]) -> Vec<Vec<u8>> {
+        let find = |hay: &[u8], needle: &[u8], from: usize| {
+            hay[from..].windows(needle.len()).position(|w| w == needle).map(|i| i + from)
+        };
+        let mut out = Vec::new();
+        let mut pos = 0;
+        while let Some(start) = find(pdf, b"stream\n", pos) {
+            let dict_start = pdf[..start].iter().rposition(|&c| c == b'<').unwrap_or(0).saturating_sub(200);
+            let dict = &pdf[dict_start..start];
+            let body = start + b"stream\n".len();
+            let end = find(pdf, b"\nendstream", body).expect("endstream");
+            pos = end + b"\nendstream".len();
+            if find(dict, b"/XRef", 0).is_some() {
+                continue;
+            }
+            let raw = &pdf[body..end];
+            let mut data = miniz_oxide::inflate::decompress_to_vec_zlib(raw).unwrap_or_else(|_| raw.to_vec());
+            if let (Some(a), Some(b)) = (find(&data, b"<xmpMM:InstanceID>", 0), find(&data, b"</xmpMM:InstanceID>", 0)) {
+                data.drain(a..b);
+            }
+            out.push(data);
+        }
+        out
+    }
+
+    #[test]
+    fn unix_timestamp_to_datetime() {
+        let d = datetime_from_unix(1_792_000_000).unwrap();
+        assert_eq!((d.year(), d.month(), d.day(), d.hour(), d.minute()), (Some(2026), Some(10), Some(14), Some(17), Some(46)));
     }
 
     #[test]

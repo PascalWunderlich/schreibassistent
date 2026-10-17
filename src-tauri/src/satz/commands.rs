@@ -100,3 +100,18 @@ pub async fn satz_font(state: State<'_, AppState>, family: String, bold: bool) -
 pub async fn satz_first_page(state: State<'_, AppState>, file: String) -> Result<Option<usize>, String> {
     with_project(&state, |p| Ok(p.satz.first_page_of(&file)))
 }
+
+/// PDF-Export an den gewählten Ort (Speichern-Dialog der Oberfläche). Setzt vorher neu,
+/// damit das PDF dem gespeicherten Stand entspricht.
+#[tauri::command]
+pub async fn satz_export_pdf(state: State<'_, AppState>, path: String) -> Result<(), Vec<String>> {
+    let target = std::path::PathBuf::from(&path);
+    if !target.is_absolute() || target.extension().is_none_or(|e| e != "pdf") {
+        return Err(vec![format!("Ungültiger Zielpfad: {path}")]);
+    }
+    let mut guard = state.0.lock().unwrap();
+    let project = guard.as_mut().ok_or_else(|| vec!["Kein Arbeits-Vault geöffnet".to_owned()])?;
+    project.satz.compile()?;
+    let pdf = project.satz.export_pdf(None)?;
+    std::fs::write(&target, pdf).map_err(|e| vec![format!("{path}: {e}")])
+}

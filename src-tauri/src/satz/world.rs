@@ -54,7 +54,10 @@ impl SatzWorld {
     /// `root`: Arbeits-Vault (entspricht `typst compile --root`),
     /// `main`: Pfad der Hauptdatei relativ zu `root`, z. B. `Arbeit/main.typ`.
     pub fn new(root: impl Into<PathBuf>, main: &str) -> Result<Self, String> {
+        // Wie `typst compile`: Systemschriften und die mit Typst gelieferten Schriften.
+        // Sonst fehlen z. B. Helvetica/Arial in SVG-Abbildungen und das PDF weicht ab.
         let mut fonts = FontStore::new();
+        fonts.extend(typst_kit::fonts::system());
         fonts.extend(typst_kit::fonts::embedded());
         let packages = SystemPackages::from_parts(
             FsPackages::system_data(),

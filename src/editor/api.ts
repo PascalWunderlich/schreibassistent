@@ -10,6 +10,8 @@ export interface CompileReport {
   warnings: string[];
   page_sizes: [number, number][];
   page_labels: string[];
+  /** Seiten des Inhaltsteils (Seite „1“ bis vor das Quellverzeichnis). */
+  content_pages: number | null;
 }
 
 export interface Rect {
@@ -69,6 +71,7 @@ export const writeFile = (path: string, text: string) => invoke<SaveInfo>("proje
 // ---------- satz ----------
 export const allPages = () => invoke<CompileReport>("satz_all_pages");
 export const compile = () => invoke<CompileReport>("satz_compile");
+export const exportPdf = (path: string) => invoke<void>("satz_export_pdf", { path });
 export const firstPage = (file: string) => invoke<number | null>("satz_first_page", { file });
 
 export const paragraphAt = (page: number, x: number, y: number) =>

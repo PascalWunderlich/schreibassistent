@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
@@ -12,6 +12,7 @@ import {
   SaveInfo,
   TreeNode,
   errorMessages,
+  exportPdf,
   initGit,
   lastProject,
   lspErrorCount,
@@ -39,6 +40,7 @@ function App() {
   const [lastAutosave, setLastAutosave] = useState<number | null>(null);
   const [gitError, setGitError] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
   /** Quelltextmodus: Datei links, Seiten rechts. */
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
@@ -86,6 +88,22 @@ function App() {
     try {
       await initGit();
       setProject((p) => (p ? { ...p, git: true } : p));
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
+  async function exportToPdf() {
+    if (!project) return;
+    const path = await save({
+      title: "PDF exportieren",
+      defaultPath: `${project.root}/${project.name}.pdf`,
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (!path) return;
+    try {
+      await exportPdf(path);
+      setNotice(`PDF gespeichert: ${path}`);
     } catch (e) {
       setErrors(errorMessages(e));
     }
@@ -157,8 +175,19 @@ function App() {
             Quelltext
           </button>
         </div>
+        <button onClick={exportToPdf}>PDF</button>
         <button onClick={choose}>Andere Arbeit …</button>
       </header>
+      {notice && (
+        <div className="hint" onClick={() => setNotice(null)}>
+          {notice}
+        </div>
+      )}
+      {errors.length > 0 && (
+        <div className="errors" onClick={() => setErrors([])}>
+          {errors.join(" · ")}
+        </div>
+      )}
       {project.lsp_error && <div className="hint">{project.lsp_error} – ohne Vervollständigung und Fehleranzeige.</div>}
       {!project.git && (
         <div className="hint">
@@ -211,7 +240,7 @@ function App() {
         <RightPanel />
       </div>
       <StatusBar
-        pageCount={report?.page_count ?? null}
+        contentPages={report?.content_pages ?? null}
         saveState={saveState}
         lastAutosave={lastAutosave}
         git={project.git}
