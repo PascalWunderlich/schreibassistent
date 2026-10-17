@@ -66,10 +66,14 @@ interface Props {
   scale?: number;
   /** Quelltextmodus: Absatz an dieser Stelle zeigen und kurz hervorheben. */
   reveal?: { file: string; offset: number; nonce: number } | null;
+  /** Seite (Index ab 0) in der Mitte des sichtbaren Bereichs, beim Scrollen. */
+  onVisiblePage?: (page: number) => void;
+  /** Datei des gerade bearbeiteten Absatzes (oder `null`). */
+  onEditingFile?: (file: string | null) => void;
 }
 
 /** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
-export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal }: Props) {
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal, onVisiblePage, onEditingFile }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
@@ -139,6 +143,24 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
       })
       .catch(() => {});
   }, [reveal]);
+
+  useEffect(() => {
+    onEditingFile?.(editing?.file ?? null);
+  }, [editing?.file]);
+
+  const visibleTimer = useRef<number | undefined>(undefined);
+  function reportVisiblePage(container: HTMLDivElement) {
+    if (!onVisiblePage) return;
+    window.clearTimeout(visibleTimer.current);
+    visibleTimer.current = window.setTimeout(() => {
+      const middle = container.scrollTop + container.clientHeight / 2;
+      let page = 0;
+      pageRefs.current.forEach((el, i) => {
+        if (el && el.offsetTop <= middle) page = i;
+      });
+      onVisiblePage(page);
+    }, 150);
+  }
 
   const scrollRef = useRef(scrollTo);
   scrollRef.current = scrollTo;
@@ -276,7 +298,7 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
           ))}
         </div>
       )}
-      <div className="pages">
+      <div className="pages" onScroll={(e) => reportVisiblePage(e.currentTarget)}>
         {pages.map((page, i) => (
           <div
             key={i}

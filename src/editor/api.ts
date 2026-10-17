@@ -165,3 +165,52 @@ export const lspHover = (field: Field, cursor: number) => invoke<string | null>(
 export const lspDefinition = (field: Field, cursor: number) => invoke<Definition | null>("lsp_definition", { field, cursor });
 export const lspFieldDiagnostics = (field: Field) => invoke<FieldDiagnostic[]>("lsp_field_diagnostics", { field });
 export const lspErrorCount = () => invoke<number>("lsp_error_count");
+
+// ---------- quellen und index ----------
+export interface Source {
+  citekey: string;
+  kind: string;
+  authors: string[];
+  title: string | null;
+  year: string | null;
+  container: string | null;
+  publisher: string | null;
+  url: string | null;
+  doi: string | null;
+  file: string | null;
+  /** Kapitel, die die Quelle zitieren (leer = ungenutzt). */
+  chapters: string[];
+}
+
+export interface SourcesOverview {
+  sources: Source[];
+  error: string | null;
+}
+
+export interface ChapterInfo {
+  file: string;
+  title: string | null;
+  first_page: number | null;
+}
+
+export interface ChapterView {
+  file: string;
+  title: string | null;
+  /** Citekey → Ergänzungen wie „S. 14“. */
+  quellen: Record<string, string[]>;
+  notizen_direkt: string[];
+  /** Notiz → Quellen, über die sie zum Kapitel gehört. */
+  notizen_ueber: Record<string, string[]>;
+  wissen_direkt: string[];
+  wissen_ueber: Record<string, string[]>;
+}
+
+export const indexChapters = () => invoke<ChapterInfo[]>("index_chapters");
+export const indexChapter = (file: string) => invoke<ChapterView | null>("index_chapter", { file });
+export const indexSources = () => invoke<SourcesOverview>("index_sources");
+
+/** Kurzform für die Anzeige: „Sutton 2018“. */
+export function sourceLabel(source: Source): string {
+  const surname = source.authors[0]?.split(",")[0]?.replace(/[{}]/g, "").trim();
+  return [surname, source.year].filter(Boolean).join(" ") || source.citekey;
+}

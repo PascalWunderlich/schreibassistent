@@ -5,14 +5,20 @@ import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
 import { SourceEditor } from "./editor/SourceEditor";
 import {
+  ChapterInfo,
+  ChapterView,
   CompileReport,
   Definition,
   ParagraphHit,
   ProjectInfo,
   SaveInfo,
   TreeNode,
+  SourcesOverview,
   errorMessages,
   exportDir,
+  indexChapter,
+  indexChapters,
+  indexSources,
   exportPdf,
   initGit,
   lastProject,
@@ -23,6 +29,7 @@ import {
   projectTree,
 } from "./editor/api";
 import { Sidebar } from "./layout/Sidebar";
+import { ChapterPanel } from "./layout/ChapterPanel";
 import { RightPanel } from "./layout/RightPanel";
 import { SaveState, StatusBar } from "./layout/StatusBar";
 import "./App.css";
@@ -50,6 +57,14 @@ function App() {
   const [sourceJump, setSourceJump] = useState<{ file: string; offset: number; nonce: number } | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [reveal, setReveal] = useState<{ file: string; offset: number; nonce: number } | null>(null);
+  // Index: Kapitel, aktuelles Kapitel, Quellen.
+  const [chapters, setChapters] = useState<ChapterInfo[]>([]);
+  const [visiblePage, setVisiblePage] = useState<number | null>(null);
+  const [editingFile, setEditingFile] = useState<string | null>(null);
+  const [chapterView, setChapterView] = useState<ChapterView | null>(null);
+  const [sources, setSources] = useState<SourcesOverview>({ sources: [], error: null });
+  const [indexVersion, setIndexVersion] = useState(0);
+  const refreshIndex = () => setIndexVersion((n) => n + 1);
 
   // Änderungen von außen: Dateibaum aktualisieren (neue oder gelöschte Dateien).
   useEffect(() => {
@@ -59,6 +74,44 @@ function App() {
       unlisten.then((f) => f()).catch(() => {});
     };
   }, [project]);
+
+  // Index neu laden: nach dem Öffnen, nach dem Speichern, bei Änderungen von außen.
+  useEffect(() => {
+    if (!project) return;
+    const unlisten = listen("index_aktualisiert", refreshIndex);
+    return () => {
+      unlisten.then((f) => f()).catch(() => {});
+    };
+  }, [project]);
+
+  useEffect(() => {
+    if (!project) return;
+    indexChapters().then(setChapters).catch(() => {});
+    indexSources().then(setSources).catch(() => {});
+  }, [project, indexVersion, report]);
+
+  /** Aktuelles Kapitel: Quelltextmodus → offene Datei; sonst bearbeiteter Absatz oder sichtbare Seite. */
+  const isChapter = (file: string | null) => !!file && chapters.some((c) => c.file === file);
+  const currentChapter = (() => {
+    if (sourceMode && center.kind === "pages") return isChapter(sourceFile) ? sourceFile : null;
+    if (isChapter(editingFile)) return editingFile;
+    if (visiblePage === null) return chapters[0]?.file ?? null;
+    const before = chapters.filter((c) => c.first_page !== null && c.first_page <= visiblePage);
+    return before.length > 0 ? before[before.length - 1].file : null;
+  })();
+
+  useEffect(() => {
+    if (!project || !currentChapter) {
+      setChapterView(null);
+      return;
+    }
+    indexChapter(currentChapter).then(setChapterView).catch(() => setChapterView(null));
+  }, [project, currentChapter, indexVersion]);
+
+  function openFromIndex(path: string) {
+    setSelected(path);
+    setCenter({ kind: "note", path, readOnly: !path.startsWith("Notizen/") });
+  }
 
   // Fehlerzahl von Tinymist für die Statusleiste.
   useEffect(() => {
@@ -131,6 +184,7 @@ function App() {
   }
 
   function saved(save: SaveInfo) {
+    refreshIndex();
     setSaveState("gespeichert");
     if (save.autosaved) setLastAutosave(save.autosaved);
     setGitError(save.git_error);
@@ -243,7 +297,15 @@ function App() {
         </div>
       )}
       <div className="workspace">
-        <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} onNewChapter={createChapter} />
+        <div className="left">
+          <ChapterPanel
+            chapter={chapterView}
+            sources={sources.sources}
+            sourcesError={sources.error}
+            onOpenFile={openFromIndex}
+          />
+          <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} onNewChapter={createChapter} />
+        </div>
         <main className="center">
           {center.kind === "pages" && sourceMode ? (
             <div className="source-split">
@@ -277,6 +339,8 @@ function App() {
               onSaved={saved}
               onSaving={() => setSaveState("speichert …")}
               refresh={refresh}
+              onVisiblePage={setVisiblePage}
+              onEditingFile={setEditingFile}
             />
           ) : (
             <NoteEditor

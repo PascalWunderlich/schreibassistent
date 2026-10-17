@@ -102,12 +102,84 @@ button {
 }
 
 /* ---------- Seitenleiste ---------- */
-.sidebar {
+.left {
   overflow: auto;
+  min-height: 0;
   background: var(--panel);
   border-right: 1px solid var(--line);
+}
+
+.sidebar,
+.chapter-panel {
   padding: 0.6rem 0.4rem;
   font-size: 0.9rem;
+}
+
+.chapter-panel {
+  border-bottom: 1px solid var(--line);
+}
+
+.chapter-panel h3 {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin: 0.5rem 0.6rem 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chapter-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chapter-panel .item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 5px;
+  color: inherit;
+}
+
+.chapter-panel .item:hover {
+  background: #ececef;
+}
+
+.chapter-panel .item.unused {
+  color: #a8a8ae;
+}
+
+.chapter-panel .meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.source-details {
+  margin: 0.15rem 0.6rem 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.source-details .citekey {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.source-details .title {
+  font-style: italic;
+}
+
+.source-details .url {
+  word-break: break-all;
 }
 
 .sidebar h2,
