@@ -40,7 +40,7 @@ Die Namen der Optionen sind sinngemäß angegeben und können je nach Version le
 
 | Problem | Folge im Quellverzeichnis | Einstellung |
 |---|---|---|
-| Better BibTeX schreibt bei Internetquellen (`@misc`) die URL standardmäßig nicht | URL und Zugriffsdatum fehlen (FHDW S. 10) | **Einstellungen → Better BibTeX → Export → „URLs in den BibTeX-Export aufnehmen“: im `url`-Feld** |
+| Better BibTeX schreibt bei Internetquellen (`@misc`) die URL standardmäßig nicht | URL und Zugriffsdatum fehlen (FHDW S. 10) | **Einstellungen → Better BibTeX → Export → „URLs in den BibTeX-Export aufnehmen“: im `url`-Feld** – **vor** dem Einrichten des Auto-Exports. Jeder Auto-Export merkt sich die Einstellungen von seiner Einrichtung; später geänderte gelten für ihn nicht (im Test 2026-10-17 so beobachtet). Dann im Reiter „Automatischer Export“ beim Eintrag selbst ändern. |
 | Ohne Sprache behandelt Better BibTeX Titel als Englisch und schreibt jedes Wort groß | „Vom Softwaremonolithen **Zu** Microservices … **Am** Praxisbeispiel“ | bei deutschen Quellen in Zotero das Feld **Sprache = `de`** setzen |
 | Beim Import einer `.bib` schreibt Zotero Titel klein („softwaremonolithen“) | Substantive klein | vor einem Import **Better BibTeX → Import → „Titel in Satzschreibweise umwandeln“ ausschalten**; besser Quellen über den Browser erfassen |
 

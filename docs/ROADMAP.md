@@ -20,3 +20,5 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-17 | Startbare `.app` ohne Terminal, Tinymist als Sidecar eingebaut (T14) | Pascal, Planung P3 |
 | 2026-10-17 | Seitenvorgabe (20–22) aus dem Regelprofil statt fest im Code | P3, kommt mit P5 |
 | 2026-10-17 | Notiz von außen geändert, während sie offen ist: neu laden statt überschreiben | P3, offen |
+| 2026-10-17 | URLs fehlen im Better-BibTeX-Auto-Export (`@misc`): Einstellung je Auto-Export in Zotero setzen oder Export neu anlegen; vor der Praxisarbeit klären | P4, offen |
+| 2026-10-17 | Design der Seitenleiste besprechen | Pascal, P4 |
