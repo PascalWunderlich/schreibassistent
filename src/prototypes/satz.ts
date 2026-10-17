@@ -25,6 +25,12 @@ export interface ParagraphHit {
   end: number;
   text: string;
   rects: [number, Rect][];
+  /** Typografie im Satz, in pt. */
+  font_size: number;
+  line_height: number;
+  /** Textspalte der Arbeit, in pt. */
+  column_x: number;
+  column_width: number;
 }
 
 export const openExample = () => invoke<CompileReport>("satz_open_example");
@@ -32,8 +38,26 @@ export const openExample = () => invoke<CompileReport>("satz_open_example");
 export const paragraphAt = (page: number, x: number, y: number) =>
   invoke<ParagraphHit | null>("satz_paragraph_at", { page, x, y });
 
+export const paragraphAtOffset = (file: string, offset: number) =>
+  invoke<ParagraphHit | null>("satz_paragraph_at_offset", { file, offset });
+
+/** Länge in UTF-8-Bytes (Rust rechnet in Bytes, JavaScript in UTF-16). */
+export const utf8Length = (text: string) => new TextEncoder().encode(text).length;
+
 export const replaceText = (file: string, start: number, end: number, text: string) =>
   invoke<CompileReport>("satz_replace", { file, start, end, text });
+
+/** Familie, unter der die Satzschrift im Editierfeld verfügbar ist. */
+export const EDITOR_FONT = "Satzschrift";
+
+/** Lädt die Schrift, mit der Typst setzt (New Computer Modern), in die Oberfläche. */
+export async function loadEditorFont() {
+  for (const bold of [false, true]) {
+    const data = await invoke<ArrayBuffer>("satz_font", { family: "New Computer Modern", bold });
+    const face = new FontFace(EDITOR_FONT, data, { weight: bold ? "700" : "400" });
+    document.fonts.add(await face.load());
+  }
+}
 
 /** Fehler aus Rust kommen als Liste von Meldungen. */
 export function errorMessages(error: unknown): string[] {

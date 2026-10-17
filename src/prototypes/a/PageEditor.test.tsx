@@ -22,12 +22,22 @@ const invoke = vi.fn(async (command: string, _args?: unknown): Promise<unknown> 
         end: 20,
         text: "Ein Absatz.",
         rects: [[0, { x: 10, y: 10, width: 50, height: 12 }]],
+        font_size: 11,
+        line_height: 14.8,
+        column_x: 10,
+        column_width: 80,
       };
+    case "satz_font":
+      throw ["keine Schrift im Test"];
     default:
       throw [`unerwartet: ${command}`];
   }
 });
 vi.mock("@tauri-apps/api/core", () => ({ invoke: (c: string, a?: unknown) => invoke(c, a) }));
+
+// jsdom kennt keine Objekt-URLs.
+URL.createObjectURL = vi.fn(() => "blob:seite");
+URL.revokeObjectURL = vi.fn();
 
 describe("PageEditor", () => {
   it("öffnet nach einem Klick das Feld mit dem Absatz", async () => {

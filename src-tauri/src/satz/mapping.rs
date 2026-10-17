@@ -4,6 +4,7 @@
 //! Vom Klickpunkt geht es über den Span zur Byte-Position und von dort im Syntaxbaum
 //! zum umgebenden Absatz (Bereich zwischen zwei Leerzeilen).
 
+use std::collections::HashMap;
 use std::ops::Range;
 
 use typst::WorldExt;
@@ -43,6 +44,8 @@ impl Rect {
 #[derive(Debug, Clone)]
 pub struct TextBox {
     pub rect: Rect,
+    /// Schriftgröße in pt.
+    pub size: f64,
     pub file: FileId,
     pub range: Range<usize>,
 }
@@ -89,7 +92,7 @@ fn collect(world: &SatzWorld, frame: &Frame, ts: Transform, out: &mut Vec<TextBo
                     width: (b.x - a.x).to_pt().abs(),
                     height: (b.y - a.y).to_pt().abs(),
                 };
-                out.push(TextBox { rect, file, range });
+                out.push(TextBox { rect, size: text.size.to_pt(), file, range });
             }
             _ => {}
         }
@@ -167,6 +170,31 @@ fn is_trivia(kind: SyntaxKind) -> bool {
     matches!(kind, SyntaxKind::Space | SyntaxKind::LineComment | SyntaxKind::BlockComment)
 }
 
+/// Stelle für einen leeren Absatz bei `offset`: eine Zeile unter dem letzten gesetzten
+/// Text davor (gleiche Datei), so breit wie dieser Text.
+pub fn rect_after(page_boxes: &[(usize, Vec<TextBox>)], file: FileId, offset: usize) -> Option<(usize, Rect)> {
+    let mut best: Option<(usize, &TextBox)> = None;
+    for (page, boxes) in page_boxes {
+        for b in boxes.iter().filter(|b| b.file == file && b.range.end <= offset) {
+            if best.is_none_or(|(_, prev)| b.range.end >= prev.range.end) {
+                best = Some((*page, b));
+            }
+        }
+    }
+    let (page, last) = best?;
+    // Linke Kante und Breite der Zeile: alle Stücke mit gleicher Grundlinie zusammenfassen.
+    let line = page_boxes
+        .iter()
+        .filter(|(p, _)| *p == page)
+        .flat_map(|(_, boxes)| boxes.iter())
+        .filter(|b| (b.rect.y - last.rect.y).abs() < 0.5)
+        .map(|b| b.rect)
+        .reduce(Rect::union)
+        .unwrap_or(last.rect);
+    let gap = line.height * 0.4;
+    Some((page, Rect { x: line.x, y: line.y + line.height + gap, width: line.width, height: line.height }))
+}
+
 /// Umrandung eines Quelltextbereichs auf den Seiten: je Seite ein Rechteck.
 pub fn rects_for_range(
     page_boxes: &[(usize, Vec<TextBox>)],
@@ -183,6 +211,49 @@ pub fn rects_for_range(
         }
     }
     out
+}
+
+/// Typografie eines Absatzes: Schriftgröße (häufigste) und Abstand der Grundlinien in pt.
+pub fn typography(page_boxes: &[(usize, Vec<TextBox>)], file: FileId, range: &Range<usize>) -> (f64, f64) {
+    let hits: Vec<&TextBox> = page_boxes
+        .iter()
+        .flat_map(|(_, boxes)| boxes.iter())
+        .filter(|b| b.file == file && b.range.start < range.end && b.range.end > range.start)
+        .collect();
+    let mut sizes: Vec<f64> = hits.iter().map(|b| b.size).collect();
+    sizes.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let size = sizes.get(sizes.len() / 2).copied().unwrap_or(11.0);
+    // Zeilenabstand: kleinster positiver Abstand der Oberkanten verschiedener Zeilen.
+    let mut tops: Vec<f64> = hits.iter().filter(|b| (b.size - size).abs() < 0.1).map(|b| b.rect.y).collect();
+    tops.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let pitch = tops
+        .windows(2)
+        .map(|w| w[1] - w[0])
+        .filter(|d| *d > size * 0.5 && *d < size * 3.0)
+        .fold(f64::INFINITY, f64::min);
+    (size, if pitch.is_finite() { pitch } else { size * 1.35 })
+}
+
+/// Textspalte (linke Kante, Breite) in pt. Im Blocksatz beginnen und enden fast alle
+/// Zeilen an den Spaltenrändern: häufigste linke und rechte Zeilenkante (auf 0,5 pt).
+pub fn column(page_boxes: &[(usize, Vec<TextBox>)]) -> Option<(f64, f64)> {
+    let mut lines: HashMap<(usize, i64), Rect> = HashMap::new();
+    for (page, boxes) in page_boxes {
+        for b in boxes {
+            let key = (*page, (b.rect.y * 2.0).round() as i64);
+            lines.entry(key).and_modify(|r| *r = r.union(b.rect)).or_insert(b.rect);
+        }
+    }
+    let mode = |values: Vec<f64>| -> Option<f64> {
+        let mut counts: HashMap<i64, usize> = HashMap::new();
+        for v in values {
+            *counts.entry((v * 2.0).round() as i64).or_default() += 1;
+        }
+        counts.into_iter().max_by_key(|(_, n)| *n).map(|(k, _)| k as f64 / 2.0)
+    };
+    let left = mode(lines.values().map(|r| r.x).collect())?;
+    let right = mode(lines.values().map(|r| r.x + r.width).collect())?;
+    Some((left, right - left))
 }
 
 /// Größe einer Seite in pt.

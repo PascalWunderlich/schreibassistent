@@ -44,6 +44,12 @@ pub struct ParagraphHit {
     pub text: String,
     /// Je Seite (Index ab 0) das umschließende Rechteck in pt.
     pub rects: Vec<(usize, Rect)>,
+    /// Schriftgröße und Zeilenabstand (Grundlinie zu Grundlinie) im Satz, in pt.
+    pub font_size: f64,
+    pub line_height: f64,
+    /// Textspalte der Arbeit: linke Kante und Breite in pt.
+    pub column_x: f64,
+    pub column_width: f64,
 }
 
 /// Hält World und letztes Dokument eines Arbeits-Vaults.
@@ -51,11 +57,13 @@ pub struct Satz {
     world: SatzWorld,
     page_hashes: Vec<u128>,
     document: Option<PagedDocument>,
+    /// Textspalte (linke Kante, Breite) in pt; einmal ermittelt, die Ränder ändern sich nicht.
+    column: Option<(f64, f64)>,
 }
 
 impl Satz {
     pub fn open(root: impl Into<std::path::PathBuf>, main: &str) -> Result<Self, String> {
-        Ok(Self { world: SatzWorld::new(root, main)?, page_hashes: Vec::new(), document: None })
+        Ok(Self { world: SatzWorld::new(root, main)?, page_hashes: Vec::new(), document: None, column: None })
     }
 
     pub fn world(&self) -> &SatzWorld {
@@ -97,6 +105,15 @@ impl Satz {
         let page_count = document.pages().len();
         let page_sizes = document.pages().iter().map(|p| mapping::page_size(&p.frame)).collect();
         let page_labels = document.pages().iter().map(page_label).collect();
+        if self.column.is_none() {
+            let boxes: Vec<_> = document
+                .pages()
+                .iter()
+                .enumerate()
+                .map(|(i, p)| (i, mapping::text_boxes(&self.world, &p.frame)))
+                .collect();
+            self.column = mapping::column(&boxes);
+        }
         self.document = Some(document);
         Ok(CompileReport { page_count, changed_pages, svgs, compile_ms, svg_ms, warnings, page_sizes, page_labels })
     }
@@ -117,6 +134,8 @@ impl Satz {
             .map(|p| (p, if p == page { boxes.clone() } else { mapping::text_boxes(&self.world, &pages[p].frame) }))
             .collect();
         let rects = mapping::rects_for_range(&page_boxes, hit.file, &range);
+        let (font_size, line_height) = mapping::typography(&page_boxes, hit.file, &range);
+        let (column_x, column_width) = self.column.unwrap_or((rects[0].1.x, rects[0].1.width));
 
         Some(ParagraphHit {
             file: hit.file.vpath().get_without_slash().to_string(),
@@ -124,7 +143,61 @@ impl Satz {
             start: range.start,
             end: range.end,
             rects,
+            font_size,
+            line_height,
+            column_x,
+            column_width,
         })
+    }
+
+    /// Absatz, der bei Byte `offset` in `file` beginnt oder ihn enthält, mit seiner Lage
+    /// auf den Seiten. Liegt `offset` zwischen zwei Absätzen (nach Enter), ist der Absatz
+    /// leer: `start == end == offset`, das Rechteck liegt unter dem Text davor.
+    pub fn paragraph_at_offset(&self, file: &str, offset: usize) -> Option<ParagraphHit> {
+        let id = project_file(file).ok()?;
+        let source = typst::World::source(&self.world, id).ok()?;
+        let text = source.text();
+        let rest = text.get(offset..)?;
+        let blank = rest.trim_start_matches([' ', '\t']).starts_with('\n') || rest.trim().is_empty();
+        let range = if blank { offset..offset } else { mapping::paragraph_range(&source, offset)? };
+
+        let pages = self.document.as_ref()?.pages();
+        let page_boxes: Vec<_> =
+            pages.iter().enumerate().map(|(i, p)| (i, mapping::text_boxes(&self.world, &p.frame))).collect();
+        let rects = if range.is_empty() {
+            mapping::rect_after(&page_boxes, id, offset).into_iter().collect()
+        } else {
+            mapping::rects_for_range(&page_boxes, id, &range)
+        };
+        if rects.is_empty() {
+            return None;
+        }
+        // Leerer Absatz: Typografie vom Text davor übernehmen.
+        let probe = if range.is_empty() { offset.saturating_sub(1)..offset } else { range.clone() };
+        let (font_size, line_height) = mapping::typography(&page_boxes, id, &probe);
+        let (column_x, column_width) = self.column.unwrap_or((rects[0].1.x, rects[0].1.width));
+        Some(ParagraphHit {
+            file: file.to_owned(),
+            text: text[range.clone()].to_owned(),
+            start: range.start,
+            end: range.end,
+            rects,
+            font_size,
+            line_height,
+            column_x,
+            column_width,
+        })
+    }
+
+    /// Schriftdatei, mit der Typst eine Familie setzt (für das Editierfeld in der Oberfläche).
+    pub fn font_data(&self, family: &str, bold: bool) -> Option<Vec<u8>> {
+        use typst::text::{FontVariant, FontWeight};
+        let mut variant = FontVariant::default();
+        if bold {
+            variant.weight = FontWeight::BOLD;
+        }
+        let index = typst::World::book(&self.world).select(&family.to_lowercase(), variant)?;
+        typst::World::font(&self.world, index).map(|f| f.data().to_vec())
     }
 
     /// Ersetzt `start..end` in `file` durch `text` (nur im Speicher) und kompiliert neu.
@@ -217,6 +290,12 @@ mod tests {
         assert_eq!(hit.file, path);
         assert!(hit.text.starts_with("#lorem(60) Die Modellierung erfolgt"), "{}", hit.text);
         assert!(hit.rects.iter().any(|(p, _)| *p == page));
+        // Fließtext: 11 pt; Textspalte links 3 cm, rechts 4 cm (FHDW-Ränder der Vorlage).
+        assert!((hit.font_size - 11.0).abs() < 0.01, "{}", hit.font_size);
+        assert!(hit.line_height > 12.0 && hit.line_height < 18.0, "{}", hit.line_height);
+        assert!((hit.column_x - 85.04).abs() < 1.0, "{}", hit.column_x);
+        assert!((hit.column_width - (595.28 - 85.04 - 113.39)).abs() < 2.0, "{}", hit.column_width);
+        assert!(satz.font_data("New Computer Modern", false).is_some_and(|d| d.len() > 10_000));
 
         let new_text = hit.text.replace("Die Modellierung", "Die neue Modellierung");
         let report = satz.replace(&hit.file, hit.start, hit.end, &new_text).unwrap();
@@ -253,6 +332,35 @@ mod tests {
         let hit = satz.paragraph_at(page, rect.x + 1.0, rect.y + rect.height / 2.0).unwrap();
         assert_eq!(hit.text, "#lorem(420)");
         assert_eq!(hit.rects.len(), 2, "{:?}", hit.rects);
+    }
+
+    #[test]
+    fn enter_creates_empty_paragraph_below_and_splits_in_the_middle() {
+        let mut satz = beispiel();
+        satz.compile().unwrap();
+        let path = "Arbeit/kapitel/03-umsetzung.typ";
+        let text = satz.world().source_text(path).unwrap();
+        let start = text.find("#lorem(60) Die Modellierung").unwrap();
+        let end = start + text[start..].find('\n').unwrap();
+        let paragraph = text[start..end].to_owned();
+
+        // Enter am Ende: neuer leerer Absatz darunter.
+        let new_text = format!("{paragraph}\n\n");
+        satz.replace(path, start, end, &new_text).unwrap();
+        let offset = start + new_text.len();
+        let hit = satz.paragraph_at_offset(path, offset).expect("leerer Absatz");
+        assert_eq!((hit.start, hit.end, hit.text.as_str()), (offset, offset, ""));
+        assert_eq!(hit.rects.len(), 1);
+        let report = satz.replace(path, offset, offset, "Ganz neuer Absatz.").unwrap();
+        assert!(!report.changed_pages.is_empty());
+        let after = satz.world().source_text(path).unwrap();
+        assert!(after.contains("@omg2017.\n\nGanz neuer Absatz.\n"), "{}", &after[start..start + 200]);
+
+        // Enter in der Mitte: zweiter Teil wird eigener Absatz.
+        let split = after.find("Ganz neuer").unwrap() + "Ganz ".len();
+        satz.replace(path, split, split, "\n\n").unwrap();
+        let hit = satz.paragraph_at_offset(path, split + 2).expect("zweiter Teil");
+        assert_eq!(hit.text, "neuer Absatz.");
     }
 
     #[test]

@@ -32,6 +32,30 @@ pub async fn satz_paragraph_at(
 }
 
 #[tauri::command]
+pub async fn satz_paragraph_at_offset(
+    state: State<'_, SatzState>,
+    file: String,
+    offset: usize,
+) -> Result<Option<ParagraphHit>, Vec<String>> {
+    let guard = state.0.lock().unwrap();
+    let satz = guard.as_ref().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
+    Ok(satz.paragraph_at_offset(&file, offset))
+}
+
+/// Schriftdatei für das Editierfeld (roh, ohne JSON-Umweg).
+#[tauri::command]
+pub async fn satz_font(
+    state: State<'_, SatzState>,
+    family: String,
+    bold: bool,
+) -> Result<tauri::ipc::Response, Vec<String>> {
+    let guard = state.0.lock().unwrap();
+    let satz = guard.as_ref().ok_or_else(|| vec!["Keine Arbeit geöffnet".to_owned()])?;
+    let data = satz.font_data(&family, bold).ok_or_else(|| vec![format!("Schrift {family} fehlt")])?;
+    Ok(tauri::ipc::Response::new(data))
+}
+
+#[tauri::command]
 pub async fn satz_replace(
     state: State<'_, SatzState>,
     file: String,

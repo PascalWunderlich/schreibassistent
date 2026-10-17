@@ -17,6 +17,8 @@ pub fn run() {
             satz::commands::satz_open_example,
             satz::commands::satz_paragraph_at,
             satz::commands::satz_replace,
+            satz::commands::satz_paragraph_at_offset,
+            satz::commands::satz_font,
             satz::commands::satz_debug_log,
             lsp::commands::lsp_open_example,
             lsp::commands::lsp_change,
