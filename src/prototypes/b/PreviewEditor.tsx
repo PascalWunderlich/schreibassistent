@@ -14,6 +14,9 @@ import {
   scrollPreview,
 } from "../lsp";
 
+/** Pause, nach der neues Tippen als „Tippbeginn“ gilt und die Vorschau einmal mitspringt. */
+const TYPING_PAUSE_MS = 2000;
+
 const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
 /** Prototyp B: Quelltext links, Tinymist-Vorschau rechts, Sprung in beide Richtungen. */
@@ -29,6 +32,7 @@ export function PreviewEditor() {
   const sentAt = useRef<number | null>(null);
   const pendingJump = useRef<{ line: number; character: number } | null>(null);
   const scrollTimer = useRef<number | undefined>(undefined);
+  const lastChange = useRef(0);
 
   useEffect(() => {
     openPreview()
@@ -105,7 +109,18 @@ export function PreviewEditor() {
               const text = update.state.doc.toString();
               texts.current.set(current, text);
               sentAt.current = performance.now();
-              changeFile(current, text).catch((e) => setError(String(e)));
+              const pause = sentAt.current - lastChange.current;
+              lastChange.current = sentAt.current;
+              changeFile(current, text)
+                .then(() => {
+                  // Zu Beginn des Tippens (nach ≥ 2 s Pause) einmal zur Stelle springen.
+                  if (pause < TYPING_PAUSE_MS) return;
+                  const head = update.state.selection.main.head;
+                  const line = update.state.doc.lineAt(head);
+                  debugLog(`B: Tippbeginn, Sprung zur Vorschau ${current}:${line.number - 1}:${head - line.from}`);
+                  return scrollPreview(current, line.number - 1, head - line.from);
+                })
+                .catch((e) => setError(String(e)));
             }
           }),
           // Vorschau nur bei einem Klick in den Quelltext springen lassen, nicht beim Tippen:
