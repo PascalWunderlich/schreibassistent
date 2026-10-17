@@ -4,3 +4,8 @@ dist/
 .schreibassistent/
 referenz/
 .DS_Store
+*.log
+*.local
+.vscode/*
+!.vscode/extensions.json
+src-tauri/gen/schemas/
