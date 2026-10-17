@@ -209,6 +209,8 @@ button {
 }
 
 .pages {
+  /* Bezugspunkt für offsetTop der Seiten (Sprung aus dem Quelltext). */
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: auto;
