@@ -50,6 +50,7 @@ pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: Stri
             paths.into_iter().filter(|p| project.external_change(p).unwrap_or(true)).collect()
         };
         if !changed.is_empty() {
+            let _ = watch_app.emit("index_aktualisiert", ());
             let _ = watch_app.emit("datei_geaendert", changed);
         }
     })

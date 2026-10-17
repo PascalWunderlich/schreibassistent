@@ -1,0 +1,56 @@
+{
+  "_hinweis": "Erwartete Zuordnung für beispiel-arbeit (P4, Abnahme 100 %). Vor der Umsetzung von Hand aus den Dateien abgeleitet. Notizen/Wissen 'direkt' = Frontmatter kapitel; 'ueber' = nennt eine im Kapitel zitierte Quelle (Frontmatter citekeys/citekey oder [[Link]]).",
+  "kapitel": {
+    "Arbeit/kapitel/01-einleitung.typ": {
+      "titel": "Einleitung",
+      "quellen": { "gebhard2021": [] },
+      "notizen_direkt": ["Notizen/gliederung.md"],
+      "notizen_ueber": { "Notizen/microservices-gedanken.md": ["gebhard2021"] },
+      "wissen_direkt": [],
+      "wissen_ueber": {}
+    },
+    "Arbeit/kapitel/02-grundlagen.typ": {
+      "titel": "Grundlagen",
+      "quellen": { "greenyer2013": ["S. 1"], "koenig2023": [], "sutton2018": [] },
+      "notizen_direkt": ["Notizen/idee-reinforcement.md"],
+      "notizen_ueber": {},
+      "wissen_direkt": ["Wissen/Konzepte/produktlinien.md"],
+      "wissen_ueber": {
+        "Wissen/Quellen/greenyer2013.md": ["greenyer2013"],
+        "Wissen/Quellen/sutton2018.md": ["sutton2018"]
+      }
+    },
+    "Arbeit/kapitel/03-umsetzung.typ": {
+      "titel": "Umsetzung und Evaluierung",
+      "quellen": { "omg2017": [] },
+      "notizen_direkt": [],
+      "notizen_ueber": { "Notizen/gliederung.md": ["omg2017"] },
+      "wissen_direkt": [],
+      "wissen_ueber": {}
+    },
+    "Arbeit/kapitel/04-loesungskonzept.typ": {
+      "titel": "Lösungskonzept",
+      "quellen": { "gebhard2021": [] },
+      "notizen_direkt": [],
+      "notizen_ueber": { "Notizen/microservices-gedanken.md": ["gebhard2021"] },
+      "wissen_direkt": [],
+      "wissen_ueber": {}
+    },
+    "Arbeit/kapitel/05-zusammenfassung.typ": {
+      "titel": "Zusammenfassung und Ausblick",
+      "quellen": { "sutton2018": ["S. 42"] },
+      "notizen_direkt": ["Notizen/gliederung.md"],
+      "notizen_ueber": { "Notizen/idee-reinforcement.md": ["sutton2018"] },
+      "wissen_direkt": [],
+      "wissen_ueber": { "Wissen/Quellen/sutton2018.md": ["sutton2018"] }
+    }
+  },
+  "quellen": {
+    "gebhard2021": ["Arbeit/kapitel/01-einleitung.typ", "Arbeit/kapitel/04-loesungskonzept.typ"],
+    "greenyer2013": ["Arbeit/kapitel/02-grundlagen.typ"],
+    "koenig2023": ["Arbeit/kapitel/02-grundlagen.typ"],
+    "omg2017": ["Arbeit/kapitel/03-umsetzung.typ"],
+    "sutton2018": ["Arbeit/kapitel/02-grundlagen.typ", "Arbeit/kapitel/05-zusammenfassung.typ"],
+    "weber2022": []
+  }
+}

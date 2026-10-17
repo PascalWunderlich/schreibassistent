@@ -12,7 +12,9 @@ pub mod watch;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use crate::index::{Index, cache::Cache};
 use crate::lsp::{TinymistSession, find_tinymist};
+use crate::quellen::{self, Source};
 use crate::satz::{CompileReport, Satz};
 
 pub const NAME: &str = "projekt";
@@ -32,6 +34,13 @@ pub struct Project {
     written: HashMap<String, u128>,
     /// Dateibeobachtung (endet beim Schließen des Projekts).
     pub watcher: Option<notify::RecommendedWatcher>,
+    /// Quellen aus `System/quellen.bib`.
+    pub sources: Vec<Source>,
+    /// Kapitel ↔ Quelle ↔ Notiz ↔ Wissensseite.
+    pub index: Index,
+    cache: Option<Cache>,
+    /// Fehler beim Lesen der `.bib` (Quellen bleiben dann auf dem letzten Stand).
+    pub sources_error: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -95,7 +104,22 @@ impl Project {
             compile_errors,
             error_location: satz.error_location(),
         };
-        Ok((Self { root, satz, lsp, last_autosave, written: HashMap::new(), watcher: None }, info))
+        let cache = Cache::open(&root.join(".schreibassistent/cache.sqlite")).ok();
+        let mut project = Self {
+            root,
+            satz,
+            lsp,
+            last_autosave,
+            written: HashMap::new(),
+            watcher: None,
+            sources: Vec::new(),
+            index: Index::default(),
+            cache,
+            sources_error: None,
+        };
+        project.reload_sources();
+        project.reindex().map_err(|e| vec![e])?;
+        Ok((project, info))
     }
 
     /// Schreibt eine Datei (nur `Arbeit/` und `Notizen/`) und sichert ggf. per Git.
@@ -110,7 +134,32 @@ impl Project {
         {
             lsp.file_changed(relative)?;
         }
+        if relative.ends_with(".typ") || relative.ends_with(".md") {
+            self.reindex()?;
+        }
         Ok(self.autosave(false))
+    }
+
+    /// `System/quellen.bib` neu lesen (z. B. nach dem Auto-Export von Better BibTeX).
+    pub fn reload_sources(&mut self) {
+        match quellen::load(&self.root) {
+            Ok(sources) => {
+                self.sources = sources;
+                self.sources_error = None;
+            }
+            Err(e) => self.sources_error = Some(e),
+        }
+    }
+
+    /// Index neu aufbauen; unveränderte Dateien kommen aus dem Cache.
+    pub fn reindex(&mut self) -> Result<(), String> {
+        self.index = Index::build(&self.root, self.cache.as_ref())?;
+        Ok(())
+    }
+
+    /// Citekeys der `.bib`.
+    pub fn citekeys(&self) -> std::collections::BTreeSet<String> {
+        self.sources.iter().map(|s| s.citekey.clone()).collect()
     }
 
     /// Git-Sicherung, höchstens alle 5 Minuten. Erzwingen ist nicht nötig: Jede Änderung
@@ -138,6 +187,12 @@ impl Project {
         }
         self.written.remove(relative);
         self.satz.world().reload_from_disk(relative)?;
+        if relative == quellen::BIB_FILE {
+            self.reload_sources();
+        }
+        if relative.ends_with(".typ") || relative.ends_with(".md") || relative == quellen::BIB_FILE {
+            self.reindex()?;
+        }
         Ok(true)
     }
 
