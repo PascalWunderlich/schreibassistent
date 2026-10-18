@@ -200,6 +200,8 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    // Symlinks anzulegen braucht unter Windows besondere Rechte; die Sperre selbst ist plattformneutral.
+    #[cfg(unix)]
     #[test]
     fn refuses_symlinks_out_of_knowledge() {
         use std::os::unix::fs::symlink;

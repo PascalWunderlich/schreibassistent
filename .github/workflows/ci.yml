@@ -54,6 +54,8 @@ jobs:
       - name: Vorlage installieren
         run: cargo run --manifest-path src-tauri/Cargo.toml --example vorlage_installieren
       - name: Rust-Tests
+        env:
+          LTEX_DEBUG: "1" # zeigt bei Fehlern, was LTeX+ gemeldet hat
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
       - name: Paket bauen

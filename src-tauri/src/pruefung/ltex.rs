@@ -135,7 +135,7 @@ impl LtexSession {
         let notify_root = root.clone();
         let client = LspClient::spawn_with(program, &[], settings, move |method, params| {
             if std::env::var_os("LTEX_DEBUG").is_some() {
-                eprintln!("ltex <- {method} {}", params.to_string().chars().take(150).collect::<String>());
+                eprintln!("ltex <- {method} {}", params.to_string().chars().take(1500).collect::<String>());
             }
             if method != "textDocument/publishDiagnostics" {
                 return;

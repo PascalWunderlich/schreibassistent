@@ -99,7 +99,7 @@ impl LspClient {
         let (tx, rx) = channel();
         self.pending.lock().unwrap().insert(id, tx);
         self.write(&json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }))?;
-        rx.recv_timeout(Duration::from_secs(30))
+        rx.recv_timeout(Duration::from_secs(120))
             .map_err(|_| format!("Keine Antwort auf {method}"))?
     }
 
