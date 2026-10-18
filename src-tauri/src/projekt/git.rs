@@ -2,42 +2,30 @@
 //! entsteht höchstens alle 5 Minuten ein lokaler Commit „autosave“. Kein Push.
 
 use std::path::Path;
-use std::process::Command;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use git2::{IndexAddOption, Repository, Signature, StatusOptions};
 
 pub const AUTOSAVE_MESSAGE: &str = "autosave";
 pub const AUTOSAVE_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
-fn git(root: &Path, args: &[&str]) -> Result<String, String> {
-    // Ohne eigene Git-Identität (user.name/email) trotzdem committen können.
-    let mut command = Command::new("git");
-    command.arg("-C").arg(root);
-    if config(root, "user.name").is_none() {
-        command.args(["-c", "user.name=Schreibassistent"]);
-    }
-    if config(root, "user.email").is_none() {
-        command.args(["-c", "user.email=autosave@schreibassistent.local"]);
-    }
-    let output = command.args(args).output().map_err(|e| format!("git nicht ausführbar: {e}"))?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
-    } else {
-        Err(format!("git {}: {}", args.join(" "), String::from_utf8_lossy(&output.stderr).trim()))
-    }
+fn err(e: git2::Error) -> String {
+    format!("Git: {}", e.message())
 }
 
-fn config(root: &Path, key: &str) -> Option<String> {
-    let output = Command::new("git").arg("-C").arg(root).args(["config", key]).output().ok()?;
-    let value = String::from_utf8_lossy(&output.stdout).trim().to_owned();
-    (output.status.success() && !value.is_empty()).then_some(value)
+/// Autor der Sicherung: die Git-Identität des Nutzers, sonst „Schreibassistent“.
+fn signature(repo: &Repository) -> Result<Signature<'static>, String> {
+    match repo.signature() {
+        Ok(sig) => Ok(sig.to_owned()),
+        Err(_) => Signature::now("Schreibassistent", "autosave@schreibassistent.local").map_err(err),
+    }
 }
 
 /// Ist `root` selbst die Wurzel eines Git-Repos? (Nicht nur ein Unterordner eines anderen
-/// Repos – sonst landeten Autosaves z. B. im Repo der App.)
+/// Repos – sonst landeten Autosaves z. B. im Repo der App.) `Repository::open` sucht nicht
+/// in übergeordneten Ordnern.
 pub fn is_own_repo(root: &Path) -> bool {
-    let Ok(top) = git(root, &["rev-parse", "--show-toplevel"]) else { return false };
-    let (Ok(top), Ok(root)) = (Path::new(top.trim()).canonicalize(), root.canonicalize()) else { return false };
-    top == root
+    Repository::open(root).is_ok_and(|repo| !repo.is_bare())
 }
 
 /// Was nie in die Sicherung gehört: Cache der App, Dateien des Finders, PDF-Exporte.
@@ -63,17 +51,35 @@ pub fn ensure_gitignore(root: &Path) -> Result<(), String> {
 
 /// Legt das Repo an: `.gitignore` (siehe `IGNORED`) und erster Commit.
 pub fn init(root: &Path) -> Result<(), String> {
-    git(root, &["init", "-q"])?;
+    let repo = Repository::init(root).map_err(err)?;
     ensure_gitignore(root)?;
-    git(root, &["add", "-A"])?;
-    git(root, &["commit", "-q", "-m", "Arbeit angelegt"])?;
+    commit_all(&repo, "Arbeit angelegt")?;
+    Ok(())
+}
+
+/// Alle Änderungen (neu, geändert, gelöscht; ohne Ignoriertes) als ein Commit auf `HEAD`.
+fn commit_all(repo: &Repository, message: &str) -> Result<(), String> {
+    let mut index = repo.index().map_err(err)?;
+    index.add_all(["*"], IndexAddOption::DEFAULT, None).map_err(err)?;
+    index.update_all(["*"], None).map_err(err)?;
+    index.write().map_err(err)?;
+    let tree = repo.find_tree(index.write_tree().map_err(err)?).map_err(err)?;
+    let sig = signature(repo)?;
+    let parent = repo.head().ok().and_then(|h| h.peel_to_commit().ok());
+    let parents: Vec<&git2::Commit> = parent.iter().collect();
+    repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents).map_err(err)?;
     Ok(())
 }
 
 /// Zeitpunkt des letzten Autosave-Commits (Sekunden seit 1970), falls vorhanden.
 pub fn last_autosave(root: &Path) -> Option<u64> {
-    let out = git(root, &["log", "-1", "--format=%ct", "--fixed-strings", "--grep", AUTOSAVE_MESSAGE]).ok()?;
-    out.trim().parse().ok()
+    let repo = Repository::open(root).ok()?;
+    let mut walk = repo.revwalk().ok()?;
+    walk.push_head().ok()?;
+    walk.filter_map(Result::ok)
+        .filter_map(|id| repo.find_commit(id).ok())
+        .find(|c| c.message().is_some_and(|m| m.contains(AUTOSAVE_MESSAGE)))
+        .map(|c| c.time().seconds().max(0) as u64)
 }
 
 /// Committet alle Änderungen als „autosave“, wenn der letzte Autosave mindestens
@@ -84,11 +90,13 @@ pub fn autosave(root: &Path, force: bool) -> Result<Option<u64>, String> {
     if !force && last_autosave(root).is_some_and(|last| now.saturating_sub(last) < AUTOSAVE_INTERVAL.as_secs()) {
         return Ok(None);
     }
-    if git(root, &["status", "--porcelain"])?.trim().is_empty() {
+    let repo = Repository::open(root).map_err(err)?;
+    let mut options = StatusOptions::new();
+    options.include_untracked(true).recurse_untracked_dirs(true);
+    if repo.statuses(Some(&mut options)).map_err(err)?.is_empty() {
         return Ok(None);
     }
-    git(root, &["add", "-A"])?;
-    git(root, &["commit", "-q", "-m", AUTOSAVE_MESSAGE])?;
+    commit_all(&repo, AUTOSAVE_MESSAGE)?;
     Ok(Some(now))
 }
 
@@ -105,7 +113,10 @@ mod tests {
     }
 
     fn commits(root: &Path) -> Vec<String> {
-        git(root, &["log", "--format=%s"]).unwrap().lines().map(str::to_owned).collect()
+        let repo = Repository::open(root).unwrap();
+        let mut walk = repo.revwalk().unwrap();
+        walk.push_head().unwrap();
+        walk.map(|id| repo.find_commit(id.unwrap()).unwrap().message().unwrap().trim().to_owned()).collect()
     }
 
     #[test]
@@ -138,6 +149,32 @@ mod tests {
         assert_eq!(autosave(&root, false).unwrap(), None, "innerhalb von 5 Minuten");
         assert!(autosave(&root, true).unwrap().is_some(), "erzwungen, z. B. beim Schließen");
         assert_eq!(commits(&root), ["autosave", "autosave", "Arbeit angelegt"]);
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn autosave_records_deletions_and_skips_ignored_files() {
+        let root = temp_vault("delete");
+        init(&root).unwrap();
+        std::fs::remove_file(root.join("Arbeit/main.typ")).unwrap();
+        std::fs::create_dir_all(root.join(".schreibassistent")).unwrap();
+        std::fs::write(root.join(".schreibassistent/cache.db"), "x").unwrap();
+        assert!(autosave(&root, true).unwrap().is_some());
+        let repo = Repository::open(&root).unwrap();
+        let tree = repo.head().unwrap().peel_to_tree().unwrap();
+        assert!(tree.get_path(Path::new("Arbeit/main.typ")).is_err(), "gelöscht");
+        assert!(tree.get_path(Path::new(".schreibassistent/cache.db")).is_err(), "ignoriert");
+        assert!(last_autosave(&root).is_some());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn commit_works_without_git_identity() {
+        let root = temp_vault("identity");
+        init(&root).unwrap();
+        let repo = Repository::open(&root).unwrap();
+        let author = repo.head().unwrap().peel_to_commit().unwrap().author().name().map(str::to_owned);
+        assert!(author.is_some_and(|n| !n.is_empty()));
         std::fs::remove_dir_all(&root).unwrap();
     }
 }
