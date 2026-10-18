@@ -17,10 +17,6 @@ button {
   cursor: pointer;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .badge {
   margin-left: 0.4rem;
   padding: 0 0.35rem;
@@ -46,7 +42,6 @@ button {
 }
 
 .start button,
-.topbar button,
 .hint button {
   border: 1px solid #c4c4ca;
   background: var(--card);
@@ -66,25 +61,6 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.4rem 1rem;
-  background: var(--sa-panel);
-  border-bottom: 1px solid var(--sa-line);
-}
-
-.topbar h1 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.project-name {
-  color: var(--sa-muted);
 }
 
 .center {
@@ -226,14 +202,6 @@ button {
 }
 
 /* ---------- Statusleiste ---------- */
-.statusbar {
-  display: flex;
-  gap: 1.2rem;
-  padding: 0.3rem 1rem;
-  font-size: 0.82rem;
-  background: var(--sa-panel);
-  border-top: 1px solid var(--sa-line);
-}
 
 .warn {
   color: #a01818;
@@ -384,29 +352,6 @@ button {
 }
 
 /* ---------- Quelltextmodus ---------- */
-.segmented {
-  display: inline-flex;
-}
-
-.segmented button {
-  border-radius: 0;
-  margin: 0;
-}
-
-.segmented button:first-child {
-  border-radius: 6px 0 0 6px;
-}
-
-.segmented button:last-child {
-  border-radius: 0 6px 6px 0;
-  border-left: 0;
-}
-
-.segmented button[aria-pressed="true"] {
-  background: var(--sa-accent);
-  border-color: var(--sa-accent);
-  color: #fff;
-}
 
 .source-split {
   display: grid;

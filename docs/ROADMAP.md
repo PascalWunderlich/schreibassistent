@@ -11,7 +11,7 @@ Aktuelle Phase: P9
 | P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
 | P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | erledigt (2026-10-18) | Hinweise mit Originalstelle |
-| P9 UI-Überarbeitung | offen | 6 Kernaufgaben ohne Nachfragen, Reibungsliste abgearbeitet |
+| P9 UI-Überarbeitung | umgesetzt (2026-10-18), Abnahme durch Pascal offen | 6 Kernaufgaben ohne Nachfragen, Reibungsliste abgearbeitet |
 | P10 Einfache Installation | offen | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
 Reibungen beim Benutzen: docs/ui-reibung.md (Eingabe für P9).
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
@@ -42,4 +42,9 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-18 | Handtestseiten aus P4 in Wissen/ (greenyer2013, sutton2018, Konzepte/produktlinien) aufräumen | P7, Testdaten |
 | 2026-10-18 | Regelprofil aus PDF: Gliederungstiefe ohne `max`, Satzspiegel (A4/11 pt/Ränder) und 4 Urteilsregeln (Firmenwebsites, wissenschaftliche Quellen, Abbildung beschreiben, Zitate kennzeichnen) fehlten gegenüber dem Handprofil; dafür Sprache, Aktiv/Passiv, Gendern, Anhang ≤ 50 % neu | P8, Vergleich |
 | 2026-10-18 | Quelle ↔ Aussage findet ohne Seitenangabe englische Quellen zu deutschen Sätzen schlecht (Volltextsuche) | P8 |
-
+| 2026-10-18 | Ersteinstieg (3 überspringbare Schritte: Arbeit, Quellenordner, KI-Anbieter) | P9, gehört zu P10 (Installation) |
+| 2026-10-18 | Menü „Zuletzt geöffnet“ in der Ablage | P9 |
+| 2026-10-18 | Einfügeleiste: Kreis- und Ablaufdiagramm; Bild beim Einfügen automatisch nach `Arbeit/abbildungen/` kopieren | P9 |
+| 2026-10-18 | Notizen und Wissensseiten brauchen noch dieselbe Einfügeleiste/Formatierung (nur Typst-Dateien haben sie) | P9 |
+| 2026-10-18 | P9 in `pnpm tauri dev` mit Pascal durchgehen (Layout, Menü, Dunkel): bisher nur Tests und Typprüfung, kein Blick ins laufende Fenster | P9, Abnahme |
+| 2026-10-18 | Prüfungstests (LTeX+) und `quellen::zotero::tests::unavailable_zotero_is_silent` schlugen im ersten Volllauf fehl, im zweiten liefen alle 107 | P9, flackernd (Last bzw. laufendes Zotero) |
