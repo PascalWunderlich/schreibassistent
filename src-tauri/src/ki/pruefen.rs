@@ -360,6 +360,38 @@ fn candidates(root: &Path, extrakt: &Extrakt, citekey: &str, satz: &str, page: O
     out
 }
 
+/// Höchstens 5 Abschnitte (Vorgabe P8).
+const MAX_FUNDS: usize = 5;
+
+/// Originaltext für eine Aussage: bei zitierter Seite die ganze Seite (benachbarte Abschnitte
+/// zusammengefasst zu höchstens 5), sonst die 3 besten Treffer der Volltextsuche.
+fn funds(extrakt: &Extrakt, root: &Path, citekey: &str, satz: &str, page: Option<&str>, key: Option<&str>) -> Vec<Fund> {
+    let fund = |label: &str, seite: u32, text: String| Fund {
+        citekey: citekey.to_owned(),
+        label: label.to_owned(),
+        pdf_seite: seite,
+        text,
+        link: key.map(|k| format!("zotero://open-pdf/library/items/{k}?page={seite}")),
+    };
+    if let Some(page) = page {
+        let on_page: Vec<&extrakt::Abschnitt> = extrakt.abschnitte.iter().filter(|a| a.label == page).collect();
+        if !on_page.is_empty() {
+            let per = on_page.len().div_ceil(MAX_FUNDS);
+            return on_page
+                .chunks(per)
+                .map(|group| fund(page, group[0].seite, group.iter().map(|a| a.text.as_str()).collect::<Vec<_>>().join(" ")))
+                .collect();
+        }
+    }
+    candidates(root, extrakt, citekey, satz, None, 3)
+        .into_iter()
+        .map(|i| {
+            let a = &extrakt.abschnitte[i];
+            fund(&a.label, a.seite, a.text.clone())
+        })
+        .collect()
+}
+
 static VERDICT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)(stützt teilweise|stuetzt teilweise|nicht gefunden|unsicher|stützt|stuetzt)").unwrap());
 static PAGE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"S\.\s*([0-9ivxlcIVXLC]+)").unwrap());
@@ -393,19 +425,7 @@ pub async fn quelle_aussage(root: &Path, settings: &KiSettings, datei: &str, off
             };
             let page = ergaenzung.as_deref().and_then(page_from);
             let key = attachment_key(root, citekey);
-            hinweis.abschnitte = candidates(root, &extrakt, citekey, &satz.text, page.as_deref(), 3)
-                .into_iter()
-                .map(|i| {
-                    let a = &extrakt.abschnitte[i];
-                    Fund {
-                        citekey: citekey.clone(),
-                        label: a.label.clone(),
-                        pdf_seite: a.seite,
-                        text: a.text.clone(),
-                        link: key.as_ref().map(|k| format!("zotero://open-pdf/library/items/{k}?page={}", a.seite)),
-                    }
-                })
-                .collect();
+            hinweis.abschnitte = funds(&extrakt, root, citekey, &satz.text, page.as_deref(), key.as_deref());
             if hinweis.abschnitte.is_empty() {
                 hinweis.problem = Some("keine passenden Abschnitte gefunden".into());
                 hinweise.push(hinweis);
@@ -783,6 +803,20 @@ mod tests {
         let rules = absatz_hinweise("- [abbildung-beschrieben] Absatz 2: Wird die Abbildung erklärt?", text, true);
         assert_eq!(rules[0].regel.as_deref(), Some("abbildung-beschrieben"));
         assert_eq!(rules[0].text, "Wird die Abbildung erklärt?");
+    }
+
+    #[test]
+    fn cited_page_is_sent_whole_in_at_most_five_parts() {
+        let mut e = crate::ingest::extrakt::sample();
+        for i in 0..12 {
+            e.abschnitte.push(crate::ingest::extrakt::Abschnitt { seite: 4, label: "3".into(), ueberschrift: "x".into(), text: format!("Teil {i}.") });
+        }
+        let root = std::env::temp_dir();
+        let f = funds(&e, &root, "k", "egal", Some("3"), Some("KEY"));
+        assert!(f.len() <= MAX_FUNDS);
+        let all: String = f.iter().map(|x| x.text.as_str()).collect::<Vec<_>>().join(" ");
+        assert!(all.contains("data decomposition") && all.contains("Teil 11."), "ganze Seite");
+        assert_eq!(f[0].link.as_deref(), Some("zotero://open-pdf/library/items/KEY?page=4"));
     }
 
     #[test]
