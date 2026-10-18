@@ -1,12 +1,11 @@
 # sidecars/
 
-Externe Programme und ihre Konfiguration:
+Konfiguration und Skripte für Fremdprogramme. Die Programme selbst kommen **nicht** ins Repo:
+`scripts/werkzeuge-bauen.sh` (macOS, Linux) bzw. `.ps1` (Windows) holt sie nach `build/werkzeuge/`
+(Versionen und Prüfsummen: `werkzeuge.lock`, Lizenzen: `docs/werkzeuge-lizenzen.md`). Die App findet sie
+über das Modul `werkzeuge` (App-Ressourcen, dann `PATH`).
 
-- `tinymist` – Typst-Sprachserver (Modul `lsp`); derzeit aus Homebrew, später als Sidecar (ROADMAP).
-- `vale/` – Konfiguration und Stil `FHDW` für Vale (Modul `pruefung`, P5). Vale und
-  `typst2vast` kommen derzeit aus Homebrew bzw. `cargo install typst2vast`.
-- LTeX+ (`ltex-ls-plus`, MPL-2.0, enthält LanguageTool LGPL-2.1 und Java) – Rechtschreibung
-  und Grammatik (P5); derzeit aus Homebrew, beim Bündeln Lizenztexte beilegen.
-- `docling/` – PDF-Extraktion mit Seitenangaben, Python über uv (ab P7, Modul `ingest`).
-
-Binärdateien kommen nicht ins Repo.
+- `vale/` – Konfiguration und Stil `FHDW` für Vale (Modul `pruefung`). Vale, `typst2vast`, Tinymist,
+  LTeX+ (`ltex-ls-plus`, MPL-2.0, enthält LanguageTool LGPL-2.1 und Java) und `uv` werden mitgeliefert.
+- `docling/` – PDF-Extraktion mit Seitenangaben, Python über `uv` (Modul `ingest`). Docling selbst wird nicht
+  mitgeliefert, sondern nach Bestätigung beim ersten Einlesen geladen (`ingest::docling`).
