@@ -41,7 +41,7 @@ pub fn normalize(text: &str) -> Vec<String> {
 }
 
 /// Anteil der Zitatwörter, die in einem Fenster des Seitentexts in gleicher Reihenfolge stehen (LCS).
-fn match_ratio(quote: &[String], page: &[String]) -> f64 {
+pub(crate) fn match_ratio(quote: &[String], page: &[String]) -> f64 {
     if quote.is_empty() {
         return 0.0;
     }

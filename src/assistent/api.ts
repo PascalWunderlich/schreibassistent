@@ -64,3 +64,75 @@ export const kiSchluesselLoeschen = (anbieter: Anbieter) => invoke<void>("ki_sch
 export const kiFrage = (frage: string, kontext: KontextWahl) => invoke<FrageErgebnis>("ki_frage", { frage, kontext });
 export const protokollPruefen = () => invoke<ChainCheck>("protokoll_pruefen");
 export const protokollExport = () => invoke<string>("protokoll_export");
+
+// ---------- KI-Prüfungen (P8) ----------
+
+export interface Ergebnis<T> {
+  hinweise: T[];
+  entfernt: number;
+  modell: string;
+  datei: string;
+  sonstiges: string[];
+}
+
+export interface BelegHinweis {
+  nr: number;
+  start: number;
+  satz: string;
+  grund: string;
+}
+
+export interface Fund {
+  citekey: string;
+  label: string;
+  pdf_seite: number;
+  text: string;
+  link: string | null;
+}
+
+export interface AussageHinweis {
+  start: number;
+  satz: string;
+  citekey: string;
+  ergaenzung: string | null;
+  abschnitte: Fund[];
+  einschaetzung: string | null;
+  seite: string | null;
+  begruendung: string;
+  problem: string | null;
+}
+
+export interface AbsatzHinweis {
+  absatz: number | null;
+  start: number | null;
+  regel: string | null;
+  text: string;
+}
+
+export interface Hierzu {
+  quellen: [string, string | null][];
+  seiten: string[];
+  fundstellen: Fund[];
+  absatz: string;
+}
+
+export interface Vorschlag {
+  regel: Record<string, unknown>;
+  yaml: string;
+  zitat: string;
+  zitat_ok: boolean;
+  problem: string | null;
+}
+
+export const kiBelegbedarf = (datei: string, offset: number | null) =>
+  invoke<Ergebnis<BelegHinweis>>("ki_belegbedarf", { datei, offset });
+export const kiQuelleAussage = (datei: string, offset: number) =>
+  invoke<Ergebnis<AussageHinweis>>("ki_quelle_aussage", { datei, offset });
+export const kiRoterFaden = (datei: string) => invoke<Ergebnis<AbsatzHinweis>>("ki_roter_faden", { datei });
+export const kiUrteilsregeln = (datei: string) => invoke<Ergebnis<AbsatzHinweis>>("ki_urteilsregeln", { datei });
+export const kiHierzu = (datei: string, offset: number) => invoke<Hierzu>("ki_hierzu", { datei, offset });
+export const kiHierzuEinordnen = (datei: string, offset: number) =>
+  invoke<{ text: string; entfernt: number; modell: string }>("ki_hierzu_einordnen", { datei, offset });
+export const kiRegelprofilAusPdf = (pdf: string) => invoke<{ regeln: Vorschlag[]; modell: string }>("ki_regelprofil_aus_pdf", { pdf });
+export const kiRegelprofilSpeichern = (name: string, quelle: string, regeln: Record<string, unknown>[], ziel: string) =>
+  invoke<string>("ki_regelprofil_speichern", { name, quelle, regeln, ziel });

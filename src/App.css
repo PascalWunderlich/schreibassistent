@@ -619,7 +619,7 @@ button {
 /* ---------- Assistent ---------- */
 .assistant {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   min-height: 0;
 }
 
@@ -872,4 +872,136 @@ button {
 
 .wissen-view a {
   color: var(--accent);
+}
+
+/* ---------- Prüfaufgaben ---------- */
+.task-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0 0.6rem 0.4rem;
+}
+
+.task-buttons button {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.4rem;
+}
+
+.task-result ul {
+  list-style: none;
+  margin: 0.2rem 0;
+  padding: 0;
+}
+
+.task-result li {
+  margin-bottom: 0.5rem;
+}
+
+.task-result .item {
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.task-result .item:hover {
+  color: var(--accent);
+}
+
+.task-result .item.inline {
+  color: var(--accent);
+  margin-right: 0.4rem;
+}
+
+.task-result .reason {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 0.1rem;
+}
+
+.task-result .ok {
+  color: #1e7d3a;
+}
+
+.original {
+  font-size: 0.78rem;
+  margin: 0.2rem 0 0.2rem 0.4rem;
+  padding-left: 0.4rem;
+  border-left: 2px solid var(--line);
+}
+
+.original a {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.original-text {
+  cursor: pointer;
+}
+
+.badge-einschaetzung {
+  font-size: 0.75rem;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  background: #ececef;
+}
+
+.badge-einschaetzung.stützt {
+  background: #e2f2e6;
+}
+
+.badge-einschaetzung.stützt-teilweise,
+.badge-einschaetzung.unsicher {
+  background: #fbf0d9;
+}
+
+.badge-einschaetzung.nicht-gefunden {
+  background: #f7e1df;
+}
+
+.regelprofil {
+  width: min(760px, 92vw);
+}
+
+.regelprofil .rules {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0;
+}
+
+.regelprofil .rules li {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.4rem;
+  opacity: 0.7;
+}
+
+.regelprofil .rules li.chosen {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.regelprofil pre {
+  font-size: 0.75rem;
+  margin: 0.3rem 0;
+  white-space: pre-wrap;
+}
+
+.regelprofil .zitat {
+  font-size: 0.8rem;
+  color: #8a5a00;
+}
+
+.regelprofil .zitat.ok {
+  color: #1e7d3a;
+}
+
+.regelprofil .field {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.5rem;
 }

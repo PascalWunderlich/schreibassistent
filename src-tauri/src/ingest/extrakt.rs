@@ -76,6 +76,12 @@ pub fn cached(root: &Path, citekey: &str, quelle_hash: &str) -> Option<Extrakt> 
     (cached.quelle_hash == quelle_hash).then_some(cached.extrakt)
 }
 
+/// Gespeichertes Ergebnis ohne Abgleich mit dem PDF (wenn Zotero nicht läuft, P8).
+pub fn cached_any(root: &Path, citekey: &str) -> Option<Extrakt> {
+    let text = std::fs::read_to_string(cache_file(root, citekey)).ok()?;
+    serde_json::from_str::<Cached>(&text).ok().map(|c| c.extrakt)
+}
+
 /// Docling ausführen (dauert je nach Umfang 10–60 s) und das Ergebnis speichern.
 pub fn extract(root: &Path, citekey: &str, pdf: &Path, quelle_hash: &str) -> Result<Extrakt, String> {
     let uv = find_uv().ok_or("uv nicht gefunden (brew install uv)")?;

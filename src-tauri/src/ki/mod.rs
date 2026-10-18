@@ -6,6 +6,7 @@ pub mod anbieter;
 pub mod commands;
 pub mod einstellungen;
 pub mod rechte;
+pub mod pruefen;
 pub mod schluessel;
 
 use std::path::Path;
@@ -36,7 +37,16 @@ pub enum KontextWahl {
 /// Absatz (durch Leerzeilen getrennt) um `offset`: Nummer ab 1 und Text. Liegt `offset`
 /// zwischen Absätzen, gilt der Absatz davor.
 fn paragraph_around(text: &str, offset: usize) -> (usize, &str) {
-    // Blöcke aus nicht leeren Zeilen: (Anfang, Ende) in Bytes.
+    let blocks = blocks(text);
+    let index = blocks.iter().rposition(|(start, _)| *start <= offset).unwrap_or(0);
+    match blocks.get(index) {
+        Some((start, end)) => (index + 1, text[*start..*end].trim_end()),
+        None => (1, ""),
+    }
+}
+
+/// Absätze: Blöcke aus nicht leeren Zeilen, (Anfang, Ende) in Bytes; Nummer = Index + 1.
+pub(crate) fn blocks(text: &str) -> Vec<(usize, usize)> {
     let mut blocks: Vec<(usize, usize)> = Vec::new();
     let mut pos = 0;
     let mut open: Option<usize> = None;
@@ -53,11 +63,7 @@ fn paragraph_around(text: &str, offset: usize) -> (usize, &str) {
     if let Some(start) = open {
         blocks.push((start, pos));
     }
-    let index = blocks.iter().rposition(|(start, _)| *start <= offset).unwrap_or(0);
-    match blocks.get(index) {
-        Some((start, end)) => (index + 1, text[*start..*end].trim_end()),
-        None => (1, ""),
-    }
+    blocks
 }
 
 /// Kontext für das Protokoll und Text für die Anfrage.
@@ -102,7 +108,11 @@ pub async fn frage(root: &Path, settings: &KiSettings, aufgabe: Aufgabe, questio
     }
     let (kontext, context_text) = build_context(root, kontext)?;
     let message = if context_text.is_empty() { question.to_owned() } else { format!("{context_text}\n\n---\n\nFrage: {question}") };
-    anfrage(root, settings, aufgabe, BASIS_PROMPT, &message, kontext).await
+    let mut result = anfrage(root, settings, aufgabe, BASIS_PROMPT, &message, kontext).await?;
+    // Auch freie Antworten ohne Formulierungsvorschläge (Leitplanke 1).
+    let (clean, removed) = pruefen::ohne_formulierungen(&result.text, &[&message]);
+    result.text = if removed > 0 { format!("{clean}\n\n({removed} Formulierung(en) der KI entfernt)") } else { clean };
+    Ok(result)
 }
 
 /// Eine KI-Anfrage mit Protokoll (Leitplanke 3): Anbieter aus den Einstellungen der Aufgabe,

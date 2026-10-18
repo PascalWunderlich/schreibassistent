@@ -10,7 +10,7 @@ Aktuelle Phase: P8
 | P5 Feste Prüfungen | erledigt (2026-10-18) | alle Fehlerfälle erkannt, keine Fehlalarme |
 | P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
 | P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
-| P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
+| P8 KI-Prüfungen | in Abnahme | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 
 ## Später (notiert)

@@ -447,6 +447,8 @@ function App() {
               paragraph={lastParagraph}
               chapter={currentChapter}
               onAnswer={setLastAnswer}
+              onJump={(datei, offset) => jumpToHint({ datei, offset } as Hinweis)}
+              onOpenFile={openFromIndex}
               onExported={() => {
                 projectTree().then(setTree).catch(() => {});
                 setRefresh((n) => n + 1);

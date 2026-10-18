@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
+import { RegelprofilDialog } from "../assistent/RegelprofilDialog";
 import { Hinweis, Pruefbericht } from "../editor/api";
 
 interface Props {
@@ -29,6 +30,7 @@ const ORDER: Record<string, number> = { fehler: 0, warnung: 1, hinweis: 2 };
 
 /** Rechts: oben feste Prüfungen ohne KI (P5), unten Assistent auf Nachfrage (P6). */
 export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Props) {
+  const [profilDialog, setProfilDialog] = useState(false);
   const all = [...(bericht?.hinweise ?? []), ...(Array.isArray(rechtschreibung) ? rechtschreibung : [])];
   const groups = new Map<string, Hinweis[]>();
   for (const h of all) {
@@ -44,7 +46,11 @@ export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Prop
       <section className="checks">
         <h2>
           Prüfungen <span className="meta">· {all.length}</span>
+          <button className="h2-action" onClick={() => setProfilDialog(true)} title="Regelprofil aus einem Vorgaben-PDF (KI, mit Bestätigung)">
+            Profil aus PDF …
+          </button>
         </h2>
+        {profilDialog && <RegelprofilDialog onClose={() => setProfilDialog(false)} />}
         {!bericht && <p className="empty">prüft …</p>}
         {bericht && !bericht.profil && bericht.fehler.length === 0 && (
           <p className="empty">Kein Regelprofil (System/regelprofil.yaml) – nur Rechtschreibung.</p>
