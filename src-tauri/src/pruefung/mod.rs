@@ -75,6 +75,9 @@ mod tests {
         }
         // Rechtschreibung mit LTeX+, falls installiert (Kaltstart Java: einige Sekunden).
         if let Some(program) = super::ltex::find_ltex() {
+            // Ein Java nach dem anderen: mehrere Kaltstarts gleichzeitig überschreiten auf CI-Rechnern die Fristen.
+            static ONE_LTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+            let _one = ONE_LTEX.lock().unwrap_or_else(|e| e.into_inner());
             let session = super::ltex::LtexSession::start(&program, root).unwrap();
             let texts: Vec<(String, String)> =
                 files.iter().map(|f| (f.clone(), std::fs::read_to_string(root.join(f)).unwrap())).collect();
