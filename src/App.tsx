@@ -39,12 +39,16 @@ import { RightPanel } from "./layout/RightPanel";
 import { Assistant } from "./assistent/Assistant";
 import { FrageErgebnis } from "./assistent/api";
 import { SaveState, StatusBar } from "./layout/StatusBar";
+import { Topbar } from "./layout/Topbar";
+import { Workspace } from "./layout/Workspace";
+import { useTheme } from "./lib/theme";
 import "./App.css";
 
 /** Was in der Mitte steht: die Seiten der Arbeit oder eine Notiz/Wissensseite. */
 type Center = { kind: "pages" } | { kind: "note"; path: string; readOnly: boolean };
 
 function App() {
+  const [theme, setTheme] = useTheme();
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -344,21 +348,16 @@ function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <h1>Schreibassistent</h1>
-        <span className="project-name">{project.name}</span>
-        <span className="spacer" />
-        <div className="segmented" role="group" aria-label="Ansicht">
-          <button aria-pressed={!sourceMode} onClick={() => setSourceMode(false)}>
-            Seite
-          </button>
-          <button aria-pressed={sourceMode} onClick={() => setSourceMode(true)}>
-            Quelltext
-          </button>
-        </div>
-        <button onClick={exportToPdf}>PDF</button>
-        <button onClick={choose}>Andere Arbeit …</button>
-      </header>
+      <Topbar
+        projectName={project.name}
+        saveLabel={saveState}
+        sourceMode={sourceMode}
+        onSourceMode={setSourceMode}
+        onExport={exportToPdf}
+        onChoose={choose}
+        theme={theme}
+        onTheme={setTheme}
+      />
       {notice && (
         <div className="hint" onClick={() => setNotice(null)}>
           {notice}
@@ -375,7 +374,8 @@ function App() {
           Diese Arbeit hat noch keine automatische Sicherung. <button onClick={setupGit}>Git-Sicherung einrichten</button>
         </div>
       )}
-      <div className="workspace">
+      <Workspace
+        left={
         <div className="left">
           <ChapterPanel
             chapter={chapterView}
@@ -385,6 +385,8 @@ function App() {
           />
           <Sidebar tree={tree} selected={selected} onOpen={openNode} onNewNote={createNote} onNewChapter={createChapter} />
         </div>
+        }
+        center={
         <main className="center">
           {center.kind === "pages" && sourceMode ? (
             <div className="source-split">
@@ -437,6 +439,8 @@ function App() {
             />
           )}
         </main>
+        }
+        right={
         <RightPanel
           bericht={bericht}
           rechtschreibung={rechtschreibung}
@@ -456,7 +460,8 @@ function App() {
             />
           }
         />
-      </div>
+        }
+      />
       <StatusBar
         contentPages={report?.content_pages ?? null}
         range={bericht?.umfang ?? null}

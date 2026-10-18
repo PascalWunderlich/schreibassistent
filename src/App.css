@@ -87,14 +87,8 @@ button {
   color: var(--sa-muted);
 }
 
-.workspace {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 240px 1fr 280px;
-  min-height: 0;
-}
-
 .center {
+  height: 100%;
   min-width: 0;
   min-height: 0;
   /* clip statt hidden: Auch scrollIntoView darf den Bereich nicht verschieben. */
@@ -103,6 +97,7 @@ button {
 
 /* ---------- Seitenleiste ---------- */
 .left {
+  height: 100%;
   overflow: auto;
   min-height: 0;
   background: var(--sa-panel);
@@ -230,6 +225,7 @@ button {
 
 /* ---------- Rechtes Panel ---------- */
 .right-panel {
+  height: 100%;
   display: grid;
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   background: var(--sa-panel);
