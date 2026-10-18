@@ -41,7 +41,7 @@ mod tests {
                 if path.is_dir() {
                     stack.push(path);
                 } else if path.extension().is_some_and(|e| e == "typ") {
-                    files.push(path.strip_prefix(root).unwrap().to_string_lossy().into_owned());
+                    files.push(crate::projekt::files::rel_string(path.strip_prefix(root).unwrap()));
                 }
             }
         }

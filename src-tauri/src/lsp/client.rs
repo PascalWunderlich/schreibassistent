@@ -27,7 +27,7 @@ pub struct LspClient {
 impl LspClient {
     /// Startet `program lsp` und leitet Server-Benachrichtigungen an `on_notification` weiter.
     pub fn spawn(program: &Path, on_notification: impl Fn(&str, Value) + Send + 'static) -> Result<Self, String> {
-        Self::spawn_with(program, &["lsp"], Value::Null, on_notification)
+        Self::spawn_with(program, &["lsp"], &[], Value::Null, on_notification)
     }
 
     /// Wie `spawn`, mit eigenen Argumenten. `configuration` beantwortet Anfragen
@@ -35,11 +35,13 @@ impl LspClient {
     pub fn spawn_with(
         program: &Path,
         args: &[&str],
+        env: &[(&str, std::ffi::OsString)],
         configuration: Value,
         on_notification: impl Fn(&str, Value) + Send + 'static,
     ) -> Result<Self, String> {
         let mut child = Command::new(program)
             .args(args)
+            .envs(env.iter().map(|(k, v)| (*k, v)))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             // Mit LSP_DEBUG/LTEX_DEBUG sieht man in der CI, warum ein Server nicht antwortet.

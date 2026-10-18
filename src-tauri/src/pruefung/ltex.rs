@@ -120,9 +120,42 @@ pub fn dictionary(root: &Path) -> Vec<String> {
         .collect()
 }
 
+/// Umgebung für das Startskript von LTeX+, wenn es mit eigener Java-Laufzeit geliefert wird:
+/// - `JAVA_HOME` auf die mitgelieferte Laufzeit, sonst nimmt das Skript ein vorhandenes
+///   (womöglich zu altes) Java des Systems (gesehen: Java 17 → „UnsupportedClassVersionError“).
+/// - `JDK_JAVA_OPTIONS` (vom `java`-Starter gelesen, Anführungszeichen erlaubt, also auch Pfade mit
+///   Leerzeichen) mit `jna.library.path` auf die ausgepackte Hunspell-Bibliothek (`native/`,
+///   von `werkzeuge-bauen` angelegt): JNA 5.12 bricht unter macOS ab, wenn der erste
+///   Ladeversuch scheitert („LOAD_ERROR … snprintf() output has been truncated“).
+fn bundled_java_env(program: &Path) -> Vec<(&'static str, std::ffi::OsString)> {
+    let Some(base) = program.parent().and_then(Path::parent) else { return Vec::new() };
+    java_env_in(base)
+}
+
+fn java_env_in(base: &Path) -> Vec<(&'static str, std::ffi::OsString)> {
+    let mut env = Vec::new();
+    let jdk = std::fs::read_dir(base)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.is_dir() && p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("jdk")));
+    if let Some(jdk) = jdk {
+        env.push(("JAVA_HOME", jdk.into_os_string()));
+    }
+    let native = base.join("native");
+    if native.is_dir() {
+        let mut opts = std::ffi::OsString::from("-Djna.library.path=\"");
+        opts.push(native.as_os_str());
+        opts.push("\"");
+        env.push(("JDK_JAVA_OPTIONS", opts));
+    }
+    env
+}
+
 impl LtexSession {
     pub fn start(program: &Path, root: &Path) -> Result<Self, String> {
-        let root = root.canonicalize().map_err(|e| e.to_string())?;
+        let root = crate::projekt::files::canonical(&root).map_err(|e| e.to_string())?;
         let settings = json!({
             "language": "de-DE",
             "enabled": ["typst"],
@@ -133,7 +166,7 @@ impl LtexSession {
         let received: Arc<(Mutex<Received>, Condvar)> = Arc::default();
         let store = received.clone();
         let notify_root = root.clone();
-        let client = LspClient::spawn_with(program, &[], settings, move |method, params| {
+        let client = LspClient::spawn_with(program, &[], &bundled_java_env(program), settings, move |method, params| {
             if std::env::var_os("LTEX_DEBUG").is_some() {
                 eprintln!("ltex <- {method} {}", params.to_string().chars().take(1500).collect::<String>());
             }
@@ -144,7 +177,7 @@ impl LtexSession {
                 .as_str()
                 .and_then(|u| url::Url::parse(u).ok())
                 .and_then(|u| u.to_file_path().ok())
-                .and_then(|p| p.strip_prefix(&notify_root).ok().map(|p| p.to_string_lossy().into_owned()))
+                .and_then(|p| p.strip_prefix(&notify_root).ok().map(crate::projekt::files::rel_string))
             else {
                 return;
             };
@@ -255,5 +288,22 @@ mod tests {
         assert!(!is_placeholder_typo("'Tippfeler': Möglicher Tippfehler gefunden. (GERMAN_SPELLER_RULE)"));
         assert!(!is_placeholder_typo("'Dummy': Möglicher Tippfehler gefunden."));
         assert!(!is_placeholder_typo("Satzanfang klein schreiben"));
+    }
+
+    #[test]
+    fn bundled_java_and_hunspell_are_used() {
+        let base = std::env::temp_dir().join(format!("sa-ltex-env-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(base.join("bin")).unwrap();
+        assert!(java_env_in(&base).is_empty(), "ohne Lieferung: Umgebung unverändert");
+        std::fs::create_dir_all(base.join("jdk-21.0.5+11/bin")).unwrap();
+        std::fs::create_dir_all(base.join("native")).unwrap();
+        let env = java_env_in(&base);
+        assert_eq!(env[0], ("JAVA_HOME", base.join("jdk-21.0.5+11").into_os_string()));
+        assert_eq!(env[1].0, "JDK_JAVA_OPTIONS");
+        let opts = env[1].1.to_string_lossy().into_owned();
+        assert_eq!(opts, format!("-Djna.library.path=\"{}\"", base.join("native").display()));
+        assert_eq!(bundled_java_env(&base.join("bin/ltex-ls-plus")), env);
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

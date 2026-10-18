@@ -173,7 +173,7 @@ fn collect(root: &Path, dir: &Path, ext: &str, out: &mut Vec<String>) {
         } else if path.extension().is_some_and(|e| e == ext)
             && let Ok(relative) = path.strip_prefix(root)
         {
-            out.push(relative.to_string_lossy().into_owned());
+            out.push(crate::projekt::files::rel_string(relative));
         }
     }
 }

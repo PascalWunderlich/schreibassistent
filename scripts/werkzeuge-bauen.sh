@@ -65,7 +65,11 @@ while read -r kind name tgt sha url; do
       tar -xzf "$file" -C "$tmp"; cp "$tmp"/*/uv "$out/bin/uv" ;;
     ltex-ls-plus)
       tar -xzf "$file" -C "$tmp"
-      mkdir -p "$out/ltex-ls-plus"; cp -R "$tmp"/*/. "$out/ltex-ls-plus/" ;;
+      mkdir -p "$out/ltex-ls-plus"; cp -R "$tmp"/*/. "$out/ltex-ls-plus/"
+      # Hunspell für JNA auspacken; die App setzt jna.library.path darauf (siehe pruefung/ltex.rs).
+      case "$target" in macos-arm64) plat=darwin-aarch64 ;; linux-x64) plat=linux-x86-64 ;; esac
+      mkdir -p "$out/ltex-ls-plus/native"
+      unzip -j -o -q "$out"/ltex-ls-plus/lib/hunspell-*.jar "$plat/*" -d "$out/ltex-ls-plus/native" ;;
   esac
   # Lizenztexte aus dem Paket beilegen.
   mkdir -p "$out/licenses/$name"

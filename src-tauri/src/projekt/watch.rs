@@ -19,7 +19,7 @@ pub fn relevant(root: &Path, path: &Path) -> Option<String> {
         return None;
     }
     // Immer mit „/“, auch unter Windows (die Oberfläche und der Index rechnen so).
-    Some(relative.to_string_lossy().replace('\\', "/"))
+    Some(super::files::rel_string(relative))
 }
 
 /// Startet die Beobachtung; `on_change` erhält die geänderten Pfade (relativ, sortiert).
@@ -38,12 +38,12 @@ pub fn start(root: &Path, on_change: impl Fn(Vec<String>) + Send + 'static) -> R
     watcher.watch(&root, RecursiveMode::Recursive).map_err(|e| format!("Dateibeobachtung nicht möglich: {e}"))?;
 
     std::thread::spawn(move || {
-        let root = root.canonicalize().unwrap_or(root);
+        let root = crate::projekt::files::canonical(&root).unwrap_or(root);
         let mut batch = BTreeSet::new();
         loop {
             match rx.recv_timeout(QUIET) {
                 Ok(path) => {
-                    let path = path.canonicalize().unwrap_or(path);
+                    let path = crate::projekt::files::canonical(&path).unwrap_or(path);
                     // Ordner melden ihre Änderung mit (Linux/inotify); gemeint sind die Dateien darin.
                     if path.is_dir() {
                         continue;

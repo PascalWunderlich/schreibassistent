@@ -38,6 +38,7 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          cache-on-failure: true
 
       - name: Werkzeuge holen (Unix)
         if: runner.os != 'Windows'

@@ -74,7 +74,7 @@ pub struct SaveInfo {
 impl Project {
     /// Öffnet den Vault; `on_diagnostics` erhält den Pfad, wenn Tinymist neue Fehler meldet.
     pub fn open(root: &Path, on_diagnostics: impl Fn(&str) + Send + 'static) -> Result<(Self, ProjectInfo), Vec<String>> {
-        let root = root.canonicalize().map_err(|e| vec![format!("{}: {e}", root.display())])?;
+        let root = crate::projekt::files::canonical(&root).map_err(|e| vec![format!("{}: {e}", root.display())])?;
         if !root.join(MAIN_FILE).is_file() {
             return Err(vec![format!("{} ist kein Arbeits-Vault: {MAIN_FILE} fehlt.", root.display())]);
         }

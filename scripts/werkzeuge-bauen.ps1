@@ -52,6 +52,12 @@ foreach ($line in Get-Content $lock) {
       New-Item -ItemType Directory "$out\ltex-ls-plus" | Out-Null
       $inner = Get-ChildItem $tmp -Directory | Select-Object -First 1
       Copy-Item "$($inner.FullName)\*" "$out\ltex-ls-plus" -Recurse
+      # Hunspell für JNA auspacken; die App setzt jna.library.path darauf (siehe pruefung/ltex.rs).
+      $jar = (Get-ChildItem "$out\ltex-ls-plus\lib" -Filter 'hunspell-*.jar' | Select-Object -First 1).FullName
+      New-Item -ItemType Directory -Force "$out\ltex-ls-plus\native", "$tmp\hunspell" | Out-Null
+      tar -xf $jar -C "$tmp\hunspell" 'win32-x86-64/hunspell.dll'
+      if ($LASTEXITCODE -ne 0) { throw 'Hunspell aus LTeX+ nicht auspackbar.' }
+      Copy-Item "$tmp\hunspell\win32-x86-64\hunspell.dll" "$out\ltex-ls-plus\native\hunspell.dll"
     }
   }
   # Lizenztexte aus dem Paket beilegen.

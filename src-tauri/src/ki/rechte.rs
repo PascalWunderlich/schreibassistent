@@ -49,7 +49,7 @@ fn check_text(relative: &str) -> Result<PathBuf, String> {
 
 /// Ordner anlegen und prüfen, dass der aufgelöste Ordner im echten `Wissen/` liegt.
 fn check_disk(root: &Path, relative: &Path) -> Result<PathBuf, String> {
-    let root = root.canonicalize().map_err(|e| format!("Vault nicht gefunden: {e}"))?;
+    let root = crate::projekt::files::canonical(&root).map_err(|e| format!("Vault nicht gefunden: {e}"))?;
     let allowed = root.join(KNOWLEDGE_DIR);
     // `Wissen` selbst darf kein Symlink sein (sonst zeigte er z. B. auf `Arbeit/`).
     match std::fs::symlink_metadata(&allowed) {
@@ -67,12 +67,12 @@ fn check_disk(root: &Path, relative: &Path) -> Result<PathBuf, String> {
         if !dir.exists() {
             std::fs::create_dir(&dir).map_err(|e| e.to_string())?;
         }
-        let real = dir.canonicalize().map_err(|e| e.to_string())?;
+        let real = crate::projekt::files::canonical(&dir).map_err(|e| e.to_string())?;
         if !real.starts_with(&allowed) {
             return Err(format!("Ordner zeigt aus {KNOWLEDGE_DIR}/ heraus (Symlink)"));
         }
     }
-    let real_parent = parent.canonicalize().map_err(|e| e.to_string())?;
+    let real_parent = crate::projekt::files::canonical(&parent).map_err(|e| e.to_string())?;
     if !real_parent.starts_with(&allowed) {
         return Err(format!("Ordner zeigt aus {KNOWLEDGE_DIR}/ heraus (Symlink)"));
     }

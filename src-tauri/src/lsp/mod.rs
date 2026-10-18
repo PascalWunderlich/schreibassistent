@@ -115,7 +115,7 @@ impl TinymistSession {
         main: &str,
         on_diagnostics: impl Fn(&str) + Send + 'static,
     ) -> Result<Self, String> {
-        let root = root.canonicalize().map_err(|e| format!("{}: {e}", root.display()))?;
+        let root = crate::projekt::files::canonical(&root).map_err(|e| format!("{}: {e}", root.display()))?;
         let diagnostics: Diagnostics = Arc::default();
         let store = diagnostics.clone();
         let notify_root = root.clone();
@@ -252,7 +252,7 @@ impl TinymistSession {
         let (line, character) = lsp_pos(&range["start"]);
         let text = std::fs::read_to_string(&absolute).unwrap_or_default();
         Ok(Some(Definition {
-            file: absolute.strip_prefix(&self.root).ok().map(|p| p.to_string_lossy().into_owned()),
+            file: absolute.strip_prefix(&self.root).ok().map(crate::projekt::files::rel_string),
             absolute: absolute.to_string_lossy().into_owned(),
             offset: lsp_to_byte(&text, (line, character)),
             line,
@@ -340,7 +340,7 @@ fn uri(path: &Path) -> Result<String, String> {
 
 fn relative_from_uri(root: &Path, file_uri: &str) -> Option<String> {
     let path = url::Url::parse(file_uri).ok()?.to_file_path().ok()?;
-    path.strip_prefix(root).ok().map(|p| p.to_string_lossy().into_owned())
+    path.strip_prefix(root).ok().map(crate::projekt::files::rel_string)
 }
 
 /// Tinymist (gelieferte Werkzeuge, dann `PATH`).
@@ -372,7 +372,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&target);
         let source = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit"));
         crate::projekt::neu::copy_to(source, &target).unwrap();
-        target.canonicalize().unwrap()
+        crate::projekt::files::canonical(&target).unwrap()
     }
 
     /// Feld einsetzen, schreiben, Tinymist melden (wie das Projekt es tut).

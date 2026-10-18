@@ -21,6 +21,32 @@ pub fn resolve(root: &Path, relative: &str) -> Result<PathBuf, String> {
     Ok(root.join(path))
 }
 
+/// Pfad relativ zum Vault als Zeichenkette, immer mit „/“ (auch unter Windows): So rechnen
+/// Oberfläche, Index und Regelprofil.
+pub fn rel_string(relative: &Path) -> String {
+    relative.to_string_lossy().replace('\\', "/")
+}
+
+/// Wie `canonicalize`, aber unter Windows ohne den Präfix `\\?\` (Tinymist, LTeX+ und
+/// Datei-URLs erwarten `C:\…`; sonst passen Pfade nicht zum Arbeitsordner).
+pub fn canonical(path: &Path) -> std::io::Result<PathBuf> {
+    let path = path.canonicalize()?;
+    Ok(match without_verbatim(&path.to_string_lossy()) {
+        Some(simple) => PathBuf::from(simple),
+        None => path,
+    })
+}
+
+/// `\\?\C:\x` → `C:\x`, `\\?\UNC\server\x` → `\\server\x`; sonst `None`.
+fn without_verbatim(path: &str) -> Option<String> {
+    let rest = path.strip_prefix(r"\\?\")?;
+    if let Some(unc) = rest.strip_prefix(r"UNC\") {
+        return Some(format!(r"\\{unc}"));
+    }
+    let bytes = rest.as_bytes();
+    (bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':').then(|| rest.to_owned())
+}
+
 /// Schreibt atomar: erst eine temporäre Datei im selben Ordner, dann umbenennen.
 /// Ein Absturz hinterlässt so entweder die alte oder die neue Datei, nie eine halbe.
 pub fn atomic_write(path: &Path, text: &str) -> Result<(), String> {
@@ -81,6 +107,16 @@ fn node(root: &Path, relative: &str) -> TreeNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn verbatim_prefix_is_removed_and_separators_are_forward_slashes() {
+        assert_eq!(without_verbatim(r"\\?\C:\Users\x\Arbeit").as_deref(), Some(r"C:\Users\x\Arbeit"));
+        assert_eq!(without_verbatim(r"\\?\UNC\server\share\a").as_deref(), Some(r"\\server\share\a"));
+        assert_eq!(without_verbatim(r"\\?\Volume{123}\a"), None);
+        assert_eq!(without_verbatim("/tmp/a"), None);
+        assert_eq!(rel_string(Path::new(r"Arbeit\kapitel\01.typ")), "Arbeit/kapitel/01.typ");
+        assert_eq!(rel_string(Path::new("Arbeit/main.typ")), "Arbeit/main.typ");
+    }
 
     #[test]
     fn rejects_paths_leaving_the_vault() {
