@@ -9,6 +9,7 @@ pub mod ki;
 pub mod protokoll;
 pub mod ingest;
 pub mod werkzeuge;
+pub mod vorlage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,6 +23,12 @@ pub fn run() {
             use tauri::Manager;
             if let Ok(dir) = app.path().resource_dir() {
                 werkzeuge::init(dir);
+            }
+            // Vorlage und Pakete für den Satz bereitstellen (wenn sie fehlen); Fehler zeigt der erste Satz.
+            match vorlage::install_bundled() {
+                Ok(done) if !done.is_empty() => eprintln!("Vorlage installiert: {}", done.join(", ")),
+                Ok(_) => {}
+                Err(e) => eprintln!("Vorlage nicht installiert: {e}"),
             }
             Ok(())
         })
