@@ -9,6 +9,16 @@ pub struct Settings {
     /// Anbieter und Modell je KI-Aufgabe (ohne Schlüssel).
     #[serde(default)]
     pub ki: crate::ki::einstellungen::KiSettings,
+    /// Der Ersteinstieg (Arbeit, Quellen, KI) wurde durchlaufen oder übersprungen.
+    #[serde(default)]
+    pub ersteinstieg_fertig: bool,
+}
+
+impl Settings {
+    /// Ersteinstieg zeigen? Nur beim allerersten Start: wer schon eine Arbeit geöffnet hatte, kennt die App.
+    pub fn ersteinstieg_offen(&self) -> bool {
+        !self.ersteinstieg_fertig && self.last_vault.is_none()
+    }
 }
 
 pub fn load(file: &Path) -> Settings {
@@ -35,5 +45,22 @@ mod tests {
         save(&file, &settings).unwrap();
         assert_eq!(load(&file), settings);
         std::fs::remove_dir_all(file.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn first_run_shows_onboarding_once() {
+        let mut settings = Settings::default();
+        assert!(settings.ersteinstieg_offen());
+        settings.ersteinstieg_fertig = true;
+        assert!(!settings.ersteinstieg_offen());
+    }
+
+    #[test]
+    fn existing_users_and_old_files_skip_onboarding() {
+        // Datei aus einer früheren Version: kein Feld `ersteinstieg_fertig`, aber eine zuletzt geöffnete Arbeit.
+        let old: Settings = serde_json::from_str(r#"{"last_vault": "/x/Arbeit"}"#).unwrap();
+        assert!(!old.ersteinstieg_offen());
+        let empty: Settings = serde_json::from_str("{}").unwrap();
+        assert!(empty.ersteinstieg_offen());
     }
 }

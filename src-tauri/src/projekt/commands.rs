@@ -179,3 +179,16 @@ pub async fn projekt_copy_to(state: State<'_, AppState>, path: String) -> Result
 pub async fn projekt_sichern(state: State<'_, AppState>) -> Result<SaveInfo, String> {
     with_project(&state, |p| Ok(p.autosave(true)))
 }
+
+/// Soll der Ersteinstieg erscheinen (erster Start ohne früher geöffnete Arbeit)?
+#[tauri::command]
+pub fn app_ersteinstieg(app: AppHandle) -> Result<bool, String> {
+    Ok(settings::load(&settings_file(&app)?).ersteinstieg_offen())
+}
+
+/// Ersteinstieg beendet (durchlaufen oder übersprungen): nicht noch einmal zeigen.
+#[tauri::command]
+pub fn app_ersteinstieg_beenden(app: AppHandle) -> Result<(), String> {
+    let file = settings_file(&app)?;
+    settings::save(&file, &Settings { ersteinstieg_fertig: true, ..settings::load(&file) })
+}

@@ -41,6 +41,21 @@ pub struct Source {
     pub line: usize,
 }
 
+/// Eine `.bib`-Datei als `System/quellen.bib` übernehmen (Ersteinstieg „.bib wählen“). Die Datei muss
+/// lesbar sein; vorhandene Quellen werden nie überschrieben.
+pub fn adopt_bib(root: &Path, from: &Path) -> Result<usize, String> {
+    let text = std::fs::read_to_string(from).map_err(|e| format!("{}: {e}", from.display()))?;
+    let sources = parse(&text).map_err(|e| format!("Keine lesbare .bib-Datei: {e}"))?;
+    if sources.is_empty() {
+        return Err("In der Datei stehen keine Quellen.".into());
+    }
+    if !load(root)?.is_empty() {
+        return Err("Die Arbeit hat schon Quellen (System/quellen.bib). Sie werden nicht überschrieben.".into());
+    }
+    crate::projekt::files::atomic_write(&root.join(BIB_FILE), &text)?;
+    Ok(sources.len())
+}
+
 /// Liest `System/quellen.bib`. Fehlt die Datei, gibt es keine Quellen (kein Fehler).
 pub fn load(root: &Path) -> Result<Vec<Source>, String> {
     let path = root.join(BIB_FILE);
@@ -114,5 +129,38 @@ mod tests {
     fn missing_file_means_no_sources_and_broken_file_is_an_error() {
         assert_eq!(load(&std::env::temp_dir().join("gibt-es-nicht")).unwrap(), Vec::new());
         assert!(parse("@book{kaputt, title = {").is_err());
+    }
+
+    fn temp_root(name: &str) -> std::path::PathBuf {
+        let root = std::env::temp_dir().join(format!("sa-bib-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("System")).unwrap();
+        root
+    }
+
+    const BIB: &str = "@book{mueller2024, author = {Müller, Eva}, title = {Ein Buch}, year = {2024}, publisher = {Verlag}}\n";
+
+    #[test]
+    fn adopt_bib_copies_into_empty_work_but_never_overwrites() {
+        let root = temp_root("adopt");
+        std::fs::write(root.join(BIB_FILE), "% Platzhalter\n").unwrap();
+        let from = root.join("extern.bib");
+        std::fs::write(&from, BIB).unwrap();
+        assert_eq!(adopt_bib(&root, &from), Ok(1));
+        assert_eq!(load(&root).unwrap()[0].citekey, "mueller2024");
+        let err = adopt_bib(&root, &from).unwrap_err();
+        assert!(err.contains("schon Quellen"), "{err}");
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn adopt_bib_rejects_empty_and_missing_files() {
+        let root = temp_root("reject");
+        let empty = root.join("leer.bib");
+        std::fs::write(&empty, "% nur Kommentar\n").unwrap();
+        assert!(adopt_bib(&root, &empty).unwrap_err().contains("keine Quellen"));
+        assert!(adopt_bib(&root, &root.join("gibt-es-nicht.bib")).is_err());
+        assert!(!root.join(BIB_FILE).exists());
+        std::fs::remove_dir_all(&root).unwrap();
     }
 }

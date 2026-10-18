@@ -35,10 +35,15 @@ pub struct Attachment {
 impl Attachment {
     /// Pfad der PDF-Datei im Zotero-Datenordner (Standardort `~/Zotero`), falls vorhanden.
     pub fn path(&self) -> Option<std::path::PathBuf> {
-        let home = std::env::var_os("HOME")?;
-        let path = std::path::Path::new(&home).join("Zotero/storage").join(&self.key).join(self.filename.as_deref()?);
+        let path = zotero_dir()?.join("storage").join(&self.key).join(self.filename.as_deref()?);
         path.is_file().then_some(path)
     }
+}
+
+/// Standardort des Zotero-Datenordners: `~/Zotero` (Windows: `%USERPROFILE%\Zotero`).
+fn zotero_dir() -> Option<std::path::PathBuf> {
+    let home = std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })?;
+    Some(std::path::Path::new(&home).join("Zotero"))
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
