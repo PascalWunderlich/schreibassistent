@@ -1,5 +1,5 @@
 # Roadmap
-Aktuelle Phase: P7
+Aktuelle Phase: P8
 | Phase | Status | Abnahme |
 |---|---|---|
 | P0 Grundlage | erledigt (2026-10-17) | Tauri-Fenster startet, Kontextdateien vorhanden |
@@ -9,7 +9,7 @@ Aktuelle Phase: P7
 | P4 Quellen & Index | erledigt (2026-10-17) | Seitenleiste zeigt Quellen/Notizen je Kapitel |
 | P5 Feste Prüfungen | erledigt (2026-10-18) | alle Fehlerfälle erkannt, keine Fehlalarme |
 | P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
-| P7 Ingest & Wissen | in Abnahme | Stellen führen zur richtigen Seite |
+| P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 
@@ -34,3 +34,6 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-18 | Anhang von greenyer2013 in Zotero ist kein Artikel, sondern eine Klausurterminliste; austauschen | P7, Testdaten |
 | 2026-10-18 | Prüfungstests mit LTeX+ scheitern selten unter Last (Start von Java parallel zu anderen schweren Tests) | P7 |
 | 2026-10-18 | Texterkennung (OCR) für gescannte PDFs fehlt | P7 |
+| 2026-10-18 | „Konzepte erzeugen“ in der App noch nicht ausprobiert (Knopf gebaut, Tests grün) | P7 |
+| 2026-10-18 | Mit „…“ gekürzte Zitate gelten als nicht bestätigt; Auslassungen beim Vergleich erlauben | P7 |
+| 2026-10-18 | Handtestseiten aus P4 in Wissen/ (greenyer2013, sutton2018, Konzepte/produktlinien) aufräumen | P7, Testdaten |
