@@ -63,6 +63,13 @@ pub async fn protokoll_pruefen(state: State<'_, AppState>) -> Result<protokoll::
     protokoll::verify(&root)
 }
 
+/// Alle Protokolleinträge, nur lesend (für die Liste „KI-Protokoll“ in der Statusleiste).
+#[tauri::command]
+pub async fn protokoll_liste(state: State<'_, AppState>) -> Result<Vec<protokoll::Eintrag>, String> {
+    let root = with_project(&state, |p| Ok(p.root.clone()))?;
+    protokoll::read_all(&root)
+}
+
 /// Export nach `Arbeit/anhang/ki-nutzung.typ` – schreibt die App, nicht die KI, nur auf Klick.
 #[tauri::command]
 pub async fn protokoll_export(state: State<'_, AppState>) -> Result<String, String> {

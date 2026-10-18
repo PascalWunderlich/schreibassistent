@@ -46,6 +46,7 @@ pub fn run() {
             ki::commands::ki_schluessel_loeschen,
             ki::commands::ki_frage,
             ki::commands::protokoll_pruefen,
+            ki::commands::protokoll_liste,
             ki::commands::ki_belegbedarf,
             ki::commands::ki_quelle_aussage,
             ki::commands::ki_roter_faden,

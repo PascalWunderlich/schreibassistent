@@ -22,7 +22,9 @@ interface Props {
   paragraph: { file: string; offset: number } | null;
   /** Aktuelles Kapitel (Datei). */
   chapter: string | null;
-  onAnswer: (result: FrageErgebnis) => void;
+  onAnswer?: (result: FrageErgebnis) => void;
+  /** Nach jeder abgeschlossenen Anfrage (steht dann im Protokoll). */
+  onLogged?: () => void;
   /** Nach dem Export (Datei in Arbeit/ geändert). */
   onExported: () => void;
   /** Zur Stelle im Text springen. */
@@ -44,7 +46,7 @@ interface Turn {
 const short = (file: string) => file.split("/").pop() ?? file;
 
 /** Rechts unten: Fragen an die KI auf Nachfrage. Antworten nur als Text, ohne Einfügen. */
-export function Assistant({ paragraph, chapter, onAnswer, onExported, onJump = () => {}, onOpenFile = () => {} }: Props) {
+export function Assistant({ paragraph, chapter, onAnswer = () => {}, onLogged = () => {}, onExported, onJump = () => {}, onOpenFile = () => {} }: Props) {
   const [art, setArt] = useState<Art>("absatz");
   const [frage, setFrage] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -103,6 +105,7 @@ export function Assistant({ paragraph, chapter, onAnswer, onExported, onJump = (
     }
     setTurns((t) => [...t, turn]);
     setBusy(null);
+    onLogged();
   }
 
   /** Prüfaufgabe (P8): eigener Systemprompt, protokolliert, Ergebnis mit Sprung zur Stelle. */
@@ -123,6 +126,7 @@ export function Assistant({ paragraph, chapter, onAnswer, onExported, onJump = (
     }
     setTurns((t) => [...t, turn]);
     setBusy(null);
+    onLogged();
   }
 
   const tasks = [

@@ -136,3 +136,17 @@ export const kiHierzuEinordnen = (datei: string, offset: number) =>
 export const kiRegelprofilAusPdf = (pdf: string) => invoke<{ regeln: Vorschlag[]; modell: string }>("ki_regelprofil_aus_pdf", { pdf });
 export const kiRegelprofilSpeichern = (name: string, quelle: string, regeln: Record<string, unknown>[], ziel: string) =>
   invoke<string>("ki_regelprofil_speichern", { name, quelle, regeln, ziel });
+
+export interface ProtokollEintrag {
+  id: string;
+  zeit: string;
+  anbieter: string;
+  modell: string;
+  aufgabe: string;
+  kontext: { datei: string | null; absatz: number | null };
+  anfrage: string;
+  tokens: { ein: number | null; aus: number | null };
+  /** `ok`, `fehler` oder `abgelehnt`. */
+  ergebnis: string;
+}
+export const protokollListe = () => invoke<ProtokollEintrag[]>("protokoll_liste");
