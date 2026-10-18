@@ -38,6 +38,8 @@ pub fn run() {
             index::commands::index_chapter,
             index::commands::index_sources,
             quellen::commands::quellen_zotero,
+            pruefung::commands::pruefung_run,
+            pruefung::commands::pruefung_rechtschreibung,
             lsp::commands::lsp_completion,
             lsp::commands::lsp_hover,
             lsp::commands::lsp_definition,

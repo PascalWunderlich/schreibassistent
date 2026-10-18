@@ -5,6 +5,7 @@ import {
   CompileReport,
   Definition,
   ParagraphHit,
+  Rect,
   SaveInfo,
   allPages,
   compile,
@@ -70,10 +71,12 @@ interface Props {
   onVisiblePage?: (page: number) => void;
   /** Datei des gerade bearbeiteten Absatzes (oder `null`). */
   onEditingFile?: (file: string | null) => void;
+  /** Markierungen am Absatz (Prüfungen): Seite, Rechteck, Schwere, Texte. */
+  marks?: { page: number; rect: Rect; schwere: string; texts: string[] }[];
 }
 
 /** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
-export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal, onVisiblePage, onEditingFile }: Props) {
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal, onVisiblePage, onEditingFile, marks = [] }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
@@ -310,6 +313,16 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
             onClick={(e) => handleClick(i, e)}
           >
             {page.url && <img className="page-image" src={page.url} alt={`Seite ${page.label || i + 1}`} draggable={false} />}
+            {marks
+              .filter((m) => m.page === i)
+              .map((m, k) => (
+                <div
+                  key={`mark-${k}`}
+                  className={`mark ${m.schwere}`}
+                  title={m.texts.join("\n")}
+                  style={{ left: (m.rect.x - 12) * scale, top: m.rect.y * scale, height: Math.max(m.rect.height, 10) * scale }}
+                />
+              ))}
             {highlight?.rects
               .filter(([p]) => p === i)
               .map(([, rect], k) => (

@@ -7,6 +7,8 @@ import { SourceEditor } from "./editor/SourceEditor";
 import {
   ChapterInfo,
   ChapterView,
+  Hinweis,
+  Pruefbericht,
   CompileReport,
   Definition,
   ParagraphHit,
@@ -27,6 +29,8 @@ import {
   newNote,
   openProject,
   projectTree,
+  pruefungRechtschreibung,
+  pruefungRun,
 } from "./editor/api";
 import { Sidebar } from "./layout/Sidebar";
 import { ChapterPanel } from "./layout/ChapterPanel";
@@ -65,6 +69,9 @@ function App() {
   const [sources, setSources] = useState<SourcesOverview>({ sources: [], error: null });
   const [indexVersion, setIndexVersion] = useState(0);
   const refreshIndex = () => setIndexVersion((n) => n + 1);
+  // Prüfungen: feste Regeln und Vale nach jedem Setzen, Rechtschreibung (LTeX+) nach Pausen.
+  const [bericht, setBericht] = useState<Pruefbericht | null>(null);
+  const [rechtschreibung, setRechtschreibung] = useState<Hinweis[] | "laeuft" | null>(null);
 
   // Änderungen von außen: Dateibaum aktualisieren (neue oder gelöschte Dateien).
   useEffect(() => {
@@ -74,6 +81,61 @@ function App() {
       unlisten.then((f) => f()).catch(() => {});
     };
   }, [project]);
+
+  useEffect(() => {
+    if (!project) return;
+    const timer = window.setTimeout(() => pruefungRun().then(setBericht).catch((e) => setErrors(errorMessages(e))), 600);
+    return () => window.clearTimeout(timer);
+  }, [project, report, indexVersion]);
+
+  useEffect(() => {
+    if (!project) return;
+    const timer = window.setTimeout(() => {
+      setRechtschreibung((r) => (Array.isArray(r) ? r : "laeuft"));
+      pruefungRechtschreibung()
+        .then(setRechtschreibung)
+        .catch((e) => {
+          setRechtschreibung(null);
+          setErrors(errorMessages(e));
+        });
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [project, indexVersion]);
+
+  const allHints = [...(bericht?.hinweise ?? []), ...(Array.isArray(rechtschreibung) ? rechtschreibung : [])];
+  // Markierungen am Absatz: je Stelle eine, mit der höchsten Schwere.
+  const marks = (() => {
+    const rank: Record<string, number> = { fehler: 0, warnung: 1, hinweis: 2 };
+    const byPlace = new Map<string, { page: number; rect: import("./editor/api").Rect; schwere: string; texts: string[] }>();
+    for (const h of allHints) {
+      if (!h.stelle) continue;
+      const [page, rect] = h.stelle;
+      const key = `${page}:${rect.x}:${rect.y}`;
+      const mark = byPlace.get(key) ?? { page, rect, schwere: h.schwere, texts: [] };
+      if (rank[h.schwere] < rank[mark.schwere]) mark.schwere = h.schwere;
+      mark.texts.push(h.text);
+      byPlace.set(key, mark);
+    }
+    return [...byPlace.values()];
+  })();
+
+  /** Klick auf einen Hinweis: zur Stelle springen. */
+  function jumpToHint(h: Hinweis) {
+    if (!h.datei) return;
+    if (!h.datei.endsWith(".typ")) {
+      setSelected(h.datei);
+      setCenter({ kind: "note", path: h.datei, readOnly: true });
+      return;
+    }
+    setCenter({ kind: "pages" });
+    setSelected(h.datei);
+    const target = { file: h.datei, offset: h.offset ?? 0, nonce: Date.now() };
+    if (sourceMode) {
+      setSourceFile(h.datei);
+      setSourceJump(target);
+    }
+    setReveal(target);
+  }
 
   // Index neu laden: nach dem Öffnen, nach dem Speichern, bei Änderungen von außen.
   useEffect(() => {
@@ -329,6 +391,7 @@ function App() {
                 refresh={refresh}
                 scale={0.9}
                 reveal={reveal}
+                marks={marks}
               />
             </div>
           ) : center.kind === "pages" ? (
@@ -341,6 +404,8 @@ function App() {
               refresh={refresh}
               onVisiblePage={setVisiblePage}
               onEditingFile={setEditingFile}
+              reveal={reveal}
+              marks={marks}
             />
           ) : (
             <NoteEditor
@@ -352,10 +417,12 @@ function App() {
             />
           )}
         </main>
-        <RightPanel />
+        <RightPanel bericht={bericht} rechtschreibung={rechtschreibung} onJump={jumpToHint} />
       </div>
       <StatusBar
         contentPages={report?.content_pages ?? null}
+        range={bericht?.umfang ?? null}
+        openHints={allHints.length}
         saveState={saveState}
         lastAutosave={lastAutosave}
         git={project.git}

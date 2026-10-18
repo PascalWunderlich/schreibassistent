@@ -26,12 +26,20 @@ pub struct LspClient {
 
 impl LspClient {
     /// Startet `program lsp` und leitet Server-Benachrichtigungen an `on_notification` weiter.
-    pub fn spawn(
+    pub fn spawn(program: &Path, on_notification: impl Fn(&str, Value) + Send + 'static) -> Result<Self, String> {
+        Self::spawn_with(program, &["lsp"], Value::Null, on_notification)
+    }
+
+    /// Wie `spawn`, mit eigenen Argumenten. `configuration` beantwortet Anfragen
+    /// `workspace/configuration` des Servers (je angefragtem Abschnitt derselbe Wert).
+    pub fn spawn_with(
         program: &Path,
+        args: &[&str],
+        configuration: Value,
         on_notification: impl Fn(&str, Value) + Send + 'static,
     ) -> Result<Self, String> {
         let mut child = Command::new(program)
-            .arg("lsp")
+            .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -47,9 +55,10 @@ impl LspClient {
         thread::spawn(move || {
             let mut reader = BufReader::new(stdout);
             while let Some(message) = read_message(&mut reader) {
-                match (message.get("id").and_then(Value::as_i64), message.get("method")) {
+                // IDs können Zahlen oder Texte sein (z. B. LTeX+/lsp4j); Antworten tragen dieselbe ID.
+                match (message.get("id").cloned(), message.get("method")) {
                     (Some(id), None) => {
-                        if let Some(tx) = reader_pending.lock().unwrap().remove(&id) {
+                        if let Some(tx) = id.as_i64().and_then(|id| reader_pending.lock().unwrap().remove(&id)) {
                             let result = match message.get("error") {
                                 Some(error) => Err(error.to_string()),
                                 None => Ok(message.get("result").cloned().unwrap_or(Value::Null)),
@@ -68,7 +77,10 @@ impl LspClient {
                         let params = message.get("params").cloned().unwrap_or(Value::Null);
                         let result = match method {
                             "window/showDocument" => json!({ "success": true }),
-                            "workspace/configuration" => json!([]),
+                            "workspace/configuration" => {
+                                let items = params_len(&message);
+                                Value::Array(vec![configuration.clone(); items])
+                            }
                             _ => Value::Null,
                         };
                         on_notification(method, params);
@@ -113,6 +125,11 @@ impl Drop for LspClient {
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
+}
+
+/// Anzahl angefragter Abschnitte in `workspace/configuration`.
+fn params_len(message: &Value) -> usize {
+    message["params"]["items"].as_array().map_or(0, Vec::len)
 }
 
 fn read_message(reader: &mut impl BufRead) -> Option<Value> {

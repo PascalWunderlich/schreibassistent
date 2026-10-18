@@ -1,0 +1,4 @@
+# Eigene Wörter für die Rechtschreibprüfung (LTeX+), ein Wort je Zeile.
+Ziegener
+Sutton
+Barto

@@ -240,3 +240,31 @@ export function pageFromSupplement(supplement: string | undefined): number | nul
 /** Zotero-Adresse, die ein PDF (an einer Seite) im Zotero-Reader öffnet. */
 export const zoteroPdfUrl = (attachmentKey: string, page: number | null) =>
   `zotero://open-pdf/library/items/${attachmentKey}${page ? `?page=${page}` : ""}`;
+
+// ---------- pruefung ----------
+export type Schwere = "fehler" | "warnung" | "hinweis";
+
+export interface Hinweis {
+  regel_id: string;
+  datei: string | null;
+  zeile: number | null;
+  offset: number | null;
+  text: string;
+  schwere: Schwere;
+  fundstelle: string;
+  /** "regel", "vale" oder "ltex". */
+  quelle: string;
+  /** Seite (ab 0) und Rechteck des Absatzes. */
+  stelle: [number, Rect] | null;
+}
+
+export interface Pruefbericht {
+  hinweise: Hinweis[];
+  profil: { profil: string; bestaetigt: boolean } | null;
+  fehler: string[];
+  umfang: [number, number] | null;
+  ms: number;
+}
+
+export const pruefungRun = () => invoke<Pruefbericht>("pruefung_run");
+export const pruefungRechtschreibung = () => invoke<Hinweis[]>("pruefung_rechtschreibung");

@@ -1,6 +1,8 @@
 //! Regelprofil laden, feste Prüfungen, Vale/LTeX+ einbinden.
 
+pub mod commands;
 pub mod engine;
+pub mod ltex;
 pub mod profil;
 pub mod vale;
 
@@ -70,6 +72,15 @@ mod tests {
         match super::vale::check(&profil, root, &files) {
             Ok(hinweise) => out.extend(hinweise),
             Err(e) => eprintln!("Vale übersprungen: {e}"),
+        }
+        // Rechtschreibung mit LTeX+, falls installiert (Kaltstart Java: einige Sekunden).
+        if let Some(program) = super::ltex::find_ltex() {
+            let session = super::ltex::LtexSession::start(&program, root).unwrap();
+            let texts: Vec<(String, String)> =
+                files.iter().map(|f| (f.clone(), std::fs::read_to_string(root.join(f)).unwrap())).collect();
+            out.extend(session.check(&texts, std::time::Duration::from_secs(90)).unwrap());
+        } else {
+            eprintln!("LTeX+ übersprungen: nicht installiert");
         }
         out
     }

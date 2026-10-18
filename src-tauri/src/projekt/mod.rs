@@ -41,6 +41,8 @@ pub struct Project {
     cache: Option<Cache>,
     /// Fehler beim Lesen der `.bib` (Quellen bleiben dann auf dem letzten Stand).
     pub sources_error: Option<String>,
+    /// Rechtschreibung (LTeX+), beim ersten Bedarf gestartet.
+    pub ltex: Option<std::sync::Arc<crate::pruefung::ltex::LtexSession>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -116,6 +118,7 @@ impl Project {
             index: Index::default(),
             cache,
             sources_error: None,
+            ltex: None,
         };
         project.reload_sources();
         project.reindex().map_err(|e| vec![e])?;

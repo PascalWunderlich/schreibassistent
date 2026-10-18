@@ -10,6 +10,9 @@
 
 #lorem(50)
 
+// FEHLERFALL rechtschreibung
+Die Anforderungen stehen in einem Rechtschreibfeler.
+
 // FEHLERFALL stil-man
 // FEHLERFALL stil-fuellwoerter
 Aus der Problemstellung kann man eigentlich direkt Anforderungen ableiten.

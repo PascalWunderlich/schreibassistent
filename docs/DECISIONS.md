@@ -30,3 +30,7 @@
 | 2026-10-17 | Satz lädt Systemschriften wie die CLI | sonst fehlen z. B. Helvetica in SVG-Abbildungen und das PDF weicht ab |
 | 2026-10-17 | PDF „identisch zur CLI“ = gleicher Inhalt aller Datenströme; Byte-Gleichheit nicht erreichbar | CLI (Homebrew) nutzt eine andere Deflate-Bibliothek; Unterschied nur in Kompression und davon abgeleiteter XMP-InstanceID |
 | 2026-10-17 | Quelltextmodus mit eigenen Seiten aus `satz` statt Tinymist-Vorschau | kein Flackern, gleiche Seiten wie im Seiteneditor |
+| 2026-10-17 | Regelprofil `System/regelprofil.yaml` mit Schema und festem Vokabular; FHDW-Profil von Hand, von Pascal freigegeben | Prüfungen ohne KI; jede Regel mit Fundstelle; „man“/Füllwörter ausdrücklich als „keine FHDW-Vorgabe“ markiert |
+| 2026-10-17 | LTeX+ (MPL-2.0, mit LanguageTool LGPL-2.1 und Java) unverändert als eigenes Programm, in P5 nicht gebündelt | Lizenz frei und weitergebbar; kein fremder Code im eigenen; 315 MB |
+| 2026-10-17 | LTeX+-Treffer nur im Fließtext; Grammatik nicht in Tabellenzellen, Argument-Blöcken und direkt nach Code | LTeX+ liest Typst nur grob; sonst 37 Fehlalarme im Beispiel |
+| 2026-10-17 | Fehlerfälle, die das Setzen verhindern, in eigenen Test-Vaults (`tests/pruefung/`) | Beispielarbeit muss setzbar bleiben (Vorlagentests P1) |
