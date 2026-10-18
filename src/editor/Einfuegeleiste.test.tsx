@@ -1,11 +1,14 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Einfuegeleiste } from "./Einfuegeleiste";
 import { setInserter } from "./inserter";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn(async () => null) }));
 
-afterEach(() => setInserter(null));
+afterEach(() => {
+  cleanup();
+  setInserter(null);
+});
 
 describe("Einfuegeleiste", () => {
   it("ist ohne Cursor im Text gesperrt", () => {

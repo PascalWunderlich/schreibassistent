@@ -178,8 +178,7 @@ button {
 }
 
 .sidebar h2,
-.chapter-panel h2,
-.right-panel h2 {
+.chapter-panel h2 {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -224,20 +223,6 @@ button {
   color: var(--sa-muted);
   font-size: 0.82rem;
   margin: 0.2rem 0.6rem;
-}
-
-/* ---------- Rechtes Panel ---------- */
-.right-panel {
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
-  background: var(--sa-panel);
-  border-left: 1px solid var(--sa-line);
-  overflow: auto;
-}
-
-.right-panel section + section {
-  border-top: 1px solid var(--sa-line);
 }
 
 /* ---------- Statusleiste ---------- */
@@ -522,78 +507,6 @@ button {
 .source-details .annotations .item {
   padding: 0.15rem 0;
   font-size: 0.8rem;
-}
-
-/* ---------- Prüfungen ---------- */
-.right-panel .checks {
-  overflow: auto;
-  padding-bottom: 0.6rem;
-}
-
-.check-group h3 {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--sa-muted);
-  margin: 0.6rem 0.8rem 0.15rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.check-group ul {
-  list-style: none;
-  margin: 0;
-  padding: 0 0.4rem;
-}
-
-.check {
-  display: block;
-  width: 100%;
-  text-align: left;
-  border: 0;
-  border-left: 3px solid transparent;
-  background: none;
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.82rem;
-  line-height: 1.35;
-  color: inherit;
-}
-
-.check:hover:not(:disabled) {
-  background: var(--muted);
-}
-
-.check:disabled {
-  cursor: default;
-}
-
-.check.fehler {
-  border-left-color: #c0392b;
-}
-
-.check.warnung {
-  border-left-color: #d68910;
-}
-
-.check.hinweis {
-  border-left-color: #8a8a90;
-}
-
-.badge-schwere {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  color: var(--sa-muted);
-}
-
-.right-panel .ok {
-  color: #1e7d3a;
-  margin: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-}
-
-.right-panel .warn {
-  margin: 0.4rem 0.8rem;
-  font-size: 0.82rem;
 }
 
 .mark {
