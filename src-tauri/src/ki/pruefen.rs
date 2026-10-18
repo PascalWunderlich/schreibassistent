@@ -23,9 +23,14 @@ const BELEGBEDARF_PROMPT: &str = "Prüfe den Absatz. Liste Sätze, die eine Tats
 These enthalten und keinen Beleg (@citekey) haben. Pro Satz: Satznummer, Grund
 (1 Zeile). Keine Formulierungsvorschläge.
 
-Antworte nur mit Zeilen der Form:
+Antworte nur mit Zeilen der Form (nur Sätze, die einen Beleg brauchen):
 - Satz <Nummer>: <Grund>
 Wenn kein Satz einen Beleg braucht: - keine";
+
+/// Gründe, mit denen die KI trotz Anweisung Sätze ohne Belegbedarf auflistet.
+static NO_NEED: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)kein(en)?\s+belegbedarf|ohne belegbedarf|keine\s+(tatsache|zahl|definition|these)|braucht keinen beleg|beleg vorhanden").unwrap()
+});
 
 const QUELLE_AUSSAGE_PROMPT: &str = "Aussage aus der Arbeit: {satz} (zitiert {citekey}).
 Originalabschnitte: {abschnitte mit Seite}.
@@ -64,7 +69,9 @@ Erfinde keine Werte. Unklare Vorgaben als klasse=urteil mit Zitat.
 
 Antworte nur mit einem JSON-Array von Regel-Objekten (ohne Codeblock). Jedes Objekt hat
 die Felder des Schemas für eine Regel und zusätzlich \"zitat\" (wörtlich, höchstens 25
-Wörter, aus dem Abschnitt der genannten Seite). fundstelle beginnt mit \"S. <Seite>\".";
+Wörter, aus dem Abschnitt der genannten Seite). fundstelle beginnt mit \"S. <Seite>\".
+gilt_fuer nur mit den Arten der Vorlage: \"Praxisarbeit\" (Praxisprojekt im Bachelor) oder
+\"Bachelorarbeit\" (Bachelor-Thesis); Vorgaben für andere Arbeiten weglassen.";
 
 // ---------- Text vorbereiten ----------
 
@@ -272,6 +279,13 @@ pub async fn belegbedarf(root: &Path, settings: &KiSettings, datei: &str, offset
     let answer = super::anfrage(root, settings, Aufgabe::Belegpruefung, &system, &message, kontext).await?;
     let all_text: Vec<&str> = saetze.iter().map(|s| s.text.as_str()).collect();
     let (clean, entfernt) = ohne_formulierungen(&answer.text, &all_text);
+    let (hinweise, sonstiges) = parse_belegbedarf(&clean, &saetze);
+    Ok(Ergebnis { hinweise, entfernt, modell: answer.modell, datei: datei.to_owned(), sonstiges })
+}
+
+
+/// Antwort „- Satz n: Grund“ → Hinweise; nur Sätze ohne Beleg und mit Belegbedarf.
+fn parse_belegbedarf(clean: &str, saetze: &[Satz]) -> (Vec<BelegHinweis>, Vec<String>) {
     let mut hinweise: Vec<BelegHinweis> = Vec::new();
     let mut sonstiges = Vec::new();
     for line in clean.lines().filter(|l| !l.trim().is_empty()) {
@@ -280,6 +294,7 @@ pub async fn belegbedarf(root: &Path, settings: &KiSettings, datei: &str, offset
                 // Sätze mit Beleg und doppelte Nummern ignorieren (Belegbedarf heißt: ohne Beleg).
                 if let Some(s) = saetze.iter().find(|s| s.nr == nr && s.belege.is_empty())
                     && !hinweise.iter().any(|h| h.nr == nr)
+                    && !NO_NEED.is_match(&grund)
                 {
                     hinweise.push(BelegHinweis { nr, start: s.start, satz: s.text.clone(), grund });
                 }
@@ -288,7 +303,7 @@ pub async fn belegbedarf(root: &Path, settings: &KiSettings, datei: &str, offset
             None => {}
         }
     }
-    Ok(Ergebnis { hinweise, entfernt, modell: answer.modell, datei: datei.to_owned(), sonstiges })
+    (hinweise, sonstiges)
 }
 
 // ---------- Quelle ↔ Aussage ----------
@@ -817,6 +832,25 @@ mod tests {
         let all: String = f.iter().map(|x| x.text.as_str()).collect::<Vec<_>>().join(" ");
         assert!(all.contains("data decomposition") && all.contains("Teil 11."), "ganze Seite");
         assert_eq!(f[0].link.as_deref(), Some("zotero://open-pdf/library/items/KEY?page=4"));
+    }
+
+    /// Echte Antwort von deepseek-chat auf das Testkapitel (Protokoll, 2026-10-18).
+    #[test]
+    fn real_answer_on_test_chapter_finds_the_three_unsupported_claims() {
+        let saetze = sentences(TEST_CHAPTER, (0, TEST_CHAPTER.len()), &bib());
+        let answer = "- Satz 1: keine Tatsache, Zahl, Definition oder fremde These – Einleitung ohne Belegbedarf
+- Satz 3: Tatsachenbehauptung mit Zahl (63 %, Jahr 2020, Umfrage) ohne Beleg
+- Satz 4: historische Tatsachenbehauptung (Erstnennung 2011) ohne Beleg
+- Satz 7: fremde These/Empfehlung (Eignung bestärkenden Lernens) ohne Beleg
+- Satz 8: Definition/Verfahrensbeschreibung von Experience Replay ohne Beleg
+- Satz 9: Tatsachenbehauptung über DQN (Modellbedarf) – Beleg vorhanden, aber ob @mnih2013 S. 3 die Aussage stützt, ist nicht prüfbar
+- Satz 10: methodische Ankündigung, kein Belegbedarf";
+        let (hinweise, _) = parse_belegbedarf(answer, &saetze);
+        let found: Vec<usize> = hinweise.iter().map(|h| h.nr).collect();
+        assert_eq!(found, [3, 4, 7, 8]);
+        for (nr, needle) in [(3, "63 %"), (4, "2011"), (8, "Experience Replay")] {
+            assert!(hinweise.iter().any(|h| h.nr == nr && h.satz.contains(needle)), "U-Fall {needle}");
+        }
     }
 
     #[test]

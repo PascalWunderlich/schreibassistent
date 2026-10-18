@@ -37,3 +37,6 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-18 | „Konzepte erzeugen“ in der App noch nicht ausprobiert (Knopf gebaut, Tests grün) | P7 |
 | 2026-10-18 | Mit „…“ gekürzte Zitate gelten als nicht bestätigt; Auslassungen beim Vergleich erlauben | P7 |
 | 2026-10-18 | Handtestseiten aus P4 in Wissen/ (greenyer2013, sutton2018, Konzepte/produktlinien) aufräumen | P7, Testdaten |
+| 2026-10-18 | Regelprofil aus PDF: Gliederungstiefe ohne `max`, Satzspiegel (A4/11 pt/Ränder) und 4 Urteilsregeln (Firmenwebsites, wissenschaftliche Quellen, Abbildung beschreiben, Zitate kennzeichnen) fehlten gegenüber dem Handprofil; dafür Sprache, Aktiv/Passiv, Gendern, Anhang ≤ 50 % neu | P8, Vergleich |
+| 2026-10-18 | Quelle ↔ Aussage findet ohne Seitenangabe englische Quellen zu deutschen Sätzen schlecht (Volltextsuche) | P8 |
+
