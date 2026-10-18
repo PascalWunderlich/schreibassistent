@@ -10,7 +10,7 @@ Windows und Linux sind bisher nur über die CI (Tests grün, Paket entsteht) bel
 |---|---|---|
 | macOS (Apple Silicon, M1 oder neuer) | `.dmg` | – |
 | Windows 10/11 (64 Bit) | `.exe` (Installer, ohne Administratorrechte) | WebView2 (in Windows 11 und aktuellem Windows 10 vorhanden) |
-| Linux (64 Bit) | `.AppImage` oder `.deb` | WebKitGTK 4.1, ein Schlüsselspeicher (GNOME Keyring oder KWallet) für KI-Schlüssel |
+| Linux (64 Bit, Debian/Ubuntu) | `.deb` | WebKitGTK 4.1, ein Schlüsselspeicher (GNOME Keyring oder KWallet) für KI-Schlüssel |
 
 Alles andere liegt in der App: Typst, Tinymist (Editor-Hilfen), Vale und LTeX+ (Prüfungen, LTeX+ samt Java), die Vorlage
 „fhdw-arbeit“ und `uv`. Zotero ist freiwillig und wird nicht mitgeliefert.
@@ -40,7 +40,6 @@ Ab dem zweiten Start öffnet sich die App normal.
 2. Die App wird für dein Benutzerkonto installiert (kein Administrator nötig) und erscheint im Startmenü.
 
 ### Linux
-- **AppImage:** Datei ausführbar machen (Rechtsklick → Eigenschaften → „Ausführen erlauben“, oder `chmod +x`) und starten.
 - **deb:** über den Software-Installer des Systems öffnen (Ubuntu/Debian).
 
 ## Ersteinstieg
@@ -74,7 +73,7 @@ du kannst es später erneut versuchen. Wer nichts einliest, braucht Docling nie.
 
 ## Deinstallieren
 
-App löschen (macOS: aus Programme in den Papierkorb; Windows: Einstellungen → Apps; Linux: AppImage löschen bzw. `sudo apt remove schreibassistent`).
+App löschen (macOS: aus Programme in den Papierkorb; Windows: Einstellungen → Apps; Linux: `sudo apt remove schreibassistent`).
 Deine Arbeit bleibt, wo sie liegt. Wer alles entfernen will, löscht zusätzlich die oben genannten App-Ordner.
 
 ## Probleme

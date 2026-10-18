@@ -49,6 +49,8 @@ pub fn check(profil: &Profil, root: &Path, files: &[String]) -> Result<Vec<Hinwe
 
     let mut out = Vec::new();
     for (file, alerts) in alerts {
+        // Vale nennt Dateien mit dem Trenner des Systems (Windows: „Arbeit\kapitel\…“).
+        let file = crate::projekt::files::rel_string(Path::new(&file));
         let text = std::fs::read_to_string(root.join(&file)).unwrap_or_default();
         for alert in alerts {
             let Some(regel) = rules.iter().find(|r| r.vale.as_deref() == Some(alert.check.as_str())) else { continue };
