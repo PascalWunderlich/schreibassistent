@@ -1,0 +1,20 @@
+# Mitgelieferte Werkzeuge: feste Versionen mit SHA-256 (gelesen von scripts/werkzeuge-bauen.sh und .ps1).
+# Spalten: download <Name> <Ziel> <SHA-256> <URL>      Programm je Ziel
+#          crate <Name> <Version>                       wird mit cargo gebaut
+#          package <Namespace>/<Name> <Version> <SHA-256|-> <URL>   Typst-Paket, das die Vorlage braucht
+#          (Prüfsumme „-“ = noch nicht festgelegt: Skript meldet die berechnete, bitte eintragen.)
+# Neue Version: URL ändern, Datei laden, `sha256sum` eintragen, Skript laufen lassen.
+download tinymist macos-arm64 bb5bb435f83648f88f638c4050cd44f7222bd1be510c945df7d3ba9f75289225 https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.10/tinymist-darwin-arm64
+download tinymist linux-x64 b030af8966d2759949e33aa0fed518c1667431e1d551014034ccf3f94eac9746 https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.10/tinymist-linux-x64
+download tinymist windows-x64 5c40fdbd7ba8aa411b74b552a4af08e927f9748874ed2e5e4144cc821cc305da https://github.com/Myriad-Dreamin/tinymist/releases/download/v0.15.10/tinymist-win32-x64.exe
+download vale macos-arm64 36b66e71a56b97e288ae479a9b205687b13361f08e7d9ac016fe9d4fdf72eace https://github.com/errata-ai/vale/releases/download/v3.12.0/vale_3.12.0_macOS_arm64.tar.gz
+download vale linux-x64 3f4ea05cd1f2291b660ecf11a77cbb6b544b0f3b780604ad183f63285611321b https://github.com/errata-ai/vale/releases/download/v3.12.0/vale_3.12.0_Linux_64-bit.tar.gz
+download vale windows-x64 3d196edf1e17016559f996353ffceff5f0bb0d133a0057021b39f477e4cec843 https://github.com/errata-ai/vale/releases/download/v3.12.0/vale_3.12.0_Windows_64-bit.zip
+download uv macos-arm64 136e70984e3fd359f4119ef445bfd67d6e0d50f15400226ef8db7b738ebef6d0 https://github.com/astral-sh/uv/releases/download/0.9.0/uv-aarch64-apple-darwin.tar.gz
+download uv linux-x64 4dadaa5ff5009ccd6a0a43f6ccfa32bf36ed2eff18df7011275a9b1d81950e7b https://github.com/astral-sh/uv/releases/download/0.9.0/uv-x86_64-unknown-linux-gnu.tar.gz
+download uv windows-x64 4bad2c47dafb52ad774072fb7a260e5c9f3dbf73441658db1128eb2aec5818eb https://github.com/astral-sh/uv/releases/download/0.9.0/uv-x86_64-pc-windows-msvc.zip
+download ltex-ls-plus macos-arm64 84f5dbe773e54984dcad652e4e5027a51fcaf516aac821d5141c23cbda962e36 https://github.com/ltex-plus/ltex-ls-plus/releases/download/18.5.1/ltex-ls-plus-18.5.1-mac-aarch64.tar.gz
+download ltex-ls-plus linux-x64 e6e08598bbbb575df409c8d491d305332633737742515a5c50803d4c671cb7df https://github.com/ltex-plus/ltex-ls-plus/releases/download/18.5.1/ltex-ls-plus-18.5.1-linux-x64.tar.gz
+download ltex-ls-plus windows-x64 ed47125132622f843cef1dbd286074ec56b83457e0ace0e58b58736f32a84009 https://github.com/ltex-plus/ltex-ls-plus/releases/download/18.5.1/ltex-ls-plus-18.5.1-windows-x64.zip
+crate typst2vast 0.1.0
+package preview/glossarium 0.5.10 - https://packages.typst.org/preview/glossarium-0.5.10.tar.gz

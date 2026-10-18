@@ -11,3 +11,4 @@ referenz/
 src-tauri/gen/schemas/
 *.pdf
 !referenz/*.pdf
+build/
