@@ -155,3 +155,26 @@ pub async fn projekt_log(state: State<'_, AppState>, message: String) -> Result<
         writeln!(file, "{:.3} {message}", now.as_secs_f64()).map_err(|e| e.to_string())
     })
 }
+
+/// Neue Arbeit im Ordner `path` anlegen; die Oberfläche öffnet sie danach mit `projekt_open`.
+#[tauri::command]
+pub async fn projekt_create(path: String, input: super::neu::NeueArbeit) -> Result<String, String> {
+    super::neu::create(std::path::Path::new(&path), &input)?;
+    Ok(path)
+}
+
+/// „Speichern unter“: die geöffnete Arbeit nach `path` kopieren (ohne Cache).
+#[tauri::command]
+pub async fn projekt_copy_to(state: State<'_, AppState>, path: String) -> Result<String, String> {
+    with_project(&state, |p| {
+        p.autosave(true);
+        super::neu::copy_to(&p.root, std::path::Path::new(&path))
+    })?;
+    Ok(path)
+}
+
+/// „Speichern“: Git-Sicherung jetzt, nicht erst nach 5 Minuten. Die Dateien selbst liegen schon auf der Platte.
+#[tauri::command]
+pub async fn projekt_sichern(state: State<'_, AppState>) -> Result<SaveInfo, String> {
+    with_project(&state, |p| Ok(p.autosave(true)))
+}

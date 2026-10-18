@@ -7,3 +7,7 @@ export type InsertKind = "abbildung" | "tabelle" | "diagramm" | "listing" | "zit
 
 export const showTab = (tab: RightTab) => window.dispatchEvent(new CustomEvent<RightTab>(TAB_EVENT, { detail: tab }));
 export const openInsert = (kind: InsertKind) => window.dispatchEvent(new CustomEvent<InsertKind>(INSERT_EVENT, { detail: kind }));
+
+export const PANEL_EVENT = "sa:panel";
+export type PanelSide = "links" | "rechts";
+export const togglePanel = (side: PanelSide) => window.dispatchEvent(new CustomEvent<PanelSide>(PANEL_EVENT, { detail: side }));

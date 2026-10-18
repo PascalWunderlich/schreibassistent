@@ -3,6 +3,7 @@
 //! Ein offenes Projekt hält den Satz (`satz`) und schreibt jede Änderung sofort und
 //! atomar auf die Platte; Git-Sicherung höchstens alle 5 Minuten (`git`).
 
+pub mod neu;
 pub mod commands;
 pub mod files;
 pub mod git;

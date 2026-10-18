@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from "react";
+import { PANEL_EVENT, PanelSide } from "../lib/events";
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 
 const PANELS = ["left", "center", "right"];
 
-/** Drei Spalten: Kapitel | Blatt | Prüfen und Assistent. Breiten werden gemerkt, ⌘⌥← / ⌘⌥→ blenden die Seiten ein und aus. */
+/** Drei Spalten: Kapitel | Blatt | Prüfen und Assistent. Breiten werden gemerkt, Menü Darstellung blendet die Seiten ein und aus (⌘⌥←, ⌘⌥→). */
 export function Workspace({ left, center, right }: Props) {
   const leftRef = usePanelRef();
   const rightRef = usePanelRef();
@@ -22,18 +23,10 @@ export function Workspace({ left, center, right }: Props) {
       if (panel.isCollapsed()) panel.expand();
       else panel.collapse();
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey && e.altKey)) return;
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        toggle(leftRef);
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        toggle(rightRef);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Die Tastenkürzel ⌘⌥← und ⌘⌥→ kommen über das Menü „Darstellung“ als Ereignis.
+    const onPanel = (e: Event) => toggle((e as CustomEvent<PanelSide>).detail === "links" ? leftRef : rightRef);
+    window.addEventListener(PANEL_EVENT, onPanel);
+    return () => window.removeEventListener(PANEL_EVENT, onPanel);
   }, [leftRef, rightRef]);
 
   const handle = "w-px bg-border transition-colors hover:bg-ring data-[separator=active]:bg-ring focus-visible:bg-ring outline-none";

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
@@ -20,6 +21,10 @@ import {
   errorMessages,
   exportDir,
   indexChapter,
+  NeueArbeit,
+  projektCopyTo,
+  projektCreate,
+  projektSichern,
   indexChapters,
   indexSources,
   exportPdf,
@@ -42,6 +47,10 @@ import { SaveState, StatusBar } from "./layout/StatusBar";
 import { Einfuegeleiste } from "./editor/Einfuegeleiste";
 import { Toaster, toast } from "sonner";
 import { CommandPalette } from "./layout/CommandPalette";
+import { NeueArbeitDialog } from "./layout/NeueArbeitDialog";
+import { SettingsDialog } from "./layout/SettingsDialog";
+import { useMenu } from "./layout/useMenu";
+import { togglePanel } from "./lib/events";
 import { ShortcutsDialog } from "./layout/ShortcutsDialog";
 import { Topbar } from "./layout/Topbar";
 import { Workspace } from "./layout/Workspace";
@@ -67,6 +76,8 @@ function App() {
   const [errorCount, setErrorCount] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   /** Quelltextmodus: Datei links, Seiten rechts. */
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
@@ -292,6 +303,37 @@ function App() {
     }
   }
 
+  async function createWork(folder: string, input: NeueArbeit) {
+    await projektCreate(folder, input);
+    await load(folder);
+  }
+
+  /** „Speichern unter“: Kopie der Arbeit in einem neuen Ordner anlegen und dort weiterarbeiten. */
+  async function saveAs() {
+    if (!project) return;
+    const path = await save({ title: "Arbeit speichern unter", defaultPath: `${project.root}-Kopie` });
+    if (!path) return;
+    try {
+      await projektCopyTo(path);
+      await load(path);
+      setNotice(`Kopie angelegt: ${path}`);
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
+  /** „Speichern“: Dateien liegen schon auf der Platte, hier entsteht sofort die Git-Sicherung. */
+  async function backupNow() {
+    if (!project) return;
+    try {
+      const info = await projektSichern();
+      saved(info);
+      setNotice(info.git_error ? `Gespeichert, Sicherung fehlgeschlagen: ${info.git_error}` : "Gespeichert und gesichert.");
+    } catch (e) {
+      setErrors(errorMessages(e));
+    }
+  }
+
   function saved(save: SaveInfo) {
     refreshIndex();
     setSaveState("gespeichert");
@@ -351,6 +393,26 @@ function App() {
     }
   }
 
+  useMenu({
+    neu: () => setNewOpen(true),
+    oeffnen: choose,
+    speichern: backupNow,
+    "speichern-unter": saveAs,
+    pdf: exportToPdf,
+    finder: () => project && revealItemInDir(project.root).catch(() => {}),
+    schliessen: () => setProject(null),
+    einstellungen: () => setSettingsOpen(true),
+    "ansicht-seite": () => setSourceMode(false),
+    "ansicht-quelltext": () => setSourceMode(true),
+    hell: () => setTheme("light"),
+    dunkel: () => setTheme("dark"),
+    system: () => setTheme("system"),
+    links: () => togglePanel("links"),
+    rechts: () => togglePanel("rechts"),
+    palette: () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })),
+    tastenkuerzel: () => setShortcutsOpen(true),
+  });
+
   // Meldungen als Toast: Hinweise 5 s, Fehler bleiben bis zum Schließen.
   useEffect(() => {
     if (!notice) return;
@@ -362,9 +424,23 @@ function App() {
     toast.error(errors.join(" · "), { id: "fehler", duration: Infinity, closeButton: true, onDismiss: () => setErrors([]) });
   }, [errors, project]);
 
+  const overlays = (
+    <>
+      <Toaster
+        position="bottom-right"
+        closeButton
+        style={{ "--normal-bg": "var(--popover)", "--normal-text": "var(--popover-foreground)", "--normal-border": "var(--border)" } as React.CSSProperties}
+      />
+      {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
+      {newOpen && <NeueArbeitDialog onCreate={createWork} onClose={() => setNewOpen(false)} />}
+      {settingsOpen && <SettingsDialog theme={theme} onTheme={setTheme} hasProject={!!project} onClose={() => setSettingsOpen(false)} />}
+    </>
+  );
+
   if (!project) {
     return (
       <div className="start">
+        {overlays}
         <h1>Schreibassistent</h1>
         {loading ? (
           <p>Öffne Arbeit …</p>
@@ -372,6 +448,7 @@ function App() {
           <>
             <p>Öffne den Ordner deiner Arbeit (Arbeits-Vault mit Arbeit/main.typ).</p>
             <button onClick={choose}>Arbeit öffnen …</button>
+            <button onClick={() => setNewOpen(true)}>Neue Arbeit …</button>
           </>
         )}
         {errors.map((e, i) => (
@@ -385,11 +462,7 @@ function App() {
 
   return (
     <div className="app">
-      <Toaster
-        position="bottom-right"
-        closeButton
-        style={{ "--normal-bg": "var(--popover)", "--normal-text": "var(--popover-foreground)", "--normal-border": "var(--border)" } as React.CSSProperties}
-      />
+      {overlays}
       <CommandPalette
         chapters={chapters}
         onOpenChapter={openChapter}
@@ -400,7 +473,6 @@ function App() {
         onTheme={setTheme}
         onShortcuts={() => setShortcutsOpen(true)}
       />
-      {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
       <Topbar
         projectName={project.name}
         saveLabel={saveState}

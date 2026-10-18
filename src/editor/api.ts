@@ -268,3 +268,15 @@ export interface Pruefbericht {
 
 export const pruefungRun = () => invoke<Pruefbericht>("pruefung_run");
 export const pruefungRechtschreibung = () => invoke<Hinweis[]>("pruefung_rechtschreibung");
+
+export interface NeueArbeit {
+  title: string;
+  author: string;
+  thesis_type: "Praxisarbeit" | "Bachelorarbeit";
+}
+/** Gerüst einer neuen Arbeit in `path` anlegen (Ordner neu oder leer). */
+export const projektCreate = (path: string, input: NeueArbeit) => invoke<string>("projekt_create", { path, input });
+/** „Speichern unter“: Arbeit nach `path` kopieren. */
+export const projektCopyTo = (path: string) => invoke<string>("projekt_copy_to", { path });
+/** „Speichern“: Git-Sicherung sofort. */
+export const projektSichern = () => invoke<SaveInfo>("projekt_sichern");

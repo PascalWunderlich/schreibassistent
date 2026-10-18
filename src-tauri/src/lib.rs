@@ -1,3 +1,4 @@
+pub mod menu;
 pub mod projekt;
 pub mod satz;
 pub mod lsp;
@@ -11,6 +12,11 @@ pub mod ingest;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .menu(menu::build)
+        .on_menu_event(|app, event| {
+            use tauri::Emitter;
+            let _ = app.emit("menu", event.id().0.clone());
+        })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(projekt::commands::AppState::default())
@@ -25,6 +31,9 @@ pub fn run() {
             projekt::commands::projekt_new_chapter,
             projekt::commands::projekt_export_dir,
             projekt::commands::projekt_log,
+            projekt::commands::projekt_create,
+            projekt::commands::projekt_copy_to,
+            projekt::commands::projekt_sichern,
             satz::commands::satz_paragraph_at,
             satz::commands::satz_paragraph_at_offset,
             satz::commands::satz_replace,
