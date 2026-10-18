@@ -360,13 +360,7 @@ pub struct Ergebnis {
 }
 
 fn now_label() -> String {
-    std::process::Command::new("date")
-        .arg("+%Y-%m-%d %H:%M")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_owned())
-        .unwrap_or_default()
+    chrono::Local::now().format("%Y-%m-%d %H:%M").to_string()
 }
 
 /// Quellenseite per KI erzeugen (kostet Tokens), prüfen und schreiben.

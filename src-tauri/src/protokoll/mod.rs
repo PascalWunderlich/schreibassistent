@@ -118,19 +118,9 @@ pub fn append(root: &Path, mut eintrag: Eintrag) -> Result<Eintrag, String> {
     Ok(eintrag)
 }
 
-/// Ortszeit mit Versatz, z. B. `2026-11-02T10:15:00+01:00` (über `date`, ohne weitere Crate).
+/// Ortszeit mit Versatz, z. B. `2026-11-02T10:15:00+01:00`.
 fn now() -> String {
-    std::process::Command::new("date")
-        .arg("+%Y-%m-%dT%H:%M:%S%z")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| {
-            let s = s.trim();
-            // +0100 → +01:00
-            if s.len() > 5 { format!("{}:{}", &s[..s.len() - 2], &s[s.len() - 2..]) } else { s.to_owned() }
-        })
-        .unwrap_or_default()
+    chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%:z").to_string()
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]

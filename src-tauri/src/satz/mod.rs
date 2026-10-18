@@ -647,7 +647,7 @@ mod tests {
 
     #[test]
     fn pdf_is_identical_to_typst_cli() {
-        let typst = ["/opt/homebrew/bin/typst", "/usr/local/bin/typst"].into_iter().find(|p| std::path::Path::new(p).is_file());
+        let typst = crate::werkzeuge::find("typst");
         let Some(typst) = typst else {
             eprintln!("typst-CLI nicht gefunden, Test übersprungen");
             return;

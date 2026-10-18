@@ -1,4 +1,4 @@
-//! Menüleiste (macOS und andere): jeder eigene Eintrag schickt seine ID als Ereignis `menu` an die Oberfläche.
+//! Menüleiste (macOS mit App-Menü; Windows und Linux mit „Datei“ samt „Beenden“): jeder eigene Eintrag schickt seine ID als Ereignis `menu` an die Oberfläche.
 
 use tauri::menu::{Menu, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::{AppHandle, Wry};
@@ -11,19 +11,14 @@ fn item(app: &AppHandle, id: &str, label: &str, accelerator: Option<&str>) -> ta
     }
 }
 
+/// Name des Dateimanagers im Menü.
+fn file_manager() -> &'static str {
+    if cfg!(target_os = "macos") { "Im Finder zeigen" } else { "Im Dateimanager zeigen" }
+}
+
 pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
-    let app_menu = SubmenuBuilder::new(app, "Schreibassistent")
-        .about(None)
-        .separator()
-        .item(&item(app, "einstellungen", "Einstellungen …", Some("CmdOrCtrl+,"))?)
-        .separator()
-        .hide()
-        .hide_others()
-        .show_all()
-        .separator()
-        .quit()
-        .build()?;
-    let file = SubmenuBuilder::new(app, "Ablage")
+    let settings = item(app, "einstellungen", "Einstellungen …", Some("CmdOrCtrl+,"))?;
+    let mut file = SubmenuBuilder::new(app, if cfg!(target_os = "macos") { "Ablage" } else { "Datei" })
         .item(&item(app, "neu", "Neue Arbeit …", Some("CmdOrCtrl+N"))?)
         .item(&item(app, "oeffnen", "Arbeit öffnen …", Some("CmdOrCtrl+O"))?)
         .separator()
@@ -31,9 +26,13 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .item(&item(app, "speichern-unter", "Speichern unter …", Some("CmdOrCtrl+Shift+S"))?)
         .item(&item(app, "pdf", "Als PDF exportieren …", Some("CmdOrCtrl+E"))?)
         .separator()
-        .item(&item(app, "finder", "Im Finder zeigen", None)?)
-        .item(&item(app, "schliessen", "Arbeit schließen", Some("CmdOrCtrl+Shift+W"))?)
-        .build()?;
+        .item(&item(app, "finder", file_manager(), None)?)
+        .item(&item(app, "schliessen", "Arbeit schließen", Some("CmdOrCtrl+Shift+W"))?);
+    if !cfg!(target_os = "macos") {
+        // Ohne App-Menü: Einstellungen und Beenden gehören hierher.
+        file = file.separator().item(&settings).separator().quit();
+    }
+    let file = file.build()?;
     let edit = SubmenuBuilder::new(app, "Bearbeiten")
         .undo()
         .redo()
@@ -59,5 +58,21 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .build()?;
     let window = SubmenuBuilder::new(app, "Fenster").minimize().maximize().close_window().build()?;
     let help = SubmenuBuilder::new(app, "Hilfe").item(&item(app, "tastenkuerzel", "Tastenkürzel", None)?).build()?;
-    MenuBuilder::new(app).items(&[&app_menu, &file, &edit, &view, &window, &help]).build()
+    #[cfg(target_os = "macos")]
+    {
+        let app_menu = SubmenuBuilder::new(app, "Schreibassistent")
+            .about(None)
+            .separator()
+            .item(&settings)
+            .separator()
+            .hide()
+            .hide_others()
+            .show_all()
+            .separator()
+            .quit()
+            .build()?;
+        return MenuBuilder::new(app).items(&[&app_menu, &file, &edit, &view, &window, &help]).build();
+    }
+    #[cfg(not(target_os = "macos"))]
+    MenuBuilder::new(app).items(&[&file, &edit, &view, &window, &help]).build()
 }
