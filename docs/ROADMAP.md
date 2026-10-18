@@ -1,5 +1,5 @@
 # Roadmap
-Aktuelle Phase: alle Phasen erledigt (2026-10-18), weiter mit „Später (notiert)“
+Aktuelle Phase: P9
 | Phase | Status | Abnahme |
 |---|---|---|
 | P0 Grundlage | erledigt (2026-10-17) | Tauri-Fenster startet, Kontextdateien vorhanden |
@@ -11,6 +11,9 @@ Aktuelle Phase: alle Phasen erledigt (2026-10-18), weiter mit „Später (notier
 | P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
 | P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | erledigt (2026-10-18) | Hinweise mit Originalstelle |
+| P9 UI-Überarbeitung | offen | 6 Kernaufgaben ohne Nachfragen, Reibungsliste abgearbeitet |
+| P10 Einfache Installation | offen | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
+Reibungen beim Benutzen: docs/ui-reibung.md (Eingabe für P9).
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 
 ## Später (notiert)
