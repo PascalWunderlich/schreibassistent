@@ -8,7 +8,7 @@ Aktuelle Phase: P6
 | P3 App-Gerüst | erledigt (2026-10-17) | Kapitel in der App geschrieben und exportiert |
 | P4 Quellen & Index | erledigt (2026-10-17) | Seitenleiste zeigt Quellen/Notizen je Kapitel |
 | P5 Feste Prüfungen | erledigt (2026-10-18) | alle Fehlerfälle erkannt, keine Fehlalarme |
-| P6 KI-Grundlage | offen | Schreibsperre nachgewiesen, Protokoll vollständig |
+| P6 KI-Grundlage | in Abnahme | Schreibsperre nachgewiesen, Protokoll vollständig |
 | P7 Ingest & Wissen | offen | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
@@ -26,3 +26,6 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-17 | Zotero-Testdaten: Titel von gebhard2021/weber2022 falsch geschrieben (Import), Testbuch mit langem Citekey; vor echter Nutzung bereinigen | P4, Testdaten |
 | 2026-10-18 | LTeX+ startet kalt in ~15 s (Java); früher im Hintergrund starten oder beim Öffnen vorwärmen | P5 |
 | 2026-10-18 | Regel „zitierstil: erlaubt“ (numerisch/alphabetisch) wird nicht geprüft, die Vorlage erlaubt ohnehin nur diese beiden | P5 |
+| 2026-10-18 | Abnahme „eine Frage mit Claude“ offen: kein API-Schlüssel; nachholen, sobald ein OpenRouter-Schlüssel da ist | P6 |
+| 2026-10-18 | „Verwendung“ im KI-Export ist fest; später je Anfrage selbst eintragen (z. B. „Gliederung geändert“) | P6 |
+| 2026-10-18 | Antworten nicht gestreamt; lokale Modelle brauchen ~15 s ohne Zwischenstand | P6 |

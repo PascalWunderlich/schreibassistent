@@ -69,5 +69,10 @@ JSON-Schema: System/regelprofil.schema.json (festes Vokabular für `art`).
 {"id":"…","zeit":"2026-11-02T10:15:00+01:00","anbieter":"anthropic","modell":"…",
  "aufgabe":"belegpruefung","kontext":{"datei":"Arbeit/kapitel/02-grundlagen.typ",
  "absatz":12},"anfrage":"…","antwort":"…","tokens":{"ein":1234,"aus":321},
- "vorheriger_hash":"…","hash":"…"}
-Export: Typst-Tabelle Datum | Werkzeug/Modell | Zweck | Verwendung.
+ "ergebnis":"ok","vorheriger_hash":"…","hash":"sha256:…"}
+- `ergebnis`: `ok`, `fehler` (Anbieter nicht erreichbar, Antwort = Fehlertext) oder
+  `abgelehnt` (Schreibversuch der KI außerhalb von `Wissen/`, Aufgabe `schreiben`, ohne Anbieter).
+- `hash` = SHA-256 über die Zeile mit leerem `hash`; erste Zeile hat `vorheriger_hash` "".
+  Prüfen: Knopf „Protokoll prüfen“ oder `cargo run --example protokoll_pruefen -- <Vault>`.
+Export: `Arbeit/anhang/ki-nutzung.typ` mit `ai-usage` der Vorlage
+(Datum | Werkzeug/Modell | Zweck | Verwendung), nur auf Klick, nur erfolgreiche Anfragen.
