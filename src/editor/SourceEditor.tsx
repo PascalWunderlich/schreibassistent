@@ -5,6 +5,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { Definition, Field, SaveInfo, errorMessages, log, readFile, utf8Length, writeFile } from "./api";
 import { lspExtensions, watchDiagnostics } from "./lspExtensions";
 import { Inserter, clearInserter, setInserter } from "./inserter";
+import { mod } from "../lib/platform";
 
 /** Speichern und neu setzen kurz nach dem letzten Tastendruck. */
 const SAVE_DELAY_MS = 300;
@@ -79,10 +80,10 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
               keymap.of([...defaultKeymap, ...historyKeymap]),
               EditorView.lineWrapping,
               ...lspExtensions(field, (d) => callbacks.current.onDefinition(d)),
-              // Klick (ohne ⌘) in den Quelltext: Vorschau zur Stelle bewegen.
+              // Klick (ohne Strg/⌘) in den Quelltext: Vorschau zur Stelle bewegen.
               EditorView.domEventHandlers({
                 mouseup: (event, v) => {
-                  if (event.metaKey) return false;
+                  if (mod(event)) return false;
                   window.setTimeout(() => {
                     const head = v.state.selection.main.head;
                     callbacks.current.onCursor(utf8Length(v.state.doc.sliceString(0, head)));

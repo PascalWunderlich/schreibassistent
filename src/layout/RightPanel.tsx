@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Hinweis, Pruefbericht } from "../editor/api";
 import { RightTab, TAB_EVENT } from "../lib/events";
 import { PruefenPanel } from "./PruefenPanel";
+import { mod } from "../lib/platform";
 
 interface Props {
   bericht: Pruefbericht | null;
@@ -20,7 +21,7 @@ export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Prop
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey && e.shiftKey && e.key.toLowerCase() === "a") {
+      if (mod(e) && e.shiftKey && e.key.toLowerCase() === "a") {
         e.preventDefault();
         setTab("assistent");
       }

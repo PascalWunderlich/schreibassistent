@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { ChapterInfo } from "../editor/api";
+import { keys } from "../lib/platform";
 
 interface Props {
   chapters: ChapterInfo[];
@@ -22,7 +23,7 @@ export function Kapitelliste({ chapters, current, onOpen, onNew }: Props) {
             <button
               onClick={() => onOpen(c.file)}
               aria-current={c.file === current ? "true" : undefined}
-              title={i < 9 ? `⌘${i + 1}` : undefined}
+              title={i < 9 ? keys(`⌘${i + 1}`) : undefined}
               className={`flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-sm ${c.file === current ? "bg-accent font-medium text-accent-foreground" : "hover:bg-muted"}`}
             >
               <span className="w-4 shrink-0 text-muted-foreground">{i + 1}</span>

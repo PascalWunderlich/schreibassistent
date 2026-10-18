@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { keys as keysText } from "../lib/platform";
 import { Button } from "../components/ui/button";
 
 const SHORTCUTS: [string, string][] = [
@@ -27,9 +28,9 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
       <div className="flex flex-col gap-3 p-4">
         <h2 className="text-base font-semibold">Tastenkürzel</h2>
         <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-          {SHORTCUTS.map(([keys, what]) => (
-            <div key={keys} className="contents">
-              <dt className="font-mono text-xs text-muted-foreground">{keys}</dt>
+          {SHORTCUTS.map(([shortcut, what]) => (
+            <div key={shortcut} className="contents">
+              <dt className="font-mono text-xs text-muted-foreground">{keysText(shortcut)}</dt>
               <dd className="m-0">{what}</dd>
             </div>
           ))}

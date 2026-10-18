@@ -7,7 +7,11 @@ beforeAll(() => {
   globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
   Element.prototype.scrollIntoView ??= () => {};
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+const platform = (name: string) => vi.spyOn(navigator, "platform", "get").mockReturnValue(name);
 
 const props = () => ({
   chapters: [
@@ -25,6 +29,7 @@ const props = () => ({
 
 describe("CommandPalette", () => {
   it("öffnet mit ⌘K und wechselt das Kapitel", async () => {
+    platform("MacIntel");
     const p = props();
     render(<CommandPalette {...p} />);
     fireEvent.keyDown(window, { key: "k", metaKey: true });
@@ -32,7 +37,18 @@ describe("CommandPalette", () => {
     await waitFor(() => expect(p.onOpenChapter).toHaveBeenCalledWith("Arbeit/kapitel/02-grundlagen.typ"));
   });
 
+  it("öffnet unter Windows und Linux mit Strg+K, nicht mit ⌘K", async () => {
+    platform("Win32");
+    const p = props();
+    render(<CommandPalette {...p} />);
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+    expect(screen.queryByText("Als PDF exportieren")).toBeNull();
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    await screen.findByText("Als PDF exportieren");
+  });
+
   it("zeigt Einfügen-Befehle nur, wenn ein Editor aktiv ist", async () => {
+    platform("MacIntel");
     const p = props();
     render(<CommandPalette {...p} />);
     fireEvent.keyDown(window, { key: "k", metaKey: true });
@@ -41,6 +57,7 @@ describe("CommandPalette", () => {
   });
 
   it("öffnet mit ⌘/ die Tastenkürzel", () => {
+    platform("MacIntel");
     const p = props();
     render(<CommandPalette {...p} />);
     fireEvent.keyDown(window, { key: "/", metaKey: true });

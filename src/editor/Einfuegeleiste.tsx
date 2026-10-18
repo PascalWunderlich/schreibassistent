@@ -6,6 +6,7 @@ import { Source, sourceLabel } from "./api";
 import { getInserter, relativePath, subscribeInserter } from "./inserter";
 import * as snip from "./snippets";
 import { INSERT_EVENT, InsertKind } from "../lib/events";
+import { keys, mod } from "../lib/platform";
 
 interface Props {
   sources: Source[];
@@ -24,7 +25,7 @@ export function Einfuegeleiste({ sources, projectRoot }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey && e.shiftKey)) return;
+      if (!(mod(e) && e.shiftKey)) return;
       const map: Record<string, Dialog> = { t: "tabelle", f: "abbildung", c: "zitat" };
       const d = map[e.key.toLowerCase()];
       if (d && getInserter()) {
@@ -68,14 +69,14 @@ export function Einfuegeleiste({ sources, projectRoot }: Props) {
       <Btn icon={<ListOrdered />} label="Nummerierung" onClick={() => put(snip.numberedList())} />
       <Btn icon={<Quote />} label="Zitat" onClick={() => put(snip.quote())} />
       <Sep />
-      <Btn icon={<Image />} label="Abbildung" shortcut="⌘⇧F" onClick={() => setDialog("abbildung")} />
-      <Btn icon={<Table />} label="Tabelle" shortcut="⌘⇧T" onClick={() => setDialog("tabelle")} />
+      <Btn icon={<Image />} label="Abbildung" shortcut={keys("⌘⇧F")} onClick={() => setDialog("abbildung")} />
+      <Btn icon={<Table />} label="Tabelle" shortcut={keys("⌘⇧T")} onClick={() => setDialog("tabelle")} />
       <Btn icon={<ChartColumn />} label="Diagramm" onClick={() => setDialog("diagramm")} />
       <Btn icon={<Sigma />} label="Formel" onClick={() => put(snip.equation())} />
       <Btn icon={<Code />} label="Listing" onClick={() => setDialog("listing")} />
       <Btn icon={<Superscript />} label="Fußnote" onClick={() => put(snip.footnote())} />
       <Sep />
-      <Btn icon={<BookMarked />} label="Quelle zitieren" shortcut="⌘⇧C" onClick={() => setDialog("zitat")} />
+      <Btn icon={<BookMarked />} label="Quelle zitieren" shortcut={keys("⌘⇧C")} onClick={() => setDialog("zitat")} />
       <Btn icon={<Link2 />} label="Querverweis" onClick={() => setDialog("verweis")} />
       {dialog && (
         <InsertDialog

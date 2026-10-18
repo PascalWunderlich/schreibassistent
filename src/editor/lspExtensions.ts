@@ -1,4 +1,4 @@
-// Tinymist in CodeMirror: Vervollständigung, Hover, ⌘-Klick zur Definition, Fehler.
+// Tinymist in CodeMirror: Vervollständigung, Hover, Strg/⌘-Klick zur Definition, Fehler.
 // Gemeinsam für das Feld im Seiteneditor und den Quelltextmodus.
 import { Extension } from "@codemirror/state";
 import { EditorView, hoverTooltip } from "@codemirror/view";
@@ -6,6 +6,7 @@ import { autocompletion, CompletionContext, CompletionResult } from "@codemirror
 import { setDiagnostics } from "@codemirror/lint";
 import { listen } from "@tauri-apps/api/event";
 import { Definition, Field, lspCompletion, lspDefinition, lspFieldDiagnostics, lspHover } from "./api";
+import { mod } from "../lib/platform";
 
 /** Vervollständigung nur nach `@` (Verweise, Citekeys) und `#` (Funktionen) oder mit Ctrl+Leertaste. */
 const TRIGGER = /[@#][\p{L}\p{N}_:.-]*$/u;
@@ -55,7 +56,7 @@ export function lspExtensions(field: (doc: string) => Field, onDefinition: (d: D
 
   const definition = EditorView.domEventHandlers({
     mousedown: (event, view) => {
-      if (!event.metaKey) return false;
+      if (!mod(event)) return false;
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
       if (pos === null) return false;
       lspDefinition(field(view.state.doc.toString()), pos)

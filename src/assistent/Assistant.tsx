@@ -16,6 +16,7 @@ import {
 } from "./api";
 import { Aufgabe, AufgabeErgebnis } from "./Aufgaben";
 import { KiSettingsDialog } from "./KiSettingsDialog";
+import { keys, mod } from "../lib/platform";
 
 interface Props {
   /** Zuletzt bearbeiteter Absatz (Datei und Byte-Offset). */
@@ -294,12 +295,12 @@ export function Assistant({ paragraph, chapter, onAnswer = () => {}, onLogged = 
           </button>
           <textarea
             value={frage}
-            placeholder="Frage stellen oder / für Aufgaben (⌘↩ senden)"
+            placeholder={keys("Frage stellen oder / für Aufgaben (⌘↩ senden)")}
             rows={2}
             className="min-h-9 flex-1 resize-none rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onChange={(e) => setFrage(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              if (e.key === "Enter" && mod(e)) {
                 e.preventDefault();
                 if (slash && listed.length === 1) runTask(listed[0]);
                 else ask();

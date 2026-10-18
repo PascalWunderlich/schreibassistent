@@ -5,6 +5,7 @@ import { getInserter } from "../editor/inserter";
 import * as snip from "../editor/snippets";
 import { InsertKind, openInsert, showTab } from "../lib/events";
 import { Theme } from "../lib/theme";
+import { keys, mod } from "../lib/platform";
 
 interface Props {
   chapters: ChapterInfo[];
@@ -30,10 +31,10 @@ export function CommandPalette(p: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k") {
+      if (mod(e) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((o) => !o);
-      } else if (e.metaKey && e.key === "/") {
+      } else if (mod(e) && e.key === "/") {
         e.preventDefault();
         p.onShortcuts();
       }
@@ -52,7 +53,7 @@ export function CommandPalette(p: Props) {
       entries: p.chapters.map((c, i) => ({
         id: `kap-${c.file}`,
         label: `${i + 1} ${c.title ?? c.file.split("/").pop()}`,
-        hint: i < 9 ? `⌘${i + 1}` : undefined,
+        hint: i < 9 ? keys(`⌘${i + 1}`) : undefined,
         run: () => p.onOpenChapter(c.file),
       })),
     },
@@ -65,13 +66,13 @@ export function CommandPalette(p: Props) {
             { id: "e-h3", label: "Überschrift 3", run: () => put(snip.heading(3)) },
             { id: "e-liste", label: "Liste", run: () => put(snip.bulletList()) },
             { id: "e-num", label: "Nummerierung", run: () => put(snip.numberedList()) },
-            { id: "e-abb", label: "Abbildung", hint: "⌘⇧F", run: dialog("abbildung") },
-            { id: "e-tab", label: "Tabelle", hint: "⌘⇧T", run: dialog("tabelle") },
+            { id: "e-abb", label: "Abbildung", hint: keys("⌘⇧F"), run: dialog("abbildung") },
+            { id: "e-tab", label: "Tabelle", hint: keys("⌘⇧T"), run: dialog("tabelle") },
             { id: "e-dia", label: "Diagramm", run: dialog("diagramm") },
             { id: "e-formel", label: "Formel", run: () => put(snip.equation()) },
             { id: "e-listing", label: "Listing", run: dialog("listing") },
             { id: "e-fuss", label: "Fußnote", run: () => put(snip.footnote()) },
-            { id: "e-zit", label: "Quelle zitieren", hint: "⌘⇧C", run: dialog("zitat") },
+            { id: "e-zit", label: "Quelle zitieren", hint: keys("⌘⇧C"), run: dialog("zitat") },
             { id: "e-ver", label: "Querverweis", run: dialog("verweis") },
           ]
         : [],
@@ -82,7 +83,7 @@ export function CommandPalette(p: Props) {
         { id: "a-seite", label: "Ansicht: Seite", run: () => p.onSourceMode(false) },
         { id: "a-quell", label: "Ansicht: Quelltext", run: () => p.onSourceMode(true) },
         { id: "a-pruefen", label: "Prüfen anzeigen", run: () => showTab("pruefen") },
-        { id: "a-assistent", label: "Assistent anzeigen", hint: "⌘⇧A", run: () => showTab("assistent") },
+        { id: "a-assistent", label: "Assistent anzeigen", hint: keys("⌘⇧A"), run: () => showTab("assistent") },
         { id: "a-hell", label: "Darstellung: Hell", run: () => p.onTheme("light") },
         { id: "a-dunkel", label: "Darstellung: Dunkel", run: () => p.onTheme("dark") },
         { id: "a-system", label: "Darstellung: System", run: () => p.onTheme("system") },
@@ -93,7 +94,7 @@ export function CommandPalette(p: Props) {
       entries: [
         { id: "w-pdf", label: "Als PDF exportieren", run: p.onExport },
         { id: "w-andere", label: "Andere Arbeit öffnen …", run: p.onChoose },
-        { id: "w-kuerzel", label: "Tastenkürzel anzeigen", hint: "⌘/", run: p.onShortcuts },
+        { id: "w-kuerzel", label: "Tastenkürzel anzeigen", hint: keys("⌘/"), run: p.onShortcuts },
       ],
     },
   ];

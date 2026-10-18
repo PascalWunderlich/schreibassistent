@@ -56,6 +56,7 @@ import { Topbar } from "./layout/Topbar";
 import { Workspace } from "./layout/Workspace";
 import { useTheme } from "./lib/theme";
 import "./App.css";
+import { mod, modInit } from "./lib/platform";
 
 /** Was in der Mitte steht: die Seiten der Arbeit oder eine Notiz/Wissensseite. */
 type Center = { kind: "pages" } | { kind: "note"; path: string; readOnly: boolean };
@@ -218,7 +219,7 @@ function App() {
   // ⌘1 bis ⌘9: Kapitel wechseln.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!e.metaKey || e.shiftKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
+      if (!mod(e) || e.shiftKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
       const chapter = chapters[Number(e.key) - 1];
       if (!chapter) return;
       e.preventDefault();
@@ -409,7 +410,7 @@ function App() {
     system: () => setTheme("system"),
     links: () => togglePanel("links"),
     rechts: () => togglePanel("rechts"),
-    palette: () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })),
+    palette: () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ...modInit() })),
     tastenkuerzel: () => setShortcutsOpen(true),
   });
 
