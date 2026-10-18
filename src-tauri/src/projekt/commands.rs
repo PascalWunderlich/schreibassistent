@@ -59,6 +59,7 @@ pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: Stri
     if let Some(mut previous) = state.0.lock().unwrap().replace(project) {
         previous.autosave(false);
     }
+    crate::pruefung::commands::warm_up(app.clone(), PathBuf::from(&info.root));
     let file = settings_file(&app).map_err(|e| vec![e])?;
     let settings = Settings { last_vault: Some(PathBuf::from(&info.root)), ..settings::load(&file) };
     settings::save(&file, &settings).map_err(|e| vec![e])?;
