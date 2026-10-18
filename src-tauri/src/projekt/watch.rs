@@ -43,6 +43,10 @@ pub fn start(root: &Path, on_change: impl Fn(Vec<String>) + Send + 'static) -> R
             match rx.recv_timeout(QUIET) {
                 Ok(path) => {
                     let path = path.canonicalize().unwrap_or(path);
+                    // Ordner melden ihre Änderung mit (Linux/inotify); gemeint sind die Dateien darin.
+                    if path.is_dir() {
+                        continue;
+                    }
                     if let Some(relative) = relevant(&root, &path) {
                         batch.insert(relative);
                     }
