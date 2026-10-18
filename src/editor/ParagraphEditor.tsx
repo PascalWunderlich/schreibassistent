@@ -4,6 +4,7 @@ import { EditorView, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, insertNewline } from "@codemirror/commands";
 import { Definition, Field } from "./api";
 import { lspExtensions, watchDiagnostics } from "./lspExtensions";
+import { clearInserter, setInserter } from "./inserter";
 
 interface Props {
   /** Datei und Bereich des Absatzes im Quelltext (Stand des Satzes). */
@@ -73,8 +74,19 @@ export function ParagraphEditor(props: Props) {
     view.dispatch({ selection: { anchor: text.length } });
 
     const stopDiagnostics = watchDiagnostics(view, file, field);
+    const inserter = {
+      file,
+      insert: (snippet: import("./snippets").Snippet) => {
+        const { from, to } = view.state.selection.main;
+        const [a, b] = snippet.select ?? [snippet.text.length, snippet.text.length];
+        view.dispatch({ changes: { from, to, insert: snippet.text }, selection: { anchor: from + a, head: from + b } });
+        view.focus();
+      },
+    };
+    setInserter(inserter);
 
     return () => {
+      clearInserter(inserter);
       stopDiagnostics();
       textRef.current = null;
       view.destroy();

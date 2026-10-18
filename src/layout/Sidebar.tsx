@@ -25,7 +25,10 @@ export function Sidebar({ tree, selected, onOpen, onNewNote, onNewChapter }: Pro
   const [naming, setNaming] = useState<string | null>(null);
   const create = (folder: string, name: string) => (folder === "Arbeit" ? onNewChapter(name) : onNewNote(name));
   return (
-    <nav className="sidebar" aria-label="Dateien">
+    <details className="sidebar" aria-label="Dateien">
+      <summary>
+        <h2 style={{ display: "inline" }}>Dateien und Notizen</h2>
+      </summary>
       {tree.map((root) => (
         <section key={root.path}>
           <h2>
@@ -56,7 +59,7 @@ export function Sidebar({ tree, selected, onOpen, onNewNote, onNewChapter }: Pro
           <Nodes nodes={root.children} depth={0} selected={selected} onOpen={onOpen} />
         </section>
       ))}
-    </nav>
+    </details>
   );
 }
 

@@ -43,7 +43,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
   return (
     <div className="chapter-panel">
       <section>
-        <h2>Dieses Kapitel{chapter?.title ? `: ${chapter.title}` : ""}</h2>
+        <h2>Dieses Kapitel</h2>
         {!chapter ? (
           <p className="empty">Kein Kapitel ausgewählt.</p>
         ) : (
@@ -66,13 +66,13 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
           </>
         )}
       </section>
-      <section>
-        <h2>
-          Alle Quellen
-          <button className="h2-action" onClick={createConcepts} title="Konzeptseiten aus allen Wegweisern (KI)">
-            Konzepte erzeugen
-          </button>
-        </h2>
+      <details className="all-sources">
+        <summary>
+          <h2 style={{ display: "inline" }}>Alle Quellen ({sources.length})</h2>
+        </summary>
+        <button className="h2-action" onClick={createConcepts} title="Konzeptseiten aus allen Wegweisern (KI)">
+          Konzepte erzeugen
+        </button>
         {concepts && <p className="meta concepts-line">{concepts}</p>}
         {sourcesError && <p className="warn">{sourcesError}</p>}
         {sources.length === 0 && !sourcesError && <p className="empty">System/quellen.bib ist leer</p>}
@@ -91,7 +91,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
             </li>
           ))}
         </ul>
-      </section>
+      </details>
     </div>
   );
 }

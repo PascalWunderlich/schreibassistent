@@ -1,11 +1,11 @@
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-  color: #1d1d1f;
-  background-color: #e9e9ec;
-  --sa-accent: #2f6fde;
-  --sa-line: #d6d6db;
-  --sa-panel: #f7f6f3;
-  --sa-muted: #8a8a90;
+  color: var(--foreground);
+  background-color: var(--background);
+  --sa-accent: var(--primary);
+  --sa-line: var(--border);
+  --sa-panel: var(--sidebar);
+  --sa-muted: var(--muted-foreground);
 }
 
 body {
@@ -25,7 +25,7 @@ button {
   margin-left: 0.4rem;
   padding: 0 0.35rem;
   border-radius: 4px;
-  background: #ececef;
+  background: var(--muted);
   color: var(--sa-muted);
   font-size: 0.7rem;
   font-weight: 400;
@@ -49,7 +49,7 @@ button {
 .topbar button,
 .hint button {
   border: 1px solid #c4c4ca;
-  background: #fff;
+  background: var(--card);
   border-radius: 6px;
   padding: 0.25rem 0.75rem;
 }
@@ -141,7 +141,7 @@ button {
 }
 
 .chapter-panel .item:hover {
-  background: #ececef;
+  background: var(--muted);
 }
 
 .chapter-panel .item.unused {
@@ -158,7 +158,7 @@ button {
   padding: 0.45rem 0.55rem;
   border: 1px solid var(--sa-line);
   border-radius: 6px;
-  background: #fff;
+  background: var(--card);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -178,9 +178,12 @@ button {
 }
 
 .sidebar h2,
+.chapter-panel h2,
 .right-panel h2 {
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--sa-muted);
   margin: 0.8rem 0.4rem 0.3rem;
 }
@@ -209,11 +212,11 @@ button {
 }
 
 .sidebar .file:hover {
-  background: #ececef;
+  background: var(--muted);
 }
 
 .sidebar .file.selected {
-  background: #e3ecfb;
+  background: var(--accent);
   color: var(--sa-accent);
 }
 
@@ -288,7 +291,7 @@ button {
 .page {
   position: relative;
   margin: 0 auto 1.5rem;
-  background: #fff;
+  background: var(--card);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   cursor: text;
 }
@@ -303,7 +306,7 @@ button {
 .editor-overlay {
   position: absolute;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--card);
   /* Rahmen außen, damit der Text genau an der Spaltenkante beginnt. */
   outline: 1.5px solid var(--sa-accent);
   outline-offset: 4px;
@@ -345,7 +348,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fff;
+  background: var(--card);
 }
 
 .note-title {
@@ -438,7 +441,7 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #fff;
+  background: var(--card);
   border-right: 1px solid var(--sa-line);
 }
 
@@ -509,7 +512,7 @@ button {
 
 .source-details .pdf {
   border: 1px solid var(--sa-accent);
-  background: #fff;
+  background: var(--card);
   color: var(--sa-accent);
   border-radius: 5px;
   padding: 0.1rem 0.5rem;
@@ -557,7 +560,7 @@ button {
 }
 
 .check:hover:not(:disabled) {
-  background: #ececef;
+  background: var(--muted);
 }
 
 .check:disabled {
@@ -661,7 +664,7 @@ button {
   line-height: 1.4;
   margin: 0.25rem 0;
   padding: 0.4rem 0.5rem;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--sa-line);
   border-radius: 5px;
   user-select: text;
@@ -785,7 +788,7 @@ button {
   padding: 0.35rem 0.45rem;
   border: 1px solid var(--sa-line);
   border-radius: 5px;
-  background: #fff;
+  background: var(--card);
   font-size: 0.8rem;
   display: grid;
   gap: 0.25rem;
@@ -942,7 +945,7 @@ button {
   font-size: 0.75rem;
   padding: 0 0.3rem;
   border-radius: 3px;
-  background: #ececef;
+  background: var(--muted);
 }
 
 .badge-einschaetzung.stützt {
@@ -1000,4 +1003,15 @@ button {
   display: grid;
   gap: 0.2rem;
   margin-top: 0.5rem;
+}
+
+/* Einklappbare Bereiche der linken Leiste */
+.sidebar > summary,
+.all-sources > summary {
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  list-style: revert;
+}
+.all-sources {
+  margin-top: 0.4rem;
 }

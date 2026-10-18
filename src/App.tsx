@@ -34,11 +34,13 @@ import {
   pruefungRun,
 } from "./editor/api";
 import { Sidebar } from "./layout/Sidebar";
+import { Kapitelliste } from "./layout/Kapitelliste";
 import { ChapterPanel } from "./layout/ChapterPanel";
 import { RightPanel } from "./layout/RightPanel";
 import { Assistant } from "./assistent/Assistant";
 import { FrageErgebnis } from "./assistent/api";
 import { SaveState, StatusBar } from "./layout/StatusBar";
+import { Einfuegeleiste } from "./editor/Einfuegeleiste";
 import { Topbar } from "./layout/Topbar";
 import { Workspace } from "./layout/Workspace";
 import { useTheme } from "./lib/theme";
@@ -190,6 +192,27 @@ function App() {
     if (found) openFromIndex(found);
     else setNotice(`„${name}“ gibt es noch nicht als Seite.`);
   }
+
+  function openChapter(file: string) {
+    setCenter({ kind: "pages" });
+    setSelected(file);
+    setSourceFile(file);
+    setSourceJump(null);
+    setScrollTo({ file, nonce: Date.now() });
+  }
+
+  // ⌘1 bis ⌘9: Kapitel wechseln.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.metaKey || e.shiftKey || e.altKey || !/^[1-9]$/.test(e.key)) return;
+      const chapter = chapters[Number(e.key) - 1];
+      if (!chapter) return;
+      e.preventDefault();
+      openChapter(chapter.file);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   function openFromIndex(path: string) {
     setSelected(path);
@@ -377,6 +400,7 @@ function App() {
       <Workspace
         left={
         <div className="left">
+          <Kapitelliste chapters={chapters} current={currentChapter} onOpen={openChapter} onNew={createChapter} />
           <ChapterPanel
             chapter={chapterView}
             sources={sources.sources}
@@ -387,7 +411,9 @@ function App() {
         </div>
         }
         center={
-        <main className="center">
+        <main className="center flex flex-col">
+          {center.kind === "pages" && <Einfuegeleiste sources={sources.sources} projectRoot={project.root} />}
+          <div className="min-h-0 flex-1" style={{ overflow: "clip" }}>
           {center.kind === "pages" && sourceMode ? (
             <div className="source-split">
               <SourceEditor
@@ -438,6 +464,7 @@ function App() {
               onSaving={() => setSaveState("speichert …")}
             />
           )}
+          </div>
         </main>
         }
         right={

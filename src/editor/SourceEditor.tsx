@@ -4,6 +4,7 @@ import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { Definition, Field, SaveInfo, errorMessages, log, readFile, utf8Length, writeFile } from "./api";
 import { lspExtensions, watchDiagnostics } from "./lspExtensions";
+import { Inserter, clearInserter, setInserter } from "./inserter";
 
 /** Speichern und neu setzen kurz nach dem letzten Tastendruck. */
 const SAVE_DELAY_MS = 300;
@@ -51,6 +52,7 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
     let timer: number | undefined;
     let pending: string | null = null;
     let stopDiagnostics = () => {};
+    let inserter: Inserter | null = null;
     const field = (doc: string): Field => ({ file: path, start: 0, end: 0, text: doc, whole_file: true });
     const save = () => {
       if (pending === null) return;
@@ -99,6 +101,16 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
           }),
         });
         view.current = editor;
+        inserter = {
+          file: path,
+          insert: (snippet) => {
+            const { from, to } = editor.state.selection.main;
+            const [a, b] = snippet.select ?? [snippet.text.length, snippet.text.length];
+            editor.dispatch({ changes: { from, to, insert: snippet.text }, selection: { anchor: from + a, head: from + b }, scrollIntoView: true });
+            editor.focus();
+          },
+        };
+        setInserter(inserter);
         const box = host.current!.getBoundingClientRect();
         log(`Quelltext: Editor für ${path} erstellt, Bereich ${box.width.toFixed(0)}×${box.height.toFixed(0)} px, Editoren: ${host.current!.querySelectorAll(".cm-editor").length}`);
         stopDiagnostics = watchDiagnostics(editor, path, field);
@@ -114,6 +126,7 @@ export function SourceEditor({ path, jump, onSaved, onSaving, onWritten, onDefin
       window.clearTimeout(timer);
       save();
       stopDiagnostics();
+      if (inserter) clearInserter(inserter);
       view.current?.destroy();
       view.current = null;
     };
