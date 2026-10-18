@@ -5,6 +5,7 @@ import App from "./App";
 // Kein Tauri im Test: noch keine Arbeit geöffnet.
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(async () => null) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn(async () => null) }));
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn(async () => () => {}) }));
 
 describe("App", () => {
   it("zeigt ohne geöffnete Arbeit den Startbildschirm", async () => {
