@@ -71,12 +71,14 @@ interface Props {
   onVisiblePage?: (page: number) => void;
   /** Datei des gerade bearbeiteten Absatzes (oder `null`). */
   onEditingFile?: (file: string | null) => void;
+  /** Bearbeiteter Absatz (für den Kontext des Assistenten). */
+  onEditingParagraph?: (paragraph: { file: string; offset: number } | null) => void;
   /** Markierungen am Absatz (Prüfungen): Seite, Rechteck, Schwere, Texte. */
   marks?: { page: number; rect: Rect; schwere: string; texts: string[] }[];
 }
 
 /** Seiteneditor (Entscheidung P2: A): echte Seiten, Klick öffnet den Absatz als Quelltext. */
-export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal, onVisiblePage, onEditingFile, marks = [] }: Props) {
+export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refresh, scale = DEFAULT_SCALE, reveal, onVisiblePage, onEditingFile, onEditingParagraph, marks = [] }: Props) {
   const [pages, setPages] = useState<Page[]>([]);
   const [editing, setEditing] = useState<ParagraphHit | null>(null);
   /** Leerer Absatz, der gerade per Enter entstanden ist (wird beim Verlassen ohne Text entfernt). */
@@ -150,6 +152,10 @@ export function PageEditor({ scrollTo, onReport, onSaved, onSaving, onPick, refr
   useEffect(() => {
     onEditingFile?.(editing?.file ?? null);
   }, [editing?.file]);
+
+  useEffect(() => {
+    onEditingParagraph?.(editing ? { file: editing.file, offset: editing.start } : null);
+  }, [editing?.file, editing?.start]);
 
   const visibleTimer = useRef<number | undefined>(undefined);
   function reportVisiblePage(container: HTMLDivElement) {

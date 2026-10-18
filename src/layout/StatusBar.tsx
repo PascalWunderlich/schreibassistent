@@ -1,3 +1,5 @@
+import { FrageErgebnis } from "../assistent/api";
+
 export type SaveState = "gespeichert" | "speichert …" | "Fehler beim Speichern";
 
 interface Props {
@@ -13,13 +15,15 @@ interface Props {
   gitError: string | null;
   /** Fehler laut Tinymist in der ganzen Arbeit. */
   errorCount: number;
+  /** Letzte KI-Antwort (Tokens). */
+  lastAnswer?: FrageErgebnis | null;
 }
 
 const time = (seconds: number) =>
   new Date(seconds * 1000).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
 /** Unten: Stand der Arbeit. */
-export function StatusBar({ range, openHints, contentPages, saveState, lastAutosave, git, gitError, errorCount }: Props) {
+export function StatusBar({ range, openHints, contentPages, saveState, lastAutosave, git, gitError, errorCount, lastAnswer }: Props) {
   return (
     <footer className="statusbar">
       <span
@@ -35,6 +39,11 @@ export function StatusBar({ range, openHints, contentPages, saveState, lastAutos
       <span className={openHints > 0 ? "warn" : ""}>{openHints === 1 ? "1 offener Hinweis" : `${openHints} offene Hinweise`}</span>
       <span className={errorCount > 0 ? "warn" : ""}>{errorCount === 1 ? "1 Fehler" : `${errorCount} Fehler`}</span>
       <span className="spacer" />
+      {lastAnswer && (
+        <span title={`Letzte KI-Anfrage: ${lastAnswer.modell} (${lastAnswer.anbieter})`}>
+          KI: {lastAnswer.tokens.ein ?? "?"} → {lastAnswer.tokens.aus ?? "?"} Tokens
+        </span>
+      )}
       <span className={saveState === "Fehler beim Speichern" ? "warn" : ""}>{saveState}</span>
       <span className={gitError ? "warn" : ""} title={gitError ?? undefined}>
         {!git ? "keine Sicherung (Git)" : gitError ? "Sicherung fehlgeschlagen" : lastAutosave ? `Sicherung ${time(lastAutosave)}` : "Sicherung bereit"}

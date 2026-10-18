@@ -35,6 +35,8 @@ import {
 import { Sidebar } from "./layout/Sidebar";
 import { ChapterPanel } from "./layout/ChapterPanel";
 import { RightPanel } from "./layout/RightPanel";
+import { Assistant } from "./assistent/Assistant";
+import { FrageErgebnis } from "./assistent/api";
 import { SaveState, StatusBar } from "./layout/StatusBar";
 import "./App.css";
 
@@ -65,6 +67,9 @@ function App() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [visiblePage, setVisiblePage] = useState<number | null>(null);
   const [editingFile, setEditingFile] = useState<string | null>(null);
+  /** Zuletzt bearbeiteter Absatz; bleibt nach dem Verlassen des Felds (Kontext für den Assistenten). */
+  const [lastParagraph, setLastParagraph] = useState<{ file: string; offset: number } | null>(null);
+  const [lastAnswer, setLastAnswer] = useState<FrageErgebnis | null>(null);
   const [chapterView, setChapterView] = useState<ChapterView | null>(null);
   const [sources, setSources] = useState<SourcesOverview>({ sources: [], error: null });
   const [indexVersion, setIndexVersion] = useState(0);
@@ -404,6 +409,7 @@ function App() {
               refresh={refresh}
               onVisiblePage={setVisiblePage}
               onEditingFile={setEditingFile}
+              onEditingParagraph={(p) => p && setLastParagraph(p)}
               reveal={reveal}
               marks={marks}
             />
@@ -417,7 +423,23 @@ function App() {
             />
           )}
         </main>
-        <RightPanel bericht={bericht} rechtschreibung={rechtschreibung} onJump={jumpToHint} />
+        <RightPanel
+          bericht={bericht}
+          rechtschreibung={rechtschreibung}
+          onJump={jumpToHint}
+          assistant={
+            <Assistant
+              key={project.root}
+              paragraph={lastParagraph}
+              chapter={currentChapter}
+              onAnswer={setLastAnswer}
+              onExported={() => {
+                projectTree().then(setTree).catch(() => {});
+                setRefresh((n) => n + 1);
+              }}
+            />
+          }
+        />
       </div>
       <StatusBar
         contentPages={report?.content_pages ?? null}
@@ -428,6 +450,7 @@ function App() {
         git={project.git}
         gitError={gitError}
         errorCount={errorCount}
+        lastAnswer={lastAnswer}
       />
     </div>
   );

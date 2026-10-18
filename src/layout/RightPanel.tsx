@@ -1,9 +1,12 @@
+import { ReactNode } from "react";
 import { Hinweis, Pruefbericht } from "../editor/api";
 
 interface Props {
   bericht: Pruefbericht | null;
   rechtschreibung: Hinweis[] | "laeuft" | null;
   onJump: (hinweis: Hinweis) => void;
+  /** Unten: Assistent (P6). */
+  assistant: ReactNode;
 }
 
 /** Lesbare Namen der Regeln; unbekannte zeigen ihre ID. */
@@ -25,7 +28,7 @@ const RULE_NAMES: Record<string, string> = {
 const ORDER: Record<string, number> = { fehler: 0, warnung: 1, hinweis: 2 };
 
 /** Rechts: oben feste Prüfungen ohne KI (P5), unten Assistent auf Nachfrage (P6). */
-export function RightPanel({ bericht, rechtschreibung, onJump }: Props) {
+export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Props) {
   const all = [...(bericht?.hinweise ?? []), ...(Array.isArray(rechtschreibung) ? rechtschreibung : [])];
   const groups = new Map<string, Hinweis[]>();
   for (const h of all) {
@@ -85,10 +88,7 @@ export function RightPanel({ bericht, rechtschreibung, onJump }: Props) {
           </div>
         ))}
       </section>
-      <section>
-        <h2>Assistent</h2>
-        <p className="empty">Folgt in P6: Fragen auf Nachfrage, mit Protokoll.</p>
-      </section>
+      {assistant}
     </aside>
   );
 }
