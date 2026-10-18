@@ -1,0 +1,109 @@
+/*
+ * Design-Tokens des Schreibassistenten (P9). Die einzige Stelle für Farben, Schrift,
+ * Abstände und Radien; Komponenten nutzen nur diese Variablen (über Tailwind-Klassen wie
+ * `bg-background`, `text-muted-foreground`, `bg-hint-form`).
+ * Hell = :root, dunkel = .dark (Einstellung „Darstellung“: System / Hell / Dunkel).
+ * Kontrast: Text auf seiner Fläche mindestens WCAG AA 4,5:1 (geprüft mit scripts/kontrast.py).
+ */
+
+:root {
+  /* Flächen */
+  --background: #f7f6f3;          /* App-Rahmen, Seitenleisten (warm wie die Skizze) */
+  --foreground: #1f1e1c;
+  --canvas: #e9e7e2;              /* Grund hinter den Seiten */
+  --page: #ffffff;                /* das Blatt */
+  --page-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 16px rgb(0 0 0 / 0.06);
+  --card: #ffffff;
+  --card-foreground: #1f1e1c;
+  --popover: #ffffff;
+  --popover-foreground: #1f1e1c;
+
+  /* Text und Linien */
+  --muted: #efede8;
+  --muted-foreground: #63605a;
+  --border: #e0ddd6;
+  --input: #d6d2ca;
+  --ring: #2f6fde;
+
+  /* Akzent und Zustände */
+  --primary: #2b63c6;
+  --primary-foreground: #ffffff;
+  --secondary: #efede8;
+  --secondary-foreground: #1f1e1c;
+  --accent: #e6eefb;              /* Auswahl, z. B. aktives Kapitel */
+  --accent-foreground: #1d4fa3;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --success: #1f7a3a;
+  --warning: #9a5b00;
+
+  /* Hinweisarten (Etikett = Fläche + Text) */
+  --hint-form: #fbe9d6;    --hint-form-foreground: #8a4310;      /* feste Formregel */
+  --hint-stil: #f8efc9;    --hint-stil-foreground: #75570a;      /* Stil (Vale) */
+  --hint-quelle: #ece6fa;  --hint-quelle-foreground: #5a3a9e;    /* Quellen, Zitieren */
+  --hint-sprache: #fbe3e6; --hint-sprache-foreground: #9b1c31;   /* Rechtschreibung */
+  --hint-ki: #e3edfc;      --hint-ki-foreground: #1d4fa3;        /* KI-Einschätzung, immer so markiert */
+  --hint-ok: #e1f2e5;      --hint-ok-foreground: #1f6b35;
+
+  /* Seitenleiste (shadcn-Namen) */
+  --sidebar: #f7f6f3;
+  --sidebar-foreground: #1f1e1c;
+  --sidebar-primary: #2b63c6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6eefb;
+  --sidebar-accent-foreground: #1d4fa3;
+  --sidebar-border: #e0ddd6;
+  --sidebar-ring: #2f6fde;
+
+  /* Form */
+  --radius: 0.5rem;
+  --font-ui: "Geist Variable", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-code: ui-monospace, "SF Mono", Menlo, monospace;
+  --text-ui: 0.875rem;           /* Grundgröße der Oberfläche (14 px) */
+  --space-panel: 0.75rem;        /* Innenabstand der Panels */
+}
+
+.dark {
+  --background: #1b1a18;
+  --foreground: #ecebe8;
+  --canvas: #121110;
+  --page: #ffffff;                /* das Blatt bleibt weiß: es zeigt das echte PDF */
+  --page-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 24px rgb(0 0 0 / 0.45);
+  --card: #24231f;
+  --card-foreground: #ecebe8;
+  --popover: #24231f;
+  --popover-foreground: #ecebe8;
+
+  --muted: #2b2a26;
+  --muted-foreground: #a9a59c;
+  --border: #34322d;
+  --input: #3d3a34;
+  --ring: #7aa7f5;
+
+  --primary: #7aa7f5;
+  --primary-foreground: #0f1b33;
+  --secondary: #2b2a26;
+  --secondary-foreground: #ecebe8;
+  --accent: #1f2d47;
+  --accent-foreground: #a9c6fa;
+  --destructive: #f2867b;
+  --destructive-foreground: #2a0b07;
+  --success: #6fcf8b;
+  --warning: #e8b45c;
+
+  --hint-form: #3b2716;    --hint-form-foreground: #f3b886;
+  --hint-stil: #36300f;    --hint-stil-foreground: #e9d27a;
+  --hint-quelle: #2c2340;  --hint-quelle-foreground: #c8b5f5;
+  --hint-sprache: #3d1a20; --hint-sprache-foreground: #f4a3b0;
+  --hint-ki: #1b2a45;      --hint-ki-foreground: #a9c6fa;
+  --hint-ok: #17301e;      --hint-ok-foreground: #8fdca5;
+
+  --sidebar: #1b1a18;
+  --sidebar-foreground: #ecebe8;
+  --sidebar-primary: #7aa7f5;
+  --sidebar-primary-foreground: #0f1b33;
+  --sidebar-accent: #1f2d47;
+  --sidebar-accent-foreground: #a9c6fa;
+  --sidebar-border: #34322d;
+  --sidebar-ring: #7aa7f5;
+}
