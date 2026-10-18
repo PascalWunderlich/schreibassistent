@@ -35,7 +35,9 @@ export function Workspace({ left, center, right }: Props) {
     <Group
       id="workspace"
       orientation="horizontal"
-      className="flex-1 min-h-0"
+      className="min-h-0 flex-1"
+      // Die Gruppe füllt sonst 100 % der Höhe zusätzlich zu Kopf- und Statusleiste: die App ließe sich scrollen.
+      style={{ height: "auto" }}
       defaultLayout={layout.defaultLayout}
       onLayoutChanged={layout.onLayoutChanged}
     >

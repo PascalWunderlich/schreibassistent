@@ -8,6 +8,11 @@
   --sa-muted: var(--muted-foreground);
 }
 
+html,
+body {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
 }
@@ -61,6 +66,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
 
 .center {
