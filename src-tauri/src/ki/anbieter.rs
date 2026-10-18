@@ -36,6 +36,7 @@ fn target(wahl: &Wahl, settings: &KiSettings, key: Option<String>) -> Result<(Ad
         // abschalten (`reasoning_effort`), sonst braucht qwen3 für eine Frage ~100 s statt ~10 s.
         Anbieter::Ollama => (AdapterKind::OpenAI, format!("{}v1/", with_slash(&settings.ollama_url))),
         Anbieter::Openrouter => (AdapterKind::OpenRouter, "https://openrouter.ai/api/v1/".to_owned()),
+        Anbieter::Deepseek => (AdapterKind::DeepSeek, "https://api.deepseek.com/v1/".to_owned()),
         Anbieter::Anthropic => (AdapterKind::Anthropic, "https://api.anthropic.com/v1/".to_owned()),
         Anbieter::Openai => {
             if settings.openai_url.trim().is_empty() {
@@ -118,6 +119,8 @@ mod tests {
         let wahl = Wahl { anbieter: Anbieter::Openrouter, modell: "anthropic/claude-sonnet-5.5".into() };
         let err = rt.block_on(ask(&wahl, &settings, None, "s", "m")).unwrap_err();
         assert!(err.contains("Kein API-Schlüssel"), "{err}");
+        let wahl = Wahl { anbieter: Anbieter::Deepseek, modell: Anbieter::Deepseek.default_model().into() };
+        assert!(rt.block_on(ask(&wahl, &settings, None, "s", "m")).unwrap_err().contains("Kein API-Schlüssel für deepseek"));
         let wahl = Wahl { anbieter: Anbieter::Ollama, modell: " ".into() };
         assert!(rt.block_on(ask(&wahl, &settings, None, "s", "m")).unwrap_err().contains("Kein Modell"));
         let wahl = Wahl { anbieter: Anbieter::Openai, modell: "x".into() };

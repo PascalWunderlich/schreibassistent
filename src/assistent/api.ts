@@ -1,12 +1,13 @@
 // Typen und Aufrufe der Rust-Module `ki` und `protokoll`.
 import { invoke } from "@tauri-apps/api/core";
 
-export type Anbieter = "ollama" | "openrouter" | "anthropic" | "openai";
+export type Anbieter = "ollama" | "openrouter" | "deepseek" | "anthropic" | "openai";
 export type Aufgabe = "frage" | "belegpruefung" | "feedback" | "ingest" | "regelprofil";
 
 export const ANBIETER: { id: Anbieter; name: string; vorschlag: string }[] = [
   { id: "ollama", name: "Ollama (lokal)", vorschlag: "qwen3:8b" },
   { id: "openrouter", name: "OpenRouter", vorschlag: "anthropic/claude-sonnet-5.5" },
+  { id: "deepseek", name: "DeepSeek", vorschlag: "deepseek-chat" },
   { id: "anthropic", name: "Anthropic", vorschlag: "claude-sonnet-5-5" },
   { id: "openai", name: "OpenAI-kompatibel", vorschlag: "" },
 ];

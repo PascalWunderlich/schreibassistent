@@ -36,6 +36,7 @@
 | 2026-10-17 | Fehlerfälle, die das Setzen verhindern, in eigenen Test-Vaults (`tests/pruefung/`) | Beispielarbeit muss setzbar bleiben (Vorlagentests P1) |
 | 2026-10-18 | KI über genai 0.6.5 (stabil), nicht 0.7 (nur Vorabversionen) | Vault-Vorgabe genai; 0.6.5 hat Ollama, OpenRouter, Anthropic, OpenAI-kompatibel |
 | 2026-10-18 | Anbieter Ollama, OpenRouter, Anthropic, OpenAI-kompatibel; Standard für alle Aufgaben Ollama `qwen3:8b`, Vorschlag bei OpenRouter `anthropic/claude-sonnet-5.5` | Pascal: kein Anthropic-Schlüssel, online realistisch OpenRouter; Ollama läuft ohne Konto (Leitplanke 4) |
+| 2026-10-18 | DeepSeek als weiterer Anbieter (eigener Schlüssel, Vorschlag `deepseek-chat`) | Pascal: schneller und günstiger zum Testen |
 | 2026-10-18 | Keine Kostenanzeige, nur Tokens der letzten Anfrage in der Statusleiste | Pascal, Planung P6 |
 | 2026-10-18 | Ollama über seine OpenAI-kompatible Schnittstelle mit `reasoning_effort: none` | genais eigene Ollama-Anbindung kann das Nachdenken nicht abschalten; qwen3 brauchte 108 s statt 15 s je Frage |
 | 2026-10-18 | API-Schlüssel mit keyring 3 (`apple-native`) im Schlüsselbund, Dienst „schreibassistent“, Konto = Anbieter; Oberfläche sieht nur „gesetzt/nicht gesetzt“ | Leitplanke 7; keyring 4 ist nur noch ein Sammelpaket vieler Speicher |

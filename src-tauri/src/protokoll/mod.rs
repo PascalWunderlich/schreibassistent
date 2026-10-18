@@ -208,6 +208,7 @@ fn provider_name(anbieter: &str) -> &str {
     match anbieter {
         "ollama" => "Ollama, lokal",
         "openrouter" => "OpenRouter",
+        "deepseek" => "DeepSeek",
         "anthropic" => "Anthropic",
         "openai" => "OpenAI-kompatibel",
         other => other,

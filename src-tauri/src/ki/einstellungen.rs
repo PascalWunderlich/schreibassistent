@@ -32,18 +32,20 @@ impl Aufgabe {
 pub enum Anbieter {
     Ollama,
     Openrouter,
+    Deepseek,
     Anthropic,
     /// Beliebiger OpenAI-kompatibler Dienst (Adresse in `openai_url`).
     Openai,
 }
 
 impl Anbieter {
-    pub const ALL: [Anbieter; 4] = [Anbieter::Ollama, Anbieter::Openrouter, Anbieter::Anthropic, Anbieter::Openai];
+    pub const ALL: [Anbieter; 5] = [Anbieter::Ollama, Anbieter::Openrouter, Anbieter::Deepseek, Anbieter::Anthropic, Anbieter::Openai];
 
     pub fn id(self) -> &'static str {
         match self {
             Anbieter::Ollama => "ollama",
             Anbieter::Openrouter => "openrouter",
+            Anbieter::Deepseek => "deepseek",
             Anbieter::Anthropic => "anthropic",
             Anbieter::Openai => "openai",
         }
@@ -59,6 +61,8 @@ impl Anbieter {
         match self {
             Anbieter::Ollama => "qwen3:8b",
             Anbieter::Openrouter => "anthropic/claude-sonnet-5.5",
+            // Ohne Nachdenken: schnell und günstig.
+            Anbieter::Deepseek => "deepseek-chat",
             Anbieter::Anthropic => "claude-sonnet-5-5",
             Anbieter::Openai => "",
         }
