@@ -21,11 +21,15 @@ citekey: mueller2024
 erzeugt: 2026-11-02
 modell: <anbieter/modell>
 quelle_hash: sha256:<hash des PDFs>
+markierungen_hash: sha256:<hash der Zotero-Markierungen> | keine
+seitenzahlen: gedruckt | pdf | pdf-seite
+stellen_bestaetigt: 7 von 8
 ---
 # mueller2024
 > Wegweiser, kein Beleg. Zitiert wird aus dem Original.
 ## Worum es geht        (2–3 Sätze)
-## Interessante Stellen  (- S. 14: „kurzes Zitat“ – warum interessant, [[Konzept]])
+## Interessante Stellen  (- [S. 14](zotero://open-pdf/library/items/<Anhang>?page=<PDF-Seite>): „kurzes Zitat“ – warum interessant;
+                         nicht bestätigt: - ⚠ S. 14: „…“ – … *(Grund)*)
 ## Bezüge               (Konzepte, Kapitel)
 ## Widersprüche         (zu anderen Citekeys, mit Seiten)
 Regel: Einmal beim Ingest erzeugt. Neu nur bei geändertem quelle_hash, neuen

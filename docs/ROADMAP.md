@@ -9,7 +9,7 @@ Aktuelle Phase: P7
 | P4 Quellen & Index | erledigt (2026-10-17) | Seitenleiste zeigt Quellen/Notizen je Kapitel |
 | P5 Feste Prüfungen | erledigt (2026-10-18) | alle Fehlerfälle erkannt, keine Fehlalarme |
 | P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
-| P7 Ingest & Wissen | offen | Stellen führen zur richtigen Seite |
+| P7 Ingest & Wissen | in Abnahme | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 
@@ -29,3 +29,8 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-18 | Abnahme „eine Frage mit Claude“ offen: kein API-Schlüssel; nachholen, sobald ein OpenRouter-Schlüssel da ist | P6 |
 | 2026-10-18 | „Verwendung“ im KI-Export ist fest; später je Anfrage selbst eintragen (z. B. „Gliederung geändert“) | P6 |
 | 2026-10-18 | Antworten nicht gestreamt; lokale Modelle brauchen ~15 s ohne Zwischenstand | P6 |
+| 2026-10-18 | Einlesen mit Ollama: Standard-Kontext 4096 Tokens reicht nicht; Kontextlänge in Ollama erhöhen oder online-Anbieter | P7, später (Pascal: bei DeepSeek bleiben) |
+| 2026-10-18 | Schlüssel im Schlüsselbund nur für die App lesbar; Testprogramme (`examples/`) können keine Online-Anbieter nutzen | P7 |
+| 2026-10-18 | Anhang von greenyer2013 in Zotero ist kein Artikel, sondern eine Klausurterminliste; austauschen | P7, Testdaten |
+| 2026-10-18 | Prüfungstests mit LTeX+ scheitern selten unter Last (Start von Java parallel zu anderen schweren Tests) | P7 |
+| 2026-10-18 | Texterkennung (OCR) für gescannte PDFs fehlt | P7 |

@@ -9,6 +9,8 @@ import {
   zoteroPdfUrl,
   zoteroSource,
 } from "../editor/api";
+import { Wegweiser } from "../wissen/Wegweiser";
+import { ingestKonzepte } from "../wissen/api";
 
 interface Props {
   chapter: ChapterView | null;
@@ -25,6 +27,18 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
   const [open, setOpen] = useState<string | null>(null);
   const byKey = new Map(sources.map((s) => [s.citekey, s]));
   const toggle = (key: string) => setOpen((current) => (current === key ? null : key));
+  const [concepts, setConcepts] = useState<string | null>(null);
+
+  async function createConcepts() {
+    if (!window.confirm("Konzeptseiten aus allen Wegweisern erzeugen? Das ist eine KI-Anfrage (Anbieter wie beim Einlesen).")) return;
+    setConcepts("erzeugt Konzepte …");
+    try {
+      const r = await ingestKonzepte();
+      setConcepts(`${r.seiten.length} Konzeptseiten (${r.modell})${r.warnungen ? `, ${r.warnungen} Verweise nicht bestätigt` : ""}`);
+    } catch (e) {
+      setConcepts(String(e));
+    }
+  }
 
   return (
     <div className="chapter-panel">
@@ -43,7 +57,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
                     {byKey.get(key) ? sourceLabel(byKey.get(key)!) : key}
                     {pages.length > 0 && <span className="meta"> · {pages.join(", ")}</span>}
                   </button>
-                  {open === key && byKey.get(key) && <SourceDetails source={byKey.get(key)!} pages={pages} />}
+                  {open === key && byKey.get(key) && <SourceDetails source={byKey.get(key)!} pages={pages} onOpenFile={onOpenFile} />}
                 </li>
               ))}
             </ul>
@@ -53,7 +67,13 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
         )}
       </section>
       <section>
-        <h2>Alle Quellen</h2>
+        <h2>
+          Alle Quellen
+          <button className="h2-action" onClick={createConcepts} title="Konzeptseiten aus allen Wegweisern (KI)">
+            Konzepte erzeugen
+          </button>
+        </h2>
+        {concepts && <p className="meta concepts-line">{concepts}</p>}
         {sourcesError && <p className="warn">{sourcesError}</p>}
         {sources.length === 0 && !sourcesError && <p className="empty">System/quellen.bib ist leer</p>}
         <ul>
@@ -67,7 +87,7 @@ export function ChapterPanel({ chapter, sources, sourcesError, onOpenFile }: Pro
                 {sourceLabel(source)}
                 {source.chapters.length === 0 && <span className="meta"> · ungenutzt</span>}
               </button>
-              {open === `alle:${source.citekey}` && <SourceDetails source={source} pages={[]} />}
+              {open === `alle:${source.citekey}` && <SourceDetails source={source} pages={[]} onOpenFile={onOpenFile} />}
             </li>
           ))}
         </ul>
@@ -114,7 +134,7 @@ function Related({
 }
 
 /** Details aus der `.bib`; dazu PDFs und Markierungen aus Zotero, falls es läuft. */
-function SourceDetails({ source, pages }: { source: Source; pages: string[] }) {
+function SourceDetails({ source, pages, onOpenFile }: { source: Source; pages: string[]; onOpenFile: (path: string) => void }) {
   const [zotero, setZotero] = useState<ZoteroSource | null | "laden">("laden");
   useEffect(() => {
     zoteroSource(source.citekey)
@@ -138,6 +158,7 @@ function SourceDetails({ source, pages }: { source: Source; pages: string[] }) {
       <div className="meta">
         {source.chapters.length === 0 ? "nirgends zitiert" : `zitiert in: ${source.chapters.map((c) => c.split("/").pop()!.replace(/\.typ$/, "")).join(", ")}`}
       </div>
+      <Wegweiser citekey={source.citekey} onOpenFile={onOpenFile} />
       <div className="zotero">
         {zotero === "laden" && <span className="meta">Zotero …</span>}
         {zotero === null && <span className="meta">Zotero nicht erreichbar oder Quelle dort nicht vorhanden</span>}

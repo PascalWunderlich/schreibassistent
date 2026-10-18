@@ -102,11 +102,17 @@ pub async fn frage(root: &Path, settings: &KiSettings, aufgabe: Aufgabe, questio
     }
     let (kontext, context_text) = build_context(root, kontext)?;
     let message = if context_text.is_empty() { question.to_owned() } else { format!("{context_text}\n\n---\n\nFrage: {question}") };
+    anfrage(root, settings, aufgabe, BASIS_PROMPT, &message, kontext).await
+}
+
+/// Eine KI-Anfrage mit Protokoll (Leitplanke 3): Anbieter aus den Einstellungen der Aufgabe,
+/// Eintrag vor der Rückgabe auf der Platte, auch bei Fehlschlag.
+pub async fn anfrage(root: &Path, settings: &KiSettings, aufgabe: Aufgabe, system: &str, message: &str, kontext: Kontext) -> Result<FrageErgebnis, String> {
     let wahl = settings.wahl(aufgabe);
     let key = if wahl.anbieter.needs_key() { schluessel::get(wahl.anbieter)? } else { None };
-    let result = anbieter::ask(&wahl, settings, key, BASIS_PROMPT, &message).await;
+    let result = anbieter::ask(&wahl, settings, key, system, message).await;
 
-    let mut eintrag = protokoll::entry(wahl.anbieter.id(), wahl.modell.trim(), aufgabe.id(), kontext, &message);
+    let mut eintrag = protokoll::entry(wahl.anbieter.id(), wahl.modell.trim(), aufgabe.id(), kontext, message);
     match &result {
         Ok(antwort) => {
             eintrag.antwort = antwort.text.clone();

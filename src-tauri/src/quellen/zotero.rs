@@ -27,7 +27,18 @@ pub struct Attachment {
     /// Schlüssel des Anhangs (für `zotero://open-pdf/library/items/<key>?page=<n>`).
     pub key: String,
     pub title: String,
+    /// Dateiname in `~/Zotero/storage/<key>/` (nur bei gespeicherten Dateien, nicht bei Links).
+    pub filename: Option<String>,
     pub annotations: Vec<Annotation>,
+}
+
+impl Attachment {
+    /// Pfad der PDF-Datei im Zotero-Datenordner (Standardort `~/Zotero`), falls vorhanden.
+    pub fn path(&self) -> Option<std::path::PathBuf> {
+        let home = std::env::var_os("HOME")?;
+        let path = std::path::Path::new(&home).join("Zotero/storage").join(&self.key).join(self.filename.as_deref()?);
+        path.is_file().then_some(path)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -107,6 +118,7 @@ pub fn assemble(items: &[Value], attachments: &[Value], annotations: &[Value]) -
         let (Some(parent), Some(key)) = (text(attachment, "parentItem"), text(attachment, "key")) else { continue };
         pdfs_by_item.entry(parent).or_default().push(Attachment {
             title: text(attachment, "title").unwrap_or_else(|| "PDF".to_owned()),
+            filename: text(attachment, "filename"),
             annotations: by_parent.remove(&key).unwrap_or_default(),
             key,
         });

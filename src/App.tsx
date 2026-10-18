@@ -3,6 +3,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { PageEditor } from "./editor/PageEditor";
 import { NoteEditor } from "./editor/NoteEditor";
+import { WissenView } from "./wissen/WissenView";
 import { SourceEditor } from "./editor/SourceEditor";
 import {
   ChapterInfo,
@@ -174,6 +175,17 @@ function App() {
     }
     indexChapter(currentChapter).then(setChapterView).catch(() => setChapterView(null));
   }, [project, currentChapter, indexVersion]);
+
+  /** `[[Name]]` aus einer Wissensseite: Datei gleichen Namens, zuerst in Wissen/, dann Notizen/. */
+  function openLink(name: string) {
+    const all: string[] = [];
+    const walk = (nodes: TreeNode[]) => nodes.forEach((n) => (n.is_dir ? walk(n.children) : all.push(n.path)));
+    walk(tree);
+    const match = (p: string) => p.split("/").pop() === `${name}.md`;
+    const found = all.find((p) => p.startsWith("Wissen/") && match(p)) ?? all.find(match);
+    if (found) openFromIndex(found);
+    else setNotice(`„${name}“ gibt es noch nicht als Seite.`);
+  }
 
   function openFromIndex(path: string) {
     setSelected(path);
@@ -413,6 +425,8 @@ function App() {
               reveal={reveal}
               marks={marks}
             />
+          ) : center.path.startsWith("Wissen/") ? (
+            <WissenView path={center.path} onOpenLink={openLink} version={indexVersion} />
           ) : (
             <NoteEditor
               key={center.path}
