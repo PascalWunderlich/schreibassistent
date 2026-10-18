@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Source, sourceLabel } from "./api";
 import { getInserter, relativePath, subscribeInserter } from "./inserter";
 import * as snip from "./snippets";
+import { INSERT_EVENT, InsertKind } from "../lib/events";
 
 interface Props {
   sources: Source[];
@@ -12,7 +13,7 @@ interface Props {
   projectRoot: string;
 }
 
-type Dialog = "abbildung" | "tabelle" | "diagramm" | "listing" | "zitat" | "verweis" | null;
+type Dialog = InsertKind | null;
 
 /** Leiste über dem Blatt: setzt Typst-Bausteine an die Cursorstelle. Schreibt nur auf Klick des Menschen. */
 export function Einfuegeleiste({ sources, projectRoot }: Props) {
@@ -31,8 +32,13 @@ export function Einfuegeleiste({ sources, projectRoot }: Props) {
         setDialog(d);
       }
     };
+    const onInsert = (e: Event) => setDialog((e as CustomEvent<InsertKind>).detail);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(INSERT_EVENT, onInsert);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(INSERT_EVENT, onInsert);
+    };
   }, []);
 
   const Btn = ({ icon, label, onClick, shortcut }: { icon: ReactNode; label: string; onClick: () => void; shortcut?: string }) => (

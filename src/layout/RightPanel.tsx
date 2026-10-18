@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Hinweis, Pruefbericht } from "../editor/api";
+import { RightTab, TAB_EVENT } from "../lib/events";
 import { PruefenPanel } from "./PruefenPanel";
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
   assistant: ReactNode;
 }
 
-type Tab = "pruefen" | "assistent";
+type Tab = RightTab;
 
 /** Rechts: zwei Tabs, „Prüfen“ (feste Regeln, ohne KI) und „Assistent“ (auf Nachfrage). ⌘⇧A wechselt zum Assistenten. */
 export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Props) {
@@ -24,8 +25,13 @@ export function RightPanel({ bericht, rechtschreibung, onJump, assistant }: Prop
         setTab("assistent");
       }
     };
+    const onTab = (e: Event) => setTab((e as CustomEvent<Tab>).detail);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(TAB_EVENT, onTab);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(TAB_EVENT, onTab);
+    };
   }, []);
 
   const tabClass = (t: Tab) =>

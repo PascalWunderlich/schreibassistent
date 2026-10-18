@@ -40,6 +40,9 @@ import { RightPanel } from "./layout/RightPanel";
 import { Assistant } from "./assistent/Assistant";
 import { SaveState, StatusBar } from "./layout/StatusBar";
 import { Einfuegeleiste } from "./editor/Einfuegeleiste";
+import { Toaster, toast } from "sonner";
+import { CommandPalette } from "./layout/CommandPalette";
+import { ShortcutsDialog } from "./layout/ShortcutsDialog";
 import { Topbar } from "./layout/Topbar";
 import { Workspace } from "./layout/Workspace";
 import { useTheme } from "./lib/theme";
@@ -63,6 +66,7 @@ function App() {
   const [gitError, setGitError] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   /** Quelltextmodus: Datei links, Seiten rechts. */
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
@@ -347,6 +351,17 @@ function App() {
     }
   }
 
+  // Meldungen als Toast: Hinweise 5 s, Fehler bleiben bis zum Schließen.
+  useEffect(() => {
+    if (!notice) return;
+    toast(notice, { duration: 5000 });
+    setNotice(null);
+  }, [notice]);
+  useEffect(() => {
+    if (!project || errors.length === 0) return;
+    toast.error(errors.join(" · "), { id: "fehler", duration: Infinity, closeButton: true, onDismiss: () => setErrors([]) });
+  }, [errors, project]);
+
   if (!project) {
     return (
       <div className="start">
@@ -370,6 +385,22 @@ function App() {
 
   return (
     <div className="app">
+      <Toaster
+        position="bottom-right"
+        closeButton
+        style={{ "--normal-bg": "var(--popover)", "--normal-text": "var(--popover-foreground)", "--normal-border": "var(--border)" } as React.CSSProperties}
+      />
+      <CommandPalette
+        chapters={chapters}
+        onOpenChapter={openChapter}
+        sourceMode={sourceMode}
+        onSourceMode={setSourceMode}
+        onExport={exportToPdf}
+        onChoose={choose}
+        onTheme={setTheme}
+        onShortcuts={() => setShortcutsOpen(true)}
+      />
+      {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
       <Topbar
         projectName={project.name}
         saveLabel={saveState}
@@ -380,16 +411,6 @@ function App() {
         theme={theme}
         onTheme={setTheme}
       />
-      {notice && (
-        <div className="hint" onClick={() => setNotice(null)}>
-          {notice}
-        </div>
-      )}
-      {errors.length > 0 && (
-        <div className="errors" onClick={() => setErrors([])}>
-          {errors.join(" · ")}
-        </div>
-      )}
       {project.lsp_error && <div className="hint">{project.lsp_error} – ohne Vervollständigung und Fehleranzeige.</div>}
       {!project.git && (
         <div className="hint">
