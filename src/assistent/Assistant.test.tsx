@@ -31,7 +31,7 @@ describe("Assistant", () => {
       />,
     );
     fireEvent.change(screen.getByPlaceholderText(/Frage stellen/), { target: { value: "Ist das klar?" } });
-    fireEvent.click(screen.getByText("Fragen"));
+    fireEvent.click(screen.getByRole("button", { name: "Fragen" }));
     await waitFor(() => expect(screen.getByText("- Wer ist gemeint?")).toBeTruthy());
     expect(invoke).toHaveBeenCalledWith("ki_frage", {
       frage: "Ist das klar?",
@@ -55,10 +55,35 @@ describe("Assistant", () => {
         onJump={onJump}
       />,
     );
-    fireEvent.click(screen.getByText("Belegbedarf"));
+    fireEvent.click(screen.getByRole("button", { name: "Prüfaufgaben" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Belegbedarf/ }));
     await waitFor(() => expect(screen.getByText("Zahl ohne Beleg")).toBeTruthy());
     expect(invoke).toHaveBeenCalledWith("ki_belegbedarf", { datei: "Arbeit/kapitel/07-ki-test.typ", offset: 100 });
     fireEvent.click(screen.getByText(/63 % Microservices/));
     expect(onJump).toHaveBeenCalledWith("Arbeit/kapitel/07-ki-test.typ", 120);
+  });
+});
+
+describe("Assistant: Schrägstrich-Menü", () => {
+  it("wählt eine Prüfaufgabe mit „/“ und führt sie aus", async () => {
+    cleanup();
+    render(
+      <Assistant
+        paragraph={{ file: "Arbeit/kapitel/07-ki-test.typ", offset: 100 }}
+        chapter="Arbeit/kapitel/07-ki-test.typ"
+        onAnswer={vi.fn()}
+        onExported={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByPlaceholderText(/Frage stellen/), { target: { value: "/beleg" } });
+    expect(screen.getAllByRole("menuitem")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("menuitem", { name: /Belegbedarf/ }));
+    await waitFor(() => expect(screen.getByText("Zahl ohne Beleg")).toBeTruthy());
+  });
+
+  it("zeigt den Kontext direkt über dem Eingabefeld", () => {
+    cleanup();
+    render(<Assistant paragraph={null} chapter={null} onAnswer={vi.fn()} onExported={vi.fn()} />);
+    expect(screen.getByText(/Kontext: kein Absatz gewählt/)).toBeTruthy();
   });
 });

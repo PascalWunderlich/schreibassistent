@@ -529,81 +529,8 @@ button {
 }
 
 /* ---------- Assistent ---------- */
-.assistant {
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-  min-height: 0;
-}
-
-.assistant h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.assistant-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 0.2rem;
-}
-
-.assistant-actions button {
-  font-size: 0.72rem;
-  padding: 0.1rem 0.4rem;
-}
-
-.assistant .notice-line {
-  font-size: 0.78rem;
-  margin: 0 0.8rem 0.3rem;
-  color: var(--sa-muted);
-}
-
-.turns {
-  overflow: auto;
-  padding: 0 0.8rem;
-}
-
-.turn {
-  margin-bottom: 0.7rem;
-  font-size: 0.83rem;
-}
-
-.turn-question {
-  font-weight: 500;
-}
-
-.turn-answer {
-  white-space: pre-wrap;
-  line-height: 1.4;
-  margin: 0.25rem 0;
-  padding: 0.4rem 0.5rem;
-  background: var(--card);
-  border: 1px solid var(--sa-line);
-  border-radius: 5px;
-  user-select: text;
-}
-
 .turn .warn {
   margin: 0.25rem 0;
-}
-
-.ask {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.3rem;
-  padding: 0.4rem 0.6rem 0.6rem;
-}
-
-.ask select {
-  grid-column: 1 / -1;
-  font-size: 0.78rem;
-}
-
-.ask textarea {
-  resize: none;
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.4rem;
 }
 
 /* ---------- Dialog ---------- */
@@ -787,18 +714,6 @@ button {
 }
 
 /* ---------- Prüfaufgaben ---------- */
-.task-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0 0.6rem 0.4rem;
-}
-
-.task-buttons button {
-  font-size: 0.72rem;
-  padding: 0.1rem 0.4rem;
-}
-
 .task-result ul {
   list-style: none;
   margin: 0.2rem 0;
