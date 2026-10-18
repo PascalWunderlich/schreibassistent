@@ -1,5 +1,5 @@
 # Roadmap
-Aktuelle Phase: P6
+Aktuelle Phase: P7
 | Phase | Status | Abnahme |
 |---|---|---|
 | P0 Grundlage | erledigt (2026-10-17) | Tauri-Fenster startet, Kontextdateien vorhanden |
@@ -8,7 +8,7 @@ Aktuelle Phase: P6
 | P3 App-Gerüst | erledigt (2026-10-17) | Kapitel in der App geschrieben und exportiert |
 | P4 Quellen & Index | erledigt (2026-10-17) | Seitenleiste zeigt Quellen/Notizen je Kapitel |
 | P5 Feste Prüfungen | erledigt (2026-10-18) | alle Fehlerfälle erkannt, keine Fehlalarme |
-| P6 KI-Grundlage | in Abnahme | Schreibsperre nachgewiesen, Protokoll vollständig |
+| P6 KI-Grundlage | erledigt (2026-10-18; Frage mit Claude offen) | Schreibsperre nachgewiesen, Protokoll vollständig |
 | P7 Ingest & Wissen | offen | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | offen | Hinweise mit Originalstelle |
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
