@@ -17,4 +17,4 @@ download ltex-ls-plus macos-arm64 84f5dbe773e54984dcad652e4e5027a51fcaf516aac821
 download ltex-ls-plus linux-x64 e6e08598bbbb575df409c8d491d305332633737742515a5c50803d4c671cb7df https://github.com/ltex-plus/ltex-ls-plus/releases/download/18.5.1/ltex-ls-plus-18.5.1-linux-x64.tar.gz
 download ltex-ls-plus windows-x64 ed47125132622f843cef1dbd286074ec56b83457e0ace0e58b58736f32a84009 https://github.com/ltex-plus/ltex-ls-plus/releases/download/18.5.1/ltex-ls-plus-18.5.1-windows-x64.zip
 crate typst2vast 0.1.0
-package preview/glossarium 0.5.10 - https://packages.typst.org/preview/glossarium-0.5.10.tar.gz
+package preview/glossarium 0.5.10 32b6ca30e5ff0d015aeff2ed1b9ba2bef5f628b53b611343294769b65966fc97 https://packages.typst.org/preview/glossarium-0.5.10.tar.gz

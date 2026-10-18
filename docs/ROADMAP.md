@@ -12,7 +12,7 @@ Aktuelle Phase: P10
 | P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | erledigt (2026-10-18) | Hinweise mit Originalstelle |
 | P9 UI-Überarbeitung | umgesetzt (2026-10-18), Abnahme durch Pascal offen | 6 Kernaufgaben ohne Nachfragen, Reibungsliste abgearbeitet |
-| P10 Einfache Installation (macOS, Windows, Linux) | Schritte A bis C umgesetzt (2026-10-18, Zweig `p10-installation`); Abnahme (D) offen; Plan in `docs/P10-plan.md`, Anleitung `docs/installation.md` | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
+| P10 Einfache Installation (macOS, Windows, Linux) | Schritte A bis C umgesetzt (2026-10-18, Zweig `p10-installation`), CI grün auf macOS arm64, Windows x64, Linux x64 (Tests und Pakete .dmg/.exe/.deb, Lauf 8); Abnahme (D) offen; Plan in `docs/P10-plan.md`, Anleitung `docs/installation.md` | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
 Reibungen beim Benutzen: docs/ui-reibung.md (Eingabe für P9).
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 
@@ -49,7 +49,7 @@ Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 | 2026-10-18 | P9 in `pnpm tauri dev` mit Pascal durchgehen (Layout, Menü, Dunkel): bisher nur Tests und Typprüfung, kein Blick ins laufende Fenster | P9, Abnahme |
 | 2026-10-18 | Prüfungstests (LTeX+) und `quellen::zotero::tests::unavailable_zotero_is_silent` schlugen im ersten Volllauf fehl, im zweiten liefen alle 107 | P9, flackernd (Last bzw. laufendes Zotero) |
 | 2026-10-18 | P10: Windows und Linux nur über die CI belegt (Tests, Paket); auf echter Hardware nie gestartet (Menü, Schlüsselspeicher, NSIS-Installer, deb, SmartScreen) | P10, offen bis jemand es ausprobiert |
-| 2026-10-18 | P10: `werkzeuge.lock`: Prüfsumme des Typst-Pakets `preview/glossarium` fehlt (`-`); das Skript meldet die berechnete, bitte eintragen | P10, offen (packages.typst.org war aus der Sitzung nicht erreichbar) |
+| 2026-10-18 | P10: `werkzeuge.lock`: Prüfsumme des Typst-Pakets `preview/glossarium` fehlt (`-`); das Skript meldet die berechnete, bitte eintragen | P10, erledigt: Prüfsumme aus dem ersten CI-Lauf übernommen (Erstbenutzung, nicht unabhängig gegengeprüft) |
 | 2026-10-18 | P10: Versionen in `werkzeuge.lock` (Vale 3.12.0, LTeX+ 18.5.1, uv 0.9.0, typst2vast 0.1.0) sind geprüft vorhandene, nicht die neuesten; bei Bedarf anheben und Prüfsumme neu eintragen | P10 |
 | 2026-10-18 | P10: Docling-Erstinstallation nur bis zum Fortschritt der Paketliste ausprobiert (Linux, abgebrochen wegen Speicherplatz); Modell-Download (`download_models`) und Gesamtdauer nicht geprüft; Linux lädt PyTorch mit GPU-Paketen (> 2 GB) | P10, offen |
 | 2026-10-18 | P10: Pakete entstehen nur in der CI als Artefakte; ein Release-Ablauf (Tag → Release mit Dateien) fehlt | P10 |
