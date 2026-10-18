@@ -883,6 +883,6 @@ mod tests {
         assert!(regelprofil_speichern(&root, "x", "y", vec![regel], "Arbeit/main.typ").is_err());
         let invalid = serde_json::json!({"id": "x", "klasse": "maschinell", "fundstelle": "S. 1"});
         assert!(regelprofil_speichern(&root, "x", "y", vec![invalid], "System/regelprofil-aus-pdf.yaml").is_err());
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 }

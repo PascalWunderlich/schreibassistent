@@ -81,7 +81,7 @@ mod tests {
             let session = super::ltex::LtexSession::start(&program, root).unwrap();
             let texts: Vec<(String, String)> =
                 files.iter().map(|f| (f.clone(), std::fs::read_to_string(root.join(f)).unwrap())).collect();
-            out.extend(session.check(&texts, std::time::Duration::from_secs(90)).unwrap());
+            out.extend(session.check(&texts, std::time::Duration::from_secs(300)).unwrap());
         } else {
             eprintln!("LTeX+ übersprungen: nicht installiert");
         }

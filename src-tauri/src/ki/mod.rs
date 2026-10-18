@@ -184,21 +184,21 @@ mod tests {
         assert_eq!(entries[0].ergebnis, "fehler");
         assert_eq!(entries[0].kontext, Kontext { datei: Some("Arbeit/kapitel/01.typ".into()), absatz: Some(2) });
         assert!(entries[0].anfrage.contains("Das ist der Absatz.") && entries[0].anfrage.contains("Ist das klar?"));
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     /// Ist das Protokoll nicht schreibbar, gibt es keine Antwort.
     #[test]
     fn no_answer_without_log() {
         let root = vault("ohne-protokoll");
-        std::fs::remove_dir_all(root.join("System")).unwrap();
+        let _ = std::fs::remove_dir_all(root.join("System")); // Windows hält Dateien teils noch kurz offen
         std::fs::write(root.join("System"), "Datei statt Ordner").unwrap();
         let mut settings = KiSettings::default();
         settings.ollama_url = "http://127.0.0.1:9/".into();
         let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
         let err = rt.block_on(frage(&root, &settings, Aufgabe::Frage, "x", &KontextWahl::Keiner)).unwrap_err();
         assert!(err.contains("Protokoll"), "{err}");
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     /// Echte Frage an Ollama, falls es läuft (sonst übersprungen).
@@ -217,6 +217,6 @@ mod tests {
         let entries = protokoll::read_all(&root).unwrap();
         assert_eq!((entries.len(), entries[0].ergebnis.as_str(), entries[0].antwort.as_str()), (1, "ok", result.text.as_str()));
         assert!(protokoll::verify(&root).unwrap().fehler.is_none());
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 }

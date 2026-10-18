@@ -18,7 +18,8 @@ pub fn relevant(root: &Path, path: &Path) -> Option<String> {
     if relative.components().any(|c| c.as_os_str().to_string_lossy().starts_with('.')) {
         return None;
     }
-    Some(relative.to_string_lossy().into_owned())
+    // Immer mit „/“, auch unter Windows (die Oberfläche und der Index rechnen so).
+    Some(relative.to_string_lossy().replace('\\', "/"))
 }
 
 /// Startet die Beobachtung; `on_change` erhält die geänderten Pfade (relativ, sortiert).
@@ -90,6 +91,6 @@ mod tests {
         std::fs::write(root.join("System/quellen.bib"), "@book{a, title={T}}").unwrap();
         let paths = rx.recv_timeout(Duration::from_secs(5)).expect("Änderung gemeldet");
         assert_eq!(paths, ["System/quellen.bib"]);
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 }

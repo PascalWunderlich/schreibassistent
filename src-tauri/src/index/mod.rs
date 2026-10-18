@@ -246,13 +246,13 @@ mod tests {
         assert_eq!(cache.len().unwrap(), first.typ.len() + first.md.len());
         let from_cache = Index::build(root, Some(&cache)).unwrap();
         drop(cache);
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
         let cache = cache::Cache::open(&dir.join("cache.sqlite")).unwrap();
         let rebuilt = Index::build(root, Some(&cache)).unwrap();
 
         assert_eq!(first, without);
         assert_eq!(from_cache, without);
         assert_eq!(rebuilt, without);
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 }

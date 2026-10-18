@@ -150,7 +150,7 @@ mod tests {
         assert_eq!(load(&root).unwrap()[0].citekey, "mueller2024");
         let err = adopt_bib(&root, &from).unwrap_err();
         assert!(err.contains("schon Quellen"), "{err}");
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -161,6 +161,6 @@ mod tests {
         assert!(adopt_bib(&root, &empty).unwrap_err().contains("keine Quellen"));
         assert!(adopt_bib(&root, &root.join("gibt-es-nicht.bib")).is_err());
         assert!(!root.join(BIB_FILE).exists());
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 }

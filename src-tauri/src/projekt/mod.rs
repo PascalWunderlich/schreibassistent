@@ -308,7 +308,7 @@ mod tests {
         let report = project.satz.compile().unwrap();
         assert!(report.page_count > before, "neues Kapitel beginnt auf einer neuen Seite");
         assert!(project.satz.first_page_of(&path).is_some());
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -321,7 +321,7 @@ mod tests {
         assert_eq!(info.report.page_count, 0);
         assert!(info.compile_errors[0].contains("unknown variable: gibtsnich"), "{:?}", info.compile_errors);
         assert_eq!(info.error_location.unwrap().0, "Arbeit/kapitel/05-zusammenfassung.typ");
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -354,6 +354,6 @@ mod tests {
 
         assert!(project.write("Wissen/Quellen/x.md", "nein").is_err(), "Wissen/ ist nur lesbar");
         assert!(project.write("Notizen/idee.md", "# Idee\n").is_ok());
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 }

@@ -44,7 +44,7 @@ mod tests {
         let settings = Settings { last_vault: Some("/Users/x/Arbeiten/Testarbeit".into()), ..Default::default() };
         save(&file, &settings).unwrap();
         assert_eq!(load(&file), settings);
-        std::fs::remove_dir_all(file.parent().unwrap()).unwrap();
+        let _ = std::fs::remove_dir_all(file.parent().unwrap()); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]

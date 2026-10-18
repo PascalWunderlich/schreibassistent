@@ -146,7 +146,7 @@ mod tests {
         ki_schreibe(&root, "Wissen/Konzepte/Ümlaut Begriff.md", "x", "ingest").unwrap();
         assert_eq!(denied_entries(&root), 0);
         untouched(&root);
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod tests {
         untouched(&root);
         assert!(walk(&root.join("Wissen")).is_empty());
         assert!(crate::protokoll::verify(&root).unwrap().fehler.is_none());
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     // Symlinks anzulegen braucht unter Windows besondere Rechte; die Sperre selbst ist plattformneutral.
@@ -226,11 +226,11 @@ mod tests {
         untouched(&root);
 
         // Wissen/ selbst als Symlink auf Notizen/.
-        std::fs::remove_dir_all(root.join("Wissen")).unwrap();
+        let _ = std::fs::remove_dir_all(root.join("Wissen")); // Windows hält Dateien teils noch kurz offen
         symlink(root.join("Notizen"), root.join("Wissen")).unwrap();
         assert!(ki_schreibe(&root, "Wissen/neu.md", "KI-TEXT", "test").is_err());
         assert!(ki_schreibe(&root, "Wissen/idee.md", "KI-TEXT", "test").is_err());
         untouched(&root);
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 }

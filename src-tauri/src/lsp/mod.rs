@@ -445,6 +445,6 @@ mod tests {
         let diagnostic = found.first().expect("Fehler im Feld");
         assert_eq!(&field.text[diagnostic.from..diagnostic.to], "gibtsnicht", "{diagnostic:?}");
         assert_eq!(diagnostic.severity, "error");
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 }

@@ -109,7 +109,7 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&file).unwrap(), "zwei");
         let names: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name()).collect();
         assert_eq!(names.len(), 1, "{names:?}");
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]

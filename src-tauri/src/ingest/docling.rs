@@ -142,7 +142,7 @@ mod tests {
         let status = status_in(Some(&dir), false);
         assert!(status.bereit && !status.uv);
         assert_eq!(status.groesse_mb, GROESSE_MB);
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]

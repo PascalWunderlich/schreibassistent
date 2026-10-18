@@ -42,7 +42,8 @@ impl LspClient {
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            // Mit LSP_DEBUG/LTEX_DEBUG sieht man in der CI, warum ein Server nicht antwortet.
+            .stderr(if std::env::var_os("LTEX_DEBUG").is_some() { Stdio::inherit() } else { Stdio::null() })
             .spawn()
             .map_err(|e| format!("{} lässt sich nicht starten: {e}", program.display()))?;
         let stdin = child.stdin.take().ok_or("kein stdin")?;

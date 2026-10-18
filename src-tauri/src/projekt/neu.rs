@@ -121,7 +121,7 @@ mod tests {
         let meta = std::fs::read_to_string(dir.join("Arbeit/metadaten.typ")).unwrap();
         assert!(meta.contains("title: \"Titel mit \\\"Zitat\\\"\""));
         assert!(meta.contains("second-examiner: none"));
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -130,7 +130,7 @@ mod tests {
         create(&dir, &NeueArbeit { thesis_type: "Bachelorarbeit".to_owned(), ..input("T") }).unwrap();
         let meta = std::fs::read_to_string(dir.join("Arbeit/metadaten.typ")).unwrap();
         assert!(meta.contains("second-examiner: \"Name des Zweitprüfers\""));
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -141,7 +141,7 @@ mod tests {
         assert!(create(&dir, &input("T")).unwrap_err().contains("nicht leer"));
         assert!(create(&temp("notitle"), &input("  ")).is_err());
         assert!(create(&temp("badtype"), &NeueArbeit { thesis_type: "Diplom".to_owned(), ..input("T") }).is_err());
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -154,8 +154,8 @@ mod tests {
         assert!(dst.join("Arbeit/main.typ").is_file());
         assert!(!dst.join(".schreibassistent").exists());
         assert!(copy_to(&src, &src.join("innen")).is_err());
-        std::fs::remove_dir_all(&src).unwrap();
-        std::fs::remove_dir_all(&dst).unwrap();
+        let _ = std::fs::remove_dir_all(&src); // Windows hält Dateien teils noch kurz offen
+        let _ = std::fs::remove_dir_all(&dst); // Windows hält Dateien teils noch kurz offen
     }
 }
 

@@ -146,7 +146,7 @@ mod tests {
         assert!(data.join("local/fhdw-arbeit/0.1.0/unter/ordner.typ").is_file());
         assert!(data.join("preview/glossarium/0.5.10/typst.toml").is_file());
         assert!(install_into(&data, &source).unwrap().is_empty(), "zweiter Start ändert nichts");
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(install_into(&data, &source).unwrap(), ["@local/fhdw-arbeit:0.1.0"]);
         assert_eq!(std::fs::read_to_string(data.join("local/fhdw-arbeit/0.1.0/lib.typ")).unwrap(), "// neuer Stand");
         assert_eq!(std::fs::read_to_string(data.join("preview/glossarium/0.5.10/typst.toml")).unwrap(), "// vom Nutzer");
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod tests {
         write(&source.join("fhdw-arbeit/typst.toml"), "[package]\nname = \"fhdw-arbeit\"\nversion = \"0.2.0\"\n");
         assert_eq!(install_into(&data, &source).unwrap(), ["@local/fhdw-arbeit:0.2.0"]);
         assert!(data.join("local/fhdw-arbeit/0.1.0").is_dir() && data.join("local/fhdw-arbeit/0.2.0").is_dir());
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[cfg(unix)]
@@ -187,13 +187,13 @@ mod tests {
         std::os::unix::fs::symlink(&repo, data.join("local/fhdw-arbeit/0.1.0")).unwrap();
         assert_eq!(install_into(&data, &source).unwrap(), ["@preview/glossarium:0.5.10"]);
         assert_eq!(std::fs::read_to_string(repo.join("lib.typ")).unwrap(), "// Entwicklung");
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
     fn missing_source_installs_nothing() {
         let dir = temp("quelle");
         assert!(install_into(&dir.join("data"), &dir.join("gibt-es-nicht")).unwrap().is_empty());
-        std::fs::remove_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir); // Windows hält Dateien teils noch kurz offen
     }
 }

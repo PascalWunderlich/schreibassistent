@@ -1,0 +1,6 @@
+# Quelltexte immer mit LF auschecken (Typst-Positionen, Profile und Tests rechnen in Bytes; Windows würde CRLF erzeugen).
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.ico binary
+*.icns binary

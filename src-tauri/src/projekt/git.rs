@@ -128,7 +128,7 @@ mod tests {
         let ignore = std::fs::read_to_string(root.join(".gitignore")).unwrap();
         assert!(ignore.contains(".schreibassistent/") && ignore.contains(".DS_Store"), "{ignore}");
         assert_eq!(commits(&root), ["Arbeit angelegt"]);
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -149,7 +149,7 @@ mod tests {
         assert_eq!(autosave(&root, false).unwrap(), None, "innerhalb von 5 Minuten");
         assert!(autosave(&root, true).unwrap().is_some(), "erzwungen, z. B. beim Schließen");
         assert_eq!(commits(&root), ["autosave", "autosave", "Arbeit angelegt"]);
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -165,7 +165,7 @@ mod tests {
         assert!(tree.get_path(Path::new("Arbeit/main.typ")).is_err(), "gelöscht");
         assert!(tree.get_path(Path::new(".schreibassistent/cache.db")).is_err(), "ignoriert");
         assert!(last_autosave(&root).is_some());
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -175,6 +175,6 @@ mod tests {
         let repo = Repository::open(&root).unwrap();
         let author = repo.head().unwrap().peel_to_commit().unwrap().author().name().map(str::to_owned);
         assert!(author.is_some_and(|n| !n.is_empty()));
-        std::fs::remove_dir_all(&root).unwrap();
+        let _ = std::fs::remove_dir_all(&root); // Windows hält Dateien teils noch kurz offen
     }
 }

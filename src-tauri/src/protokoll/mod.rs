@@ -271,7 +271,7 @@ mod tests {
         assert_eq!(b.vorheriger_hash, a.hash);
         assert!(a.hash.starts_with("sha256:"));
         assert_eq!(verify(&root).unwrap(), ChainCheck { eintraege: 2, fehler: None });
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -304,7 +304,7 @@ mod tests {
         let extra = lines[0].replacen('{', "{\"x\":1,", 1);
         std::fs::write(&path, format!("{extra}\n")).unwrap();
         assert_eq!(verify(&root).unwrap().fehler.map(|f| f.0), Some(1));
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 
     #[test]
@@ -337,6 +337,6 @@ mod tests {
         let world = crate::satz::world::SatzWorld::new(&root, "main.typ").unwrap();
         let result = typst::compile::<typst_layout::PagedDocument>(&world);
         assert!(result.output.is_ok(), "{:?}", result.output.err());
-        std::fs::remove_dir_all(root).unwrap();
+        let _ = std::fs::remove_dir_all(root); // Windows hält Dateien teils noch kurz offen
     }
 }
