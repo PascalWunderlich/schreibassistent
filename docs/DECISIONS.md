@@ -69,3 +69,7 @@
 | 2026-10-18 | P9: „Speichern“ = Git-Sicherung sofort (Dateien liegen schon auf der Platte); „Speichern unter“ = Arbeit samt Notizen und Wissen ohne Cache kopieren und dort weiterarbeiten; neue Arbeit legt Gerüst mit FHDW-Regelprofil an (in die App eingebettet) | Vault ist ein Ordner; „Speichern von Hand/benannte Versionen“ bleibt in „Später“ |
 | 2026-10-18 | P9: Neues Backend nur lesend oder auf Klick: `protokoll_liste` (liest das KI-Protokoll), `projekt_create`, `projekt_copy_to`, `projekt_sichern` | Leitplanke 1 und 3 unberührt: kein KI-Pfad schreibt nach `Arbeit/` oder `Notizen/` |
 | 2026-10-18 | P9: Darstellung System/Hell/Dunkel (Klasse `dark`, Einstellung in `localStorage`); das Blatt bleibt in beiden Themes weiß | Blatt zeigt das echte PDF |
+| 2026-10-18 | P10: App für macOS, Windows und Linux; `CLAUDE.md` angepasst (Plattformen, Leitplanke 4: einmalige Erstinstallation von Werkzeugen erlaubt, Leitplanke 7: Schlüsselspeicher des Systems) | Pascal |
+| 2026-10-18 | P10: Ad-hoc-Signierung, nur macOS arm64, Windows x64, Linux x64; Notarisierung später | kein Apple-Developer-Account |
+| 2026-10-18 | P10: LTeX+, Vale, Tinymist, `typst2vast`, `uv` mitgeliefert, Docling bei Erstnutzung geladen | App bleibt ~400 MB statt mehrere GB; Docling braucht Modelle |
+| 2026-10-18 | P10: Git-Sicherung über `git2` statt Programm `git` (geplant) | frisches Windows-Konto hat kein Git |

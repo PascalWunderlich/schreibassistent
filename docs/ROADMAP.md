@@ -12,7 +12,7 @@ Aktuelle Phase: P9
 | P7 Ingest & Wissen | erledigt (2026-10-18) | Stellen führen zur richtigen Seite |
 | P8 KI-Prüfungen | erledigt (2026-10-18) | Hinweise mit Originalstelle |
 | P9 UI-Überarbeitung | umgesetzt (2026-10-18), Abnahme durch Pascal offen | 6 Kernaufgaben ohne Nachfragen, Reibungsliste abgearbeitet |
-| P10 Einfache Installation | offen | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
+| P10 Einfache Installation (macOS, Windows, Linux) | geplant, freigegeben; Plan in `docs/P10-plan.md` | frisches macOS-Konto: Download bis PDF < 10 Min. ohne Terminal |
 Reibungen beim Benutzen: docs/ui-reibung.md (Eingabe für P9).
 Details je Phase: Vault „Schreibassistent – Implementierungsplan“.
 

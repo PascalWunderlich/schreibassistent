@@ -1,6 +1,6 @@
 # Schreibassistent – Anweisungen für Claude Code
 
-Lokale Desktop-App für wissenschaftliche Arbeiten (macOS zuerst). Der Mensch schreibt
+Lokale Desktop-App für wissenschaftliche Arbeiten (macOS, Windows und Linux). Der Mensch schreibt
 den Text in Typst; die App setzt ihn nach Vorlage und Regelprofil, verwaltet Quellen
 und Wissen, prüft Form und gibt KI-Feedback nur auf Nachfrage.
 Product Owner: Pascal. Du schreibst den Code; Pascal gibt Pläne frei und nimmt ab.
@@ -11,15 +11,24 @@ Product Owner: Pascal. Du schreibst den Code; Pascal gibt Pläne frei und nimmt 
    (`ki::rechte`), nicht nur in der Oberfläche. Kein "Vorschlag übernehmen"-Knopf.
 2. Zitiert wird aus dem Original. Jede KI-Aussage über eine Quelle trägt Citekey + Seite.
 3. Jede KI-Anfrage wird protokolliert, bevor die Antwort angezeigt wird.
-4. Lokal, ohne Konten. Netzwerk nur für gewählte KI-Anbieter.
+4. Lokal, ohne Konten. Netzwerk nur für gewählte KI-Anbieter und für die einmalige
+   Erstinstallation der Werkzeuge (z. B. Docling), nur nach Bestätigung.
 5. Kein Fork von Typst, Tinymist, CodeMirror, Zotero. Nur über Schnittstellen nutzen.
 6. Klartext-Daten. SQLite nur als Cache in `.schreibassistent/`, jederzeit löschbar.
-7. Keine Geheimnisse im Repo. API-Schlüssel nur im macOS-Schlüsselbund.
+7. Keine Geheimnisse im Repo. API-Schlüssel nur im Schlüsselspeicher des Systems
+   (macOS Schlüsselbund, Windows Anmeldeinformationsverwaltung, Linux Secret Service).
 
 ## Stack
 Tauri 2 · Rust (stable) · React + TypeScript (Vite, pnpm) · CodeMirror 6 ·
 Typst-Crates · Tinymist (Sidecar) · SQLite/FTS5 (rusqlite) · genai-Crate ·
 Docling (Python via uv, Sidecar) · Vale + typst2vast · LTeX+
+
+## Plattformen
+Code darf nicht von macOS ausgehen: keine festen Pfade wie `/opt/homebrew`, keine Systembefehle
+(`date`, `cp`, `git`-Programm) im Produktivcode, Pfade mit `Path` statt Zeichenketten, Tastenkürzel
+über „Strg/⌘“-Hilfe. Fremdprogramme findet nur das Modul `werkzeuge` (App-Ressourcen, dann `PATH`).
+Auf dem Entwicklungsrechner (macOS) lassen sich Windows/Linux nicht ausführen: dort prüft die CI
+(`.github/workflows/`). Stand und Aufgaben: `docs/P10-plan.md`.
 
 ## Befehle
 - `pnpm tauri dev` – App starten
