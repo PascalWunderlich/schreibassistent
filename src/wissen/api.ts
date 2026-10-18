@@ -41,3 +41,13 @@ export const ingestStatus = (citekey: string) => invoke<IngestStatus>("ingest_st
 export const ingestSchaetzen = (citekey: string) => invoke<Schaetzung>("ingest_schaetzen", { citekey });
 export const ingestErzeugen = (citekey: string, neu: boolean) => invoke<IngestErgebnis>("ingest_erzeugen", { citekey, neu });
 export const ingestKonzepte = () => invoke<KonzeptErgebnis>("ingest_konzepte");
+
+export interface DoclingStatus {
+  bereit: boolean;
+  uv: boolean;
+  groesse_mb: number;
+  ordner: string | null;
+}
+
+export const ingestWerkzeugStatus = () => invoke<DoclingStatus>("ingest_werkzeug_status");
+export const ingestWerkzeugInstallieren = () => invoke<void>("ingest_werkzeug_installieren");

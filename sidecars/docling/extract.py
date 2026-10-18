@@ -2,7 +2,7 @@
 # requires-python = ">=3.11,<3.14"
 # dependencies = ["docling>=2.50", "pypdf>=5"]
 # ///
-"""PDF → Abschnitte mit Seite (P7). Aufruf: uv run extract.py <pdf> <ausgabe.json>
+"""PDF → Abschnitte mit Seite (P7). Aufruf: uv run extract.py <pdf> <ausgabe.json>   (oder --vorbereiten: Erstinstallation)
 
 Ausgabe:
   {"seiten": n, "labels": ["i", "ii", "1", …],   # gedruckte Seitenzahl je PDF-Seite
@@ -121,9 +121,30 @@ def page_labels(path: str, count: int) -> tuple[list[str], bool]:
     return [str(i + 1) for i in range(count)], False
 
 
+def prepare() -> None:
+    """Erstinstallation: Docling importieren und das Layout-Modell laden (App, Schritt „Einrichten“)."""
+    print("Docling wird geladen …", file=sys.stderr, flush=True)
+    import docling  # noqa: F401  (stellt sicher, dass alle Pakete da sind)
+
+    try:
+        from docling.utils.model_downloader import download_models
+    except ImportError:
+        print("Hinweis: Modelle werden beim ersten Einlesen geladen.", file=sys.stderr, flush=True)
+        return
+    print("Layout-Modell wird geladen …", file=sys.stderr, flush=True)
+    try:
+        download_models(with_layout=True, with_tableformer=False, with_code_formula=False, with_picture_classifier=False, with_rapidocr=False, progress=False)
+    except TypeError:
+        download_models()
+    print("Fertig.", file=sys.stderr, flush=True)
+
+
 def main() -> None:
+    if len(sys.argv) == 2 and sys.argv[1] == "--vorbereiten":
+        prepare()
+        return
     if len(sys.argv) != 3:
-        sys.exit("Aufruf: extract.py <pdf> <ausgabe.json>")
+        sys.exit("Aufruf: extract.py <pdf> <ausgabe.json> | extract.py --vorbereiten")
     pdf, out = sys.argv[1], sys.argv[2]
 
     from docling.datamodel.base_models import InputFormat

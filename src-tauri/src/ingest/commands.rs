@@ -69,3 +69,22 @@ pub async fn ingest_konzepte(app: AppHandle, state: State<'_, AppState>) -> Resu
     let settings = settings::load(&settings_file(&app)?).ki;
     super::create_concepts(&root, &settings, &outline).await
 }
+
+/// Ist Docling eingerichtet, und wie groß ist die Erstinstallation?
+#[tauri::command]
+pub fn ingest_werkzeug_status() -> super::docling::WerkzeugStatus {
+    super::docling::status()
+}
+
+/// Docling einmalig einrichten (nach Bestätigung in der Oberfläche). Meldet den Fortschritt als
+/// Ereignis `docling_fortschritt` (Text der aktuellen Zeile).
+#[tauri::command]
+pub async fn ingest_werkzeug_installieren(app: AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        super::docling::install(|line| {
+            let _ = app.emit("docling_fortschritt", line);
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

@@ -6,6 +6,7 @@
 //! (`markierungen_hash`) gleich sind; dann wird nichts neu erzeugt.
 
 pub mod commands;
+pub mod docling;
 pub mod extrakt;
 pub mod stellen;
 pub mod suche;

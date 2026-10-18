@@ -51,7 +51,7 @@ pub fn file_hash(path: &Path) -> Result<String, String> {
     Ok(format!("sha256:{:x}", Sha256::digest(&bytes)))
 }
 
-fn script() -> PathBuf {
+pub(super) fn script() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../sidecars/docling/extract.py")
 }
 
@@ -79,14 +79,12 @@ pub fn cached_any(root: &Path, citekey: &str) -> Option<Extrakt> {
 /// Docling ausführen (dauert je nach Umfang 10–60 s) und das Ergebnis speichern.
 pub fn extract(root: &Path, citekey: &str, pdf: &Path, quelle_hash: &str) -> Result<Extrakt, String> {
     let uv = find_uv().ok_or("uv nicht gefunden (Installation der App unvollständig)")?;
+    super::docling::ensure_ready()?;
     let out = std::env::temp_dir().join(format!("sa-docling-{citekey}-{}.json", std::process::id()));
-    let output = std::process::Command::new(uv)
-        .args(["run", "-q"])
-        .arg(script())
-        .arg(pdf)
-        .arg(&out)
-        .output()
-        .map_err(|e| format!("Docling: {e}"))?;
+    let mut command = std::process::Command::new(uv);
+    command.args(["run", "-q"]).arg(script()).arg(pdf).arg(&out);
+    super::docling::apply_env(&mut command);
+    let output = command.output().map_err(|e| format!("Docling: {e}"))?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let last = stderr.lines().rev().find(|l| !l.trim().is_empty()).unwrap_or("unbekannter Fehler");

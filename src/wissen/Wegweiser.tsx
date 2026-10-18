@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { IngestStatus, Schaetzung, ingestErzeugen, ingestSchaetzen, ingestStatus } from "./api";
+import { DoclingDialog } from "./DoclingDialog";
+import { DoclingStatus, IngestStatus, Schaetzung, ingestErzeugen, ingestSchaetzen, ingestStatus, ingestWerkzeugStatus } from "./api";
 
 interface Props {
   citekey: string;
@@ -20,6 +21,7 @@ export function Wegweiser({ citekey, onOpenFile }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [docling, setDocling] = useState<DoclingStatus | null>(null);
 
   const load = () => ingestStatus(citekey).then(setStatus).catch((e) => setError(String(e)));
   useEffect(() => {
@@ -36,6 +38,13 @@ export function Wegweiser({ citekey, onOpenFile }: Props) {
     setError(null);
     setBusy("liest das PDF (Docling) …");
     try {
+      // Beim ersten Mal erst fragen: Docling wird einmalig aus dem Netz geladen.
+      const werkzeug = await ingestWerkzeugStatus();
+      if (!werkzeug.bereit) {
+        setBusy(null);
+        setDocling(werkzeug);
+        return;
+      }
       setSchaetzung(await ingestSchaetzen(citekey));
       load();
     } catch (e) {
@@ -107,6 +116,16 @@ export function Wegweiser({ citekey, onOpenFile }: Props) {
       {busy && <span className="meta">{busy}</span>}
       {result && !busy && <div className="ok">{result}</div>}
       {error && <div className="warn">{error}</div>}
+      {docling && (
+        <DoclingDialog
+          status={docling}
+          onCancel={() => setDocling(null)}
+          onDone={() => {
+            setDocling(null);
+            estimate();
+          }}
+        />
+      )}
     </div>
   );
 }

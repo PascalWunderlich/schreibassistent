@@ -24,6 +24,9 @@ pub fn run() {
             if let Ok(dir) = app.path().resource_dir() {
                 werkzeuge::init(dir);
             }
+            if let Ok(dir) = app.path().app_data_dir() {
+                ingest::docling::init(dir.join("docling"));
+            }
             // Vorlage und Pakete für den Satz bereitstellen (wenn sie fehlen); Fehler zeigt der erste Satz.
             match vorlage::install_bundled() {
                 Ok(done) if !done.is_empty() => eprintln!("Vorlage installiert: {}", done.join(", ")),
@@ -62,6 +65,10 @@ pub fn run() {
             index::commands::index_chapter,
             index::commands::index_sources,
             quellen::commands::quellen_zotero,
+            quellen::commands::quellen_zotero_laeuft,
+            quellen::commands::quellen_bib_uebernehmen,
+            projekt::commands::app_ersteinstieg,
+            projekt::commands::app_ersteinstieg_beenden,
             pruefung::commands::pruefung_run,
             pruefung::commands::pruefung_rechtschreibung,
             ki::commands::ki_einstellungen,
@@ -84,6 +91,8 @@ pub fn run() {
             ingest::commands::ingest_schaetzen,
             ingest::commands::ingest_erzeugen,
             ingest::commands::ingest_konzepte,
+            ingest::commands::ingest_werkzeug_status,
+            ingest::commands::ingest_werkzeug_installieren,
             lsp::commands::lsp_completion,
             lsp::commands::lsp_hover,
             lsp::commands::lsp_definition,
