@@ -136,7 +136,7 @@ export function KiSettingsDialog({ onClose }: Props) {
             />
           </label>
         )}
-        <h4>API-Schlüssel (macOS-Schlüsselbund)</h4>
+        <h4>API-Schlüssel (Schlüsselspeicher des Systems)</h4>
         {ANBIETER.filter((x) => x.id !== "ollama").map((x) => (
           <div key={x.id} className="key-row">
             <span>{x.name}</span>

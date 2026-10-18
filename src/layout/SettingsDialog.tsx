@@ -46,7 +46,7 @@ export function SettingsDialog({ theme, onTheme, hasProject, onClose }: Props) {
           </section>
           <section className="flex flex-col items-start gap-2">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">KI</h3>
-            <p className="text-sm text-muted-foreground">Anbieter und Modell je Aufgabe. API-Schlüssel liegen im macOS-Schlüsselbund.</p>
+            <p className="text-sm text-muted-foreground">Anbieter und Modell je Aufgabe. API-Schlüssel liegen im Schlüsselspeicher des Systems.</p>
             <Button size="sm" variant="outline" onClick={() => setSub("ki")}>
               KI-Einstellungen …
             </Button>

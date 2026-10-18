@@ -49,6 +49,8 @@ import { Toaster, toast } from "sonner";
 import { CommandPalette } from "./layout/CommandPalette";
 import { NeueArbeitDialog } from "./layout/NeueArbeitDialog";
 import { SettingsDialog } from "./layout/SettingsDialog";
+import { Ersteinstieg } from "./ersteinstieg/Ersteinstieg";
+import { ersteinstiegBeenden, ersteinstiegOffen } from "./ersteinstieg/api";
 import { useMenu } from "./layout/useMenu";
 import { togglePanel } from "./lib/events";
 import { ShortcutsDialog } from "./layout/ShortcutsDialog";
@@ -79,6 +81,10 @@ function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ersteinstieg, setErsteinstieg] = useState(false);
+  useEffect(() => {
+    ersteinstiegOffen().then((offen) => setErsteinstieg(offen === true)).catch(() => {});
+  }, []);
   /** Quelltextmodus: Datei links, Seiten rechts. */
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceFile, setSourceFile] = useState("Arbeit/main.typ");
@@ -434,6 +440,18 @@ function App() {
       />
       {shortcutsOpen && <ShortcutsDialog onClose={() => setShortcutsOpen(false)} />}
       {newOpen && <NeueArbeitDialog onCreate={createWork} onClose={() => setNewOpen(false)} />}
+      {ersteinstieg && (
+        <Ersteinstieg
+          projectName={project?.name ?? null}
+          onOpen={choose}
+          onNew={() => setNewOpen(true)}
+          onSettings={() => setSettingsOpen(true)}
+          onFinish={() => {
+            setErsteinstieg(false);
+            ersteinstiegBeenden().catch(() => {});
+          }}
+        />
+      )}
       {settingsOpen && <SettingsDialog theme={theme} onTheme={setTheme} hasProject={!!project} onClose={() => setSettingsOpen(false)} />}
     </>
   );
