@@ -1,5 +1,5 @@
 //! Quellenseiten wie in der App erzeugen (P7): Einlesen, Schätzung, KI, Prüfung.
-//!   cargo run --example ingest_lauf -- <Vault> <citekey>… [--konzepte] [--neu]
+//!   cargo run --example ingest_lauf -- <Vault> <citekey>… [--konzepte] [--neu] [--nur-einlesen]
 //! Anbieter per `ANBIETER`/`MODELL` (sonst Standard), Budget per `BUDGET` (Tokens).
 
 use schreibassistent_lib::{index, ingest, ki, quellen};
@@ -44,6 +44,9 @@ async fn main() {
             "{key}: {} Seiten ({}), {} von {} Abschnitten, ~{} Tokens → {} ({:.1} s)",
             s.seiten, s.seitenzahlen, s.abschnitte_gewaehlt, s.abschnitte, s.tokens_ein, s.modell, start.elapsed().as_secs_f32()
         );
+        if args.iter().any(|a| a == "--nur-einlesen") {
+            continue;
+        }
         let start = std::time::Instant::now();
         match ingest::create_page(&root, &settings, prepared).await {
             Ok(r) => println!("   → {} · {} von {} Stellen bestätigt · Tokens {:?} · {:.1} s", r.seite, r.bestaetigt, r.gesamt, r.tokens, start.elapsed().as_secs_f32()),
