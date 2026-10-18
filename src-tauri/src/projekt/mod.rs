@@ -95,7 +95,7 @@ impl Project {
                 Ok(session) => (Some(session), None),
                 Err(e) => (None, Some(e)),
             },
-            None => (None, Some("Tinymist nicht gefunden (brew install tinymist)".to_owned())),
+            None => (None, Some("Tinymist nicht gefunden (Installation der App unvollständig)".to_owned())),
         };
         let info = ProjectInfo {
             root: root.to_string_lossy().into_owned(),
@@ -280,8 +280,7 @@ mod tests {
         let target = std::env::temp_dir().join(format!("sa-projekt-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&target);
         let source = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit"));
-        let status = std::process::Command::new("cp").arg("-R").arg(source).arg(&target).status().unwrap();
-        assert!(status.success());
+        neu::copy_to(source, &target).unwrap();
         let _ = std::fs::remove_dir_all(target.join(".schreibassistent"));
         target
     }

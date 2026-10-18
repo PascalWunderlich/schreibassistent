@@ -343,13 +343,9 @@ fn relative_from_uri(root: &Path, file_uri: &str) -> Option<String> {
     path.strip_prefix(root).ok().map(|p| p.to_string_lossy().into_owned())
 }
 
-/// Tinymist im PATH oder unter /opt/homebrew/bin (später als Sidecar, siehe ROADMAP).
+/// Tinymist (gelieferte Werkzeuge, dann `PATH`).
 pub fn find_tinymist() -> Option<PathBuf> {
-    let from_path = std::env::var_os("PATH")
-        .into_iter()
-        .flat_map(|p| std::env::split_paths(&p).collect::<Vec<_>>())
-        .map(|dir| dir.join("tinymist"));
-    from_path.chain([PathBuf::from("/opt/homebrew/bin/tinymist")]).find(|p| p.is_file())
+    crate::werkzeuge::find("tinymist")
 }
 
 #[cfg(test)]
@@ -375,7 +371,7 @@ mod tests {
         let target = std::env::temp_dir().join(format!("sa-lsp-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&target);
         let source = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../beispiel-arbeit"));
-        assert!(std::process::Command::new("cp").arg("-R").arg(source).arg(&target).status().unwrap().success());
+        crate::projekt::neu::copy_to(source, &target).unwrap();
         target.canonicalize().unwrap()
     }
 

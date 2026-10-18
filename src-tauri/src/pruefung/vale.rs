@@ -9,23 +9,9 @@ use serde::Deserialize;
 use super::engine::Hinweis;
 use super::profil::{Art, Profil};
 
-/// Konfiguration und Stil FHDW (im Repo unter `sidecars/vale/`; später als App-Ressource).
-pub fn config() -> PathBuf {
-    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../sidecars/vale/.vale.ini"))
-}
-
-/// Vale im PATH oder unter /opt/homebrew/bin; `typst2vast` muss für Vale auffindbar sein.
+/// Vale (gelieferte Werkzeuge, dann `PATH`); `typst2vast` muss für Vale auffindbar sein.
 pub fn find_vale() -> Option<PathBuf> {
-    search_path().into_iter().map(|d| d.join("vale")).find(|p| p.is_file())
-}
-
-fn search_path() -> Vec<PathBuf> {
-    let mut dirs: Vec<PathBuf> = std::env::var_os("PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
-    dirs.push("/opt/homebrew/bin".into());
-    if let Some(home) = std::env::var_os("HOME") {
-        dirs.push(Path::new(&home).join(".cargo/bin"));
-    }
-    dirs
+    crate::werkzeuge::find("vale")
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,13 +32,13 @@ pub fn check(profil: &Profil, root: &Path, files: &[String]) -> Result<Vec<Hinwe
     if rules.is_empty() || files.is_empty() {
         return Ok(Vec::new());
     }
-    let vale = find_vale().ok_or("Vale nicht gefunden (brew install vale)")?;
-    let path = std::env::join_paths(search_path()).map_err(|e| e.to_string())?;
+    let vale = find_vale().ok_or("Vale nicht gefunden (Installation der App unvollständig)")?;
+    let path = std::env::join_paths(crate::werkzeuge::search_path()).map_err(|e| e.to_string())?;
     let output = Command::new(vale)
         .current_dir(root)
         .env("PATH", path)
         .arg("--config")
-        .arg(config())
+        .arg(crate::werkzeuge::vale_config())
         .args(["--output", "JSON", "--no-exit"])
         .args(files)
         .output()

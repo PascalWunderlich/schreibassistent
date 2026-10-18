@@ -109,7 +109,7 @@ pub async fn pruefung_rechtschreibung(state: State<'_, AppState>) -> Result<Vec<
     let session = match session {
         Some(session) => session,
         None => {
-            let program = find_ltex().ok_or("LTeX+ nicht gefunden (brew install ltex-ls-plus)")?;
+            let program = find_ltex().ok_or("LTeX+ nicht gefunden (Installation der App unvollständig)")?;
             let session = tauri::async_runtime::spawn_blocking(move || LtexSession::start(&program, &root))
                 .await
                 .map_err(|e| e.to_string())??;

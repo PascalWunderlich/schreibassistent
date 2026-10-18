@@ -8,6 +8,7 @@ pub mod pruefung;
 pub mod ki;
 pub mod protokoll;
 pub mod ingest;
+pub mod werkzeuge;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,6 +17,13 @@ pub fn run() {
         .on_menu_event(|app, event| {
             use tauri::Emitter;
             let _ = app.emit("menu", event.id().0.clone());
+        })
+        .setup(|app| {
+            use tauri::Manager;
+            if let Ok(dir) = app.path().resource_dir() {
+                werkzeuge::init(dir);
+            }
+            Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())

@@ -91,10 +91,22 @@ fn structural(root: &typst::syntax::SyntaxNode, text: &str, offset: usize) -> bo
     false
 }
 
+/// LTeX+ ersetzt Typst-Code (z. B. `#footnote[…]`) durch Platzhalter „DummyN“. Klebt einer an einem
+/// Wort („beschriebenDummy3“), kann der Rechtschreibprüfer ihn als Tippfehler melden – das ist kein
+/// Fehler im Text des Menschen (je nach Version von LanguageTool/LTeX+).
+fn is_placeholder_typo(message: &str) -> bool {
+    let word = message.strip_prefix('\'').and_then(|m| m.split('\'').next()).unwrap_or_default();
+    match word.find("Dummy") {
+        Some(i) => {
+            let digits = &word[i + "Dummy".len()..];
+            !digits.is_empty() && digits.chars().all(|c| c.is_ascii_digit())
+        }
+        None => false,
+    }
+}
+
 pub fn find_ltex() -> Option<PathBuf> {
-    let mut dirs: Vec<PathBuf> = std::env::var_os("PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
-    dirs.push("/opt/homebrew/bin".into());
-    dirs.into_iter().map(|d| d.join("ltex-ls-plus")).find(|p| p.is_file())
+    crate::werkzeuge::find("ltex-ls-plus")
 }
 
 /// Wörter aus `System/woerterbuch.txt` (leere Zeilen und `#`-Kommentare ignoriert).
@@ -139,6 +151,7 @@ impl LtexSession {
             let list = params["diagnostics"].as_array().cloned().unwrap_or_default();
             let parsed = list
                 .iter()
+                .filter(|d| !is_placeholder_typo(d["message"].as_str().unwrap_or_default()))
                 .map(|d| Diagnostic {
                     line: d["range"]["start"]["line"].as_u64().unwrap_or(0) as u32,
                     character: d["range"]["start"]["character"].as_u64().unwrap_or(0) as u32,
@@ -229,5 +242,18 @@ impl LtexSession {
             }
         }
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn placeholder_typos_are_dropped() {
+        assert!(is_placeholder_typo("'beschriebenDummy3': Möglicher Tippfehler gefunden. (GERMAN_SPELLER_RULE)"));
+        assert!(!is_placeholder_typo("'Tippfeler': Möglicher Tippfehler gefunden. (GERMAN_SPELLER_RULE)"));
+        assert!(!is_placeholder_typo("'Dummy': Möglicher Tippfehler gefunden."));
+        assert!(!is_placeholder_typo("Satzanfang klein schreiben"));
     }
 }

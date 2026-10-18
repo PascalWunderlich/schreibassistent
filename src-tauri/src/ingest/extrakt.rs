@@ -56,13 +56,7 @@ fn script() -> PathBuf {
 }
 
 pub fn find_uv() -> Option<PathBuf> {
-    let mut dirs: Vec<PathBuf> = std::env::var_os("PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
-    dirs.push("/opt/homebrew/bin".into());
-    if let Some(home) = std::env::var_os("HOME") {
-        dirs.push(Path::new(&home).join(".local/bin"));
-        dirs.push(Path::new(&home).join(".cargo/bin"));
-    }
-    dirs.into_iter().map(|d| d.join("uv")).find(|p| p.is_file())
+    crate::werkzeuge::find("uv")
 }
 
 fn cache_file(root: &Path, citekey: &str) -> PathBuf {
@@ -84,7 +78,7 @@ pub fn cached_any(root: &Path, citekey: &str) -> Option<Extrakt> {
 
 /// Docling ausführen (dauert je nach Umfang 10–60 s) und das Ergebnis speichern.
 pub fn extract(root: &Path, citekey: &str, pdf: &Path, quelle_hash: &str) -> Result<Extrakt, String> {
-    let uv = find_uv().ok_or("uv nicht gefunden (brew install uv)")?;
+    let uv = find_uv().ok_or("uv nicht gefunden (Installation der App unvollständig)")?;
     let out = std::env::temp_dir().join(format!("sa-docling-{citekey}-{}.json", std::process::id()));
     let output = std::process::Command::new(uv)
         .args(["run", "-q"])
