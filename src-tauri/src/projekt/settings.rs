@@ -6,6 +6,9 @@ use std::path::{Path, PathBuf};
 pub struct Settings {
     /// Zuletzt geöffneter Arbeits-Vault.
     pub last_vault: Option<PathBuf>,
+    /// Anbieter und Modell je KI-Aufgabe (ohne Schlüssel).
+    #[serde(default)]
+    pub ki: crate::ki::einstellungen::KiSettings,
 }
 
 pub fn load(file: &Path) -> Settings {
@@ -28,7 +31,7 @@ mod tests {
     fn round_trip_and_missing_file() {
         let file = std::env::temp_dir().join(format!("sa-settings-{}/settings.json", std::process::id()));
         assert_eq!(load(&file), Settings::default());
-        let settings = Settings { last_vault: Some("/Users/x/Arbeiten/Testarbeit".into()) };
+        let settings = Settings { last_vault: Some("/Users/x/Arbeiten/Testarbeit".into()), ..Default::default() };
         save(&file, &settings).unwrap();
         assert_eq!(load(&file), settings);
         std::fs::remove_dir_all(file.parent().unwrap()).unwrap();

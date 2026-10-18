@@ -13,7 +13,7 @@ use super::{Project, ProjectInfo, SaveInfo, git};
 #[derive(Default)]
 pub struct AppState(pub Mutex<Option<Project>>);
 
-fn settings_file(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn settings_file(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app.path().app_config_dir().map_err(|e| e.to_string())?.join("settings.json"))
 }
 
@@ -60,7 +60,8 @@ pub async fn projekt_open(app: AppHandle, state: State<'_, AppState>, path: Stri
         previous.autosave(false);
     }
     let file = settings_file(&app).map_err(|e| vec![e])?;
-    settings::save(&file, &Settings { last_vault: Some(PathBuf::from(&info.root)) }).map_err(|e| vec![e])?;
+    let settings = Settings { last_vault: Some(PathBuf::from(&info.root)), ..settings::load(&file) };
+    settings::save(&file, &settings).map_err(|e| vec![e])?;
     Ok(info)
 }
 

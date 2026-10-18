@@ -4,7 +4,7 @@
 
 pub mod commands;
 pub mod mapping;
-mod world;
+pub(crate) mod world;
 
 use std::time::Instant;
 
